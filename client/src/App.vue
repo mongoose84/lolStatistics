@@ -1,7 +1,7 @@
 <!-- src/App.vue -->
 <template>
   <!-- Optional global layout -->
-  <div id="app">
+  <div id="app" data-testid="app-root">
     
 
     <!-- This is where the matched route component (Home or Results) is rendered -->
