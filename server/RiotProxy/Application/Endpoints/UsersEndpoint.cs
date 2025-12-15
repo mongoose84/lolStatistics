@@ -3,8 +3,6 @@ using RiotProxy.Infrastructure.External.Database.Repositories;
 
 namespace RiotProxy.Application.Endpoints
 {
-    // Assumes IEndpoint defines a method to register endpoint routes.
-    // If your IEndpoint interface differs, adjust the signature accordingly.
     public sealed class UsersEndpoint : IEndpoint
     {
         public string Route { get; }
@@ -13,7 +11,6 @@ namespace RiotProxy.Application.Endpoints
         {
             Route = basePath + "/users";
         }
-
 
         public void Configure(WebApplication app)
         {
@@ -31,13 +28,13 @@ namespace RiotProxy.Application.Endpoints
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.StackTrace);
-                    return Results.BadRequest("Invalid operation when getting user");
+                    return Results.BadRequest("Invalid operation when getting users");
                 }
                 catch (ArgumentException ex)
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.StackTrace);
-                    return Results.BadRequest("Invalid argument when getting user");
+                    return Results.BadRequest("Invalid argument when getting users");
                 }
                 catch (Exception ex) when (
                     !(ex is OutOfMemoryException) &&
@@ -47,7 +44,7 @@ namespace RiotProxy.Application.Endpoints
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.StackTrace);
-                    return Results.BadRequest("Error when getting user");
+                    return Results.BadRequest("Error when getting users");
                 }
             });
         }
