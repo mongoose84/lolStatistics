@@ -1,8 +1,10 @@
 <template>
-  <section class="championstats">
-    <h2>Results for {{ gameName }}#{{ tagLine }}</h2>
+  <section class="userview">
+    <h2 v-if="hasUser">User: {{ userName }} (ID: {{ userId }})</h2>
+    <h2 v-else>Missing user details</h2>
 
-    <div v-if="loading">Loading…</div>
+    <div v-if="!hasUser">Please navigate via the Users list.</div>
+    <div v-else-if="loading">Loading…</div>
     <div v-else-if="error">{{ error }}</div>
 
     <!-- Pretty‑print the returned object -->
@@ -15,33 +17,30 @@
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue';
-import useSummoner from '../assets/useSummoner';
+import { onMounted, watch, computed, ref } from 'vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({
-  gameName: {
+  userName: {
     type: String,
     required: true,
   },
-  tagLine: {
-    type: String,
+  userId: {
+    type: [String, Number],
     required: true,
   },
 });
 
-const {
-  summoner,
-  winRate,
-  loading,
-  error,
-  fetchSummoner,
-} = useSummoner()
+const loading = ref(false);
+const error = ref(null);
+const summoner = ref(null);
+const winRate = ref(null);
+
+const hasUser = computed(() => !!props.userName && props.userId !== undefined && props.userId !== '' );
 
 function load() {
-  if (props.gameName.trim() && props.tagLine.trim()) {
-    fetchSummoner(props.gameName.trim(), props.tagLine.trim());
-  }
+  if (!hasUser.value) return;
+  // Placeholder for future fetches based on userId/userName
 }
 
 onMounted(() => {
@@ -49,7 +48,7 @@ onMounted(() => {
 });
 
 watch(
-  () => [props.gameName, props.tagLine],
+  () => [props.userName, props.userId],
   () => {
     load();
   }
@@ -60,7 +59,7 @@ defineExpose({ load });
 </script>
 
 <style scoped>
-.championstats {
+.userview {
   max-width: 800px;
   margin: 4rem auto;
 }

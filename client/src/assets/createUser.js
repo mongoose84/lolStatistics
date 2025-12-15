@@ -1,12 +1,11 @@
 import axios from 'axios';
+import { getBaseApi } from './getHost';
 
-var development = false;
+var development = true;
 
 // POST /api/v1.0/user/{username} with JSON body { accounts: [{ gameName, tagLine }, ...] }
 export default async function createUser(username, accounts) {
-  const apiVersion = '/api/v1.0';
-  const host = development ? 'http://localhost:5000' : 'https://lol-api.agileastronaut.com';
-  const base = host + apiVersion;
+  var base = getBaseApi();
 
   try {
     const response = await axios.post(
