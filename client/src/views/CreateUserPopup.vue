@@ -1,7 +1,7 @@
 <template>
   <div class="popup-overlay">
     <div class="popup-content">
-      <h2>Create Username</h2>
+      <h2>Create new user</h2>
 
       <!-- Single username -->
       <div class="username-input-container">
@@ -76,7 +76,6 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-import createUser from '../assets/createUser.js'
 
 interface SummonerField {
   id: number;
@@ -88,7 +87,7 @@ interface SummonerField {
 export default defineComponent({
   props: {
     onClose: { type: Function, required: true },
-    onCreate: { type: Function, required: false }
+    onCreate: { type: Function, required: true }
   },
   setup(props) {
     const options = [
@@ -125,30 +124,36 @@ export default defineComponent({
     }
 
     const handleCreate = async () => {
+      if (busy.value) return
       error.value = null
       success.value = null
-
-      const name = username.value.trim()
-      if (!name) { error.value = 'Username is required'; return }
-
-      const accounts = summoners.value
-        .map(s => ({ gameName: s.gameName.trim(), tagLine: s.tagLine }))
-        .filter(s => s.gameName && s.tagLine)
-
-      if (accounts.length === 0) {
-        error.value = 'Add at least one game name and tagLine'
-        return
-      }
+      busy.value = true
 
       try {
-        busy.value = true
-        const res = await createUser(name, accounts)
-        success.value = 'User created successfully'
-        // @ts-ignore
-        props.onCreate?.({ username: name, accounts, response: res })
-        setTimeout(() => props.onClose(), 700)
+        const name = username.value.trim()
+        const accounts = summoners.value
+          .map(s => ({ gameName: s.gameName.trim(), tagLine: s.tagLine.trim() }))
+          .filter(s => s.gameName && s.tagLine)
+
+        if (!name) {
+          error.value = 'Please enter a username.'
+          return
+        }
+
+        if (!accounts.length) {
+          error.value = 'Please enter at least one valid game name and tag.'
+          return
+        }
+
+        if (typeof props.onCreate === 'function') {
+          await Promise.resolve(props.onCreate({ username: name, accounts }))
+        }
+
+        success.value = 'Accounts created successfully.'
+        // Close popup after success
+        if (typeof props.onClose === 'function') props.onClose()
       } catch (e: any) {
-        error.value = e?.message ?? 'Failed to create user'
+        error.value = e?.message || 'Failed to create user(s).'
       } finally {
         busy.value = false
       }
@@ -161,29 +166,30 @@ export default defineComponent({
 
 <style scoped>
 .popup-overlay {
-  position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.8);
+  position: fixed; inset: 0;
+  background-color: rgba(43, 11, 58, 0.55); /* theme-tinted, more see-through */
   display: flex; justify-content: center; align-items: center; z-index: 1000;
 }
 .popup-content {
-  background: #1a1a1a; color: #fff; padding: 2rem; border-radius: 8px;
+  background: var(--color-bg-elev); color: var(--color-text); padding: 2rem; border-radius: 8px;
   max-width: 560px; width: 92%;
 }
 .popup-content h2 { margin-bottom: 1rem; }
 .username-input-container { margin-bottom: 1rem; }
 .username-input {
   width: 100%; padding: 0.5rem; font-size: 1rem;
-  border: 1px solid #555; border-radius: 4px; background: #333; color: #fff;
+  border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);
 }
-.username-input::placeholder { color: #aaa; }
+.username-input::placeholder { color: var(--color-text-muted); }
 
 .username-fields { margin: 1rem 0; }
-.username-row { margin-bottom: 1rem; padding: 1rem; border: 1px solid #444; border-radius: 4px; background: #2a2a2a; }
+.username-row { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elev); }
 
 .search-form { display: flex; gap: 0.25rem; align-items: center; }
-.search-form h1 { color: #fff; margin: 0 0.25rem; }
+.search-form h1 { color: var(--color-text); margin: 0 0.25rem; }
 
 .search-input {
-  background: #333; color: #fff; border: 1px solid #555; border-radius: 4px;
+  background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px;
   padding: 0.5rem; font-size: 1rem;
   flex: 1; min-width: 0;
 }
@@ -195,7 +201,7 @@ export default defineComponent({
 }
 
 .tagLine-input {
-  background: #333; color: #fff; border: 1px solid #555; 
+  background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); 
   border-right: none;
   border-radius: 4px 0 0 4px;
   padding: 0.5rem; font-size: 1rem;
@@ -204,9 +210,9 @@ export default defineComponent({
 }
 
 .dropdown-arrow {
-  background: #333;
-  color: #fff;
-  border: 1px solid #555;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0 4px 4px 0;
   padding: 0 0.5rem;
   cursor: pointer;
@@ -214,7 +220,7 @@ export default defineComponent({
 }
 
 .dropdown-arrow:hover {
-  background: #444;
+  background: var(--color-bg-hover);
 }
 
 .dropdown-menu {
@@ -222,8 +228,8 @@ export default defineComponent({
   top: 100%;
   left: 0;
   right: 0;
-  background: #333;
-  border: 1px solid #555;
+  background: var(--color-bg-elev);
+  border: 1px solid var(--color-border);
   border-top: none;
   border-radius: 0 0 4px 4px;
   max-height: 200px;
@@ -235,27 +241,40 @@ export default defineComponent({
 .dropdown-item {
   padding: 0.5rem;
   cursor: pointer;
-  color: #fff;
+  color: var(--color-text);
 }
 
 .dropdown-item:hover {
-  background: #444;
+  background: var(--color-bg-hover);
 }
 
 .add-button {
-  width: 40px; height: 40px; border-radius: 50%; background: #007bff; color: #fff;
-  border: none; font-size: 1.5rem; cursor: pointer; margin: 0.5rem 0 1rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-text);
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin: 0.5rem 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  box-sizing: border-box;
 }
-.add-button:hover { background: #0056b3; }
+.add-button:hover { background: var(--color-primary-hover); }
 
 .action-buttons { display: flex; gap: 1rem; justify-content: center; }
 .action-buttons button {
   padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; border: none; border-radius: 4px;
 }
-.action-buttons button:first-child { background: #28a745; color: #fff; }
-.action-buttons button:first-child:hover { background: #218838; }
-.action-buttons button:last-child { background: #dc3545; color: #fff; }
-.action-buttons button:last-child:hover { background: #c82333; }
+.action-buttons button:first-child { background: var(--color-primary); color: var(--color-text); }
+.action-buttons button:first-child:hover { background: var(--color-primary-hover); }
+.action-buttons button:last-child { background: var(--color-bg-elev); color: var(--color-text); border: 1px solid var(--color-border); }
+.action-buttons button:last-child:hover { background: var(--color-bg-hover); }
 
 .error { color: #ff6b6b; margin-top: 0.5rem; }
 .success { color: #28a745; margin-top: 0.5rem; }
