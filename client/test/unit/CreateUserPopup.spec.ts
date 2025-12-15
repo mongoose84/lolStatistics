@@ -2,12 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CreateUserPopup from '@/views/CreateUserPopup.vue'
 
-vi.mock('@/assets/createUser.js', () => ({
-  default: vi.fn().mockResolvedValue({ ok: true })
-}))
-
-import createUser from '@/assets/createUser.js'
-
 describe('CreateUserPopup', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -18,7 +12,7 @@ describe('CreateUserPopup', () => {
     vi.clearAllMocks()
   })
 
-  it('submits username and accounts, shows success, and calls onClose', async () => {
+  it('submits username and accounts via onCreate and calls onClose', async () => {
     const onClose = vi.fn()
     const onCreate = vi.fn()
 
@@ -28,30 +22,64 @@ describe('CreateUserPopup', () => {
 
     // Fill top-level username
     const usernameInput = wrapper.findAll('input.username-input')[0]
-    await usernameInput.setValue('bob')
+    await usernameInput.setValue('Rasmus')
 
     // Fill the first summoner row (defaults exist with id=1)
     const gameInputs = wrapper.findAll('input.search-input')
     expect(gameInputs.length).toBeGreaterThan(0)
-    await gameInputs[0].setValue('GamerOne')
+    await gameInputs[0].setValue('Aleno16')
 
     // Click Create
     const createBtn = wrapper.findAll('.action-buttons button')[0]
     await createBtn.trigger('click')
 
-    // Ensure API called with mapped accounts
-    expect(createUser).toHaveBeenCalledWith('bob', [
-      { gameName: 'GamerOne', tagLine: 'EUNE' }
-    ])
+    // onCreate gets called with structured payload
+    expect(onCreate).toHaveBeenCalledWith({
+      username: 'Rasmus',
+      accounts: [{ gameName: 'Aleno16', tagLine: 'EUNE' }]
+    })
 
-    // Success message shows
-    expect(wrapper.text()).toContain('User created successfully')
-
-    // onCreate gets called with payload
-    expect(onCreate).toHaveBeenCalled()
-
-    // Simulate the delayed close
-    await vi.advanceTimersByTimeAsync(800)
+    // onClose called immediately after success
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('shows validation error when username is missing', async () => {
+    const onClose = vi.fn()
+    const onCreate = vi.fn()
+
+    const wrapper = mount(CreateUserPopup, {
+      props: { onClose, onCreate }
+    })
+
+    // Leave username empty, set a valid account
+    const gameInputs = wrapper.findAll('input.search-input')
+    await gameInputs[0].setValue('SomeName')
+
+    const createBtn = wrapper.findAll('.action-buttons button')[0]
+    await createBtn.trigger('click')
+
+    expect(onCreate).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Please enter a username.')
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('shows validation error when no valid accounts provided', async () => {
+    const onClose = vi.fn()
+    const onCreate = vi.fn()
+
+    const wrapper = mount(CreateUserPopup, {
+      props: { onClose, onCreate }
+    })
+
+    // Set username but leave game name empty
+    const usernameInput = wrapper.findAll('input.username-input')[0]
+    await usernameInput.setValue('Rasmus')
+
+    const createBtn = wrapper.findAll('.action-buttons button')[0]
+    await createBtn.trigger('click')
+
+    expect(onCreate).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Please enter at least one valid game name and tag.')
+    expect(onClose).not.toHaveBeenCalled()
   })
 })
