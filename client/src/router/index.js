@@ -14,10 +14,15 @@ const routes = [
     component: UserView,
 
     // pass the query string as a prop so the component can read it easily
-    props: route => ({
-      userName: route.query.userName || '',
-      userId: route.query.userId !== undefined ? Number(route.query.userId) : undefined,
-    }),
+    props: route => {
+      const userName = route.query.userName || '';
+      let userId;
+      if (route.query.userId !== undefined) {
+        const parsedId = Number(route.query.userId);
+        userId = isNaN(parsedId) ? undefined : parsedId;
+      }
+      return { userName, userId };
+    },
   }
 ]
 
