@@ -1,20 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import ChampionStats from '../views/ChampionStats.vue'
-import Search from '../views/Search.vue'
+import UserView from '../views/UserView.vue'
+import Home from '../views/HomeView.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'Search',
-    component: Search,
+    name: 'Home',
+    component: Home,
   },
   {
-    path: '/championstats',
-    name: 'ChampionStats',
-    component: ChampionStats,
+    path: '/user',
+    name: 'UserView',
+    component: UserView,
 
     // pass the query string as a prop so the component can read it easily
-    props: route => ({ gameName: route.query.gameName, tagLine: route.query.tagLine }),
+    props: route => ({
+      userName: route.query.userName || '',
+      userId: route.query.userId !== undefined ? Number(route.query.userId) : undefined,
+    }),
   }
 ]
 
