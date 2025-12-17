@@ -17,7 +17,12 @@
       {{ gamer.gamerName }}<span class="tag">#{{ gamer.tagline }}</span>
     </div>
 
-    <div class="chart" role="img" :aria-label="`Wins ${gamer.wins}, Losses ${gamer.losses}`">
+    <div
+      class="chart"
+      role="img"
+      :aria-label="`Wins ${gamer.wins}, Losses ${gamer.losses}`"
+      :style="{ width: size + 'px', height: size + 'px' }"
+    >
       <svg :width="size" :height="size" :viewBox="`0 0 ${size} ${size}`">
         <g :transform="`rotate(-90 ${center} ${center})`">
           <!-- Losses ring (background) -->
@@ -36,6 +41,7 @@
           />
         </g>
       </svg>
+      <div class="chart-label">{{ wins }} | {{ losses }}</div>
     </div>
   </div>
 </template>
@@ -63,6 +69,7 @@ const total = computed(() => {
 
 const circumference = 2 * Math.PI * radius
 const wins = computed(() => Number(props.gamer?.wins ?? 0))
+const losses = computed(() => Number(props.gamer?.losses ?? 0))
 
 const dashArray = computed(() => {
   if (!total.value) return `0 ${circumference}`
@@ -130,5 +137,17 @@ const lossColor = '#dc3545'
 
 .chart {
   margin-top: 0.4rem;
+  position: relative;
+}
+
+.chart-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.85rem;
+  color: var(--color-text);
+  text-align: center;
+  pointer-events: none;
 }
 </style>
