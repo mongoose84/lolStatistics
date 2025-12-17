@@ -31,12 +31,9 @@ namespace RiotProxy.Infrastructure.External.Riot
             return $"https://europe.api.riotgames.com/lol{path}?api_key={Secrets.ApiKey}";
         }
 
-        public static string GetSummonerUrl(string region, string path)
+        public static string GetSummonerUrl(string puuid)
         {
-            var regionUpper = region.ToUpper();
-            var regionCode = _regionMapping.ContainsKey(regionUpper) ? _regionMapping[regionUpper] : throw new ArgumentException($"Invalid region code: {region}");
-
-            return $"https://{regionCode}.api.riotgames.com/lol{path}?api_key={Secrets.ApiKey}";
+            return $"https://europe.api.riotgames.com//lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={Secrets.ApiKey}";
         }
     }
 }
