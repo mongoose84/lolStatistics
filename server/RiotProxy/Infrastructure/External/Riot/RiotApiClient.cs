@@ -109,10 +109,10 @@ namespace RiotProxy.Infrastructure.External.Riot
             return matchDoc;
         }
 
-        public async Task<Summoner?> GetSummonerByPuuidAsync(string puuid, CancellationToken ct = default)
+        public async Task<Summoner?> GetSummonerByPuuidAsync(string region, string puuid, CancellationToken ct = default)
         {
             var encodedPuuid = HttpUtility.UrlEncode(puuid);
-            var summonerUrl = RiotUrlBuilder.GetSummonerUrl(encodedPuuid);
+            var summonerUrl = RiotUrlBuilder.GetSummonerUrl(region, encodedPuuid);
             Metrics.SetLastUrlCalled("RiotServices.cs ln 134" + summonerUrl);
 
             await _perSecondBucket.WaitAsync(ct);
@@ -127,7 +127,8 @@ namespace RiotProxy.Infrastructure.External.Riot
             response.EnsureSuccessStatusCode();   // Throws if the status is not 2xx.
 
             var json = await response.Content.ReadAsStringAsync();
-            var summoner = JsonSerializer.Deserialize<Summoner>(json);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var summoner = JsonSerializer.Deserialize<Summoner>(json, options);
             return summoner;
         }
 

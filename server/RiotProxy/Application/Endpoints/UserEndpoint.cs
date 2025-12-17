@@ -91,7 +91,7 @@ namespace RiotProxy.Application.Endpoints
                     {
                         var puuid = await riotApiClient.GetPuuidAsync(account.GameName, account.TagLine);
 
-                        var summoner = await riotApiClient.GetSummonerByPuuidAsync(puuid);
+                        var summoner = await riotApiClient.GetSummonerByPuuidAsync(account.TagLine, puuid);
                         if (summoner is null)
                         {
                             Console.WriteLine($"Could not find summoner for account: {account.GameName}#{account.TagLine}");

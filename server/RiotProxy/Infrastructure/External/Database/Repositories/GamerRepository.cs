@@ -18,7 +18,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             await using var conn = _factory.CreateConnection();
             await conn.OpenAsync();
 
-            const string sql = "SELECT Puuid, UserId, GamerName, TagLine, IconId, Level, Wins, Losses, LastChecked FROM Gamer WHERE UserId = @userId";
+            const string sql = "SELECT Puuid, UserId, GamerName, TagLine, ProfileIconId, SummonerLevel, Wins, Losses, LastChecked FROM Gamer WHERE UserId = @userId";
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@userId", userId);
             await using var reader = await cmd.ExecuteReaderAsync();
@@ -46,7 +46,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             await using var conn = _factory.CreateConnection();
             await conn.OpenAsync();
 
-            const string sql = "SELECT Puuid, UserId, GamerName, TagLine, IconId, Level, Wins, Losses, LastChecked FROM Gamer";
+            const string sql = "SELECT Puuid, UserId, GamerName, TagLine, ProfileIconId, SummonerLevel, Wins, Losses, LastChecked FROM Gamer";
             await using var cmd = new MySqlCommand(sql, conn);
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -75,7 +75,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             await conn.OpenAsync();
 
             const string sql = @"
-                INSERT INTO Gamer (UserId, Puuid, GamerName, TagLine, IconId, Level, LastChecked)          
+                INSERT INTO Gamer (UserId, Puuid, GamerName, TagLine, ProfileIconId, SummonerLevel, LastChecked)          
                 VALUES (@userId, @puuid, @gamerName, @tagLine, @iconId, @level, @lastChecked);
                 SELECT LAST_INSERT_ID();             
             ";
@@ -101,7 +101,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             await conn.OpenAsync();
 
             const string sql = @"UPDATE Gamer 
-                                 SET Wins = @wins, Losses = @losses, IconId = @iconId, Level = @level, LastChecked = @lastChecked
+                                 SET Wins = @wins, Losses = @losses, ProfileIconId = @iconId, SummonerLevel = @level, LastChecked = @lastChecked
                                  WHERE Puuid = @puuid";
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@wins", gamer.Wins);
