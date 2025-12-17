@@ -23,7 +23,7 @@ namespace RiotProxy.Application.Endpoints
             {
                 try
                 {
-                    var userIdInt = int.Parse(userId);
+                    var userIdInt = int.TryParse(userId, out var result) ? result : throw new ArgumentException($"Invalid userId: {userId}");
                     var gamers = await gamerRepo.GetGamersByUserIdAsync(userIdInt);
                     var lolVersion = await riotApiClient.GetLolVersionAsync();
                     foreach (var gamer in gamers)

@@ -111,8 +111,7 @@ namespace RiotProxy.Infrastructure.External.Riot
 
         public async Task<Summoner?> GetSummonerByPuuidAsync(string tagline, string puuid, CancellationToken ct = default)
         {
-            var encodedPuuid = HttpUtility.UrlEncode(puuid);
-            var summonerUrl = RiotUrlBuilder.GetSummonerUrl(tagline, encodedPuuid);
+            var summonerUrl = RiotUrlBuilder.GetSummonerUrl(tagline, puuid);
             Metrics.SetLastUrlCalled("RiotServices.cs ln 134" + summonerUrl);
 
             await _perSecondBucket.WaitAsync(ct);
