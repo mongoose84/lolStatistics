@@ -91,19 +91,22 @@ defineExpose({ load });
 
 <style scoped>
 .userview {
-  max-width: 800px;
-  margin: 4rem auto;
+  width: 100%;
+  /* full width; keep slight page padding */
+  margin: 2rem 0;
+  padding: 0 1rem;
 }
 
 .brand--compact {
   width: 100%;
-  margin: 0 auto 0.5rem;
+  /* keep header left-aligned, avoid auto-centering */
+  margin: 0 0 0.5rem 0;
 }
 
 .brand-inner {
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* move logo and title to the left */
+  justify-content: flex-start; /* left-align logo and titles */
   gap: 0.75rem;
 }
 
@@ -126,8 +129,18 @@ defineExpose({ load });
   opacity: 0.85;
 }
 
+.titles { text-align: left; }
+
+.user-container h2 { text-align: left; margin-left: 1rem; }
+
 .gamers-list {
-  margin-top: 1rem;
+  /* center the cards section on the page */
+  /* Limit to 5 columns worth of width, center horizontally */
+  --card-width: 260px;
+  --card-gap: 1.2rem; /* keep existing visual spacing */
+  --max-cols: 5;
+  max-width: calc(var(--max-cols) * var(--card-width) + (var(--max-cols) - 1) * var(--card-gap));
+  margin: 0.25rem auto 0;
 }
 
 .gamers-header {
@@ -139,10 +152,10 @@ defineExpose({ load });
 }
 
 .gamer-cards {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center; /* center cards in the middle */
-  gap: 7rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-width), var(--card-width)));
+  justify-content: center;
+  gap: var(--card-gap);
   margin: 0;
   padding: 0;
 }

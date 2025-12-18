@@ -44,9 +44,9 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             await conn.OpenAsync();
 
             const string sql = @"
-                INSERT INTO Gamer (Puuid, GamerName, TagLine, ProfileIconId, SummonerLevel, LastChecked)          
+            INSERT IGNORE INTO Gamer (Puuid, GamerName, TagLine, ProfileIconId, SummonerLevel, LastChecked)          
                 VALUES (@puuid, @gamerName, @tagLine, @iconId, @level, @lastChecked);
-                SELECT LAST_INSERT_ID();             
+                SELECT ROW_COUNT();             
             ";
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@puuid", puuid);
