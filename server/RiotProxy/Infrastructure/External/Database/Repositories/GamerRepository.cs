@@ -12,31 +12,6 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             _factory = factory;
         }
 
-        public async Task<IList<Gamer>> GetGamersByUserIdAsync(int userId)
-        {
-            var gamers = new List<Gamer>();
-            await using var conn = _factory.CreateConnection();
-            await conn.OpenAsync();
-
-            const string sql = "SELECT Puuid, GamerName, TagLine, ProfileIconId, SummonerLevel, LastChecked FROM Gamer WHERE UserId = @userId";
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@userId", userId);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                gamers.Add(new Gamer
-                {
-                    Puuid = reader.GetString(0),
-                    GamerName = reader.GetString(1),
-                    Tagline = reader.GetString(2),
-                    IconId = reader.GetInt32(3),
-                    Level = reader.GetInt64(4),
-                    LastChecked = reader.IsDBNull(5) ? DateTime.MinValue : reader.GetDateTime(5)
-                });
-            }
-            return gamers;
-        }
-
         public async Task<IList<Gamer>> GetAllGamersAsync()
         {
             var gamers = new List<Gamer>();
@@ -61,7 +36,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             return gamers;
         }
 
-        public async Task<bool> CreateGamerAsync(int userId, string puuid, string gamerName, string tagLine, int iconId, long level)
+        public async Task<bool> CreateGamerAsync(string puuid, string gamerName, string tagLine, int iconId, long level)
         {
             Console.WriteLine($"Creating gamer {gamerName}#{tagLine} in database...");
 
@@ -103,6 +78,30 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             cmd.Parameters.AddWithValue("@puuid", gamer.Puuid);
             var rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
+        }
+
+        public async Task<Gamer?> GetByPuuidAsync(string puuid)
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            const string sql = "SELECT Puuid, GamerName, TagLine, ProfileIconId, SummonerLevel, LastChecked FROM Gamer WHERE Puuid = @puuid";
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuid);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new Gamer
+                {
+                    Puuid = reader.GetString(0),
+                    GamerName = reader.GetString(1),
+                    Tagline = reader.GetString(2),
+                    IconId = reader.GetInt32(3),
+                    Level = reader.GetInt64(4),
+                    LastChecked = reader.IsDBNull(5) ? DateTime.MinValue : reader.GetDateTime(5)
+                };
+            }
+            return null;
         }
     }
 }

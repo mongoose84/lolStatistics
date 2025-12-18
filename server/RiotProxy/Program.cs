@@ -15,6 +15,7 @@ builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<GamerRepository>();
+builder.Services.AddScoped<UserGamerRepository>();
 builder.Services.AddScoped<LolMatchRepository>();
 builder.Services.AddScoped<LolMatchParticipantRepository>();
 

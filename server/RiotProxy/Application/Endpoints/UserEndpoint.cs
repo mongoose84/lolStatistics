@@ -70,6 +70,7 @@ namespace RiotProxy.Application.Endpoints
                 [FromBody] CreateUserRequest body,
                 [FromServices] UserRepository userRepo,
                 [FromServices] GamerRepository gamerRepo,
+                [FromServices] UserGamerRepository userGamerRepo,
                 [FromServices] MatchHistorySyncJob matchHistorySyncJob,
                 [FromServices] IRiotApiClient riotApiClient
                 ) =>
@@ -98,14 +99,22 @@ namespace RiotProxy.Application.Endpoints
                             continue;
                         }
                         // Create Gamer entry
-                        var gamerCreated = await gamerRepo.CreateGamerAsync(user.UserId, puuid, account.GameName, account.TagLine, summoner.ProfileIconId, summoner.SummonerLevel);
+                        var gamerCreated = await gamerRepo.CreateGamerAsync(puuid, account.GameName, account.TagLine, summoner.ProfileIconId, summoner.SummonerLevel);
                         if (!gamerCreated)
                         {
                             // Log error but continue
                             Console.WriteLine($"Could not create gamer for account: {account.GameName}#{account.TagLine}");
                             continue;
                         }
-
+                        
+                        // Link Gamer to User
+                        var linkCreated = await userGamerRepo.LinkGamerToUserAsync(user.UserId, puuid);
+                        if (!gamerCreated)
+                        {
+                            // Log error but continue
+                            Console.WriteLine($"Could not create gamer for account: {account.GameName}#{account.TagLine}");
+                            continue;
+                        }
                     }
                     
                     // Trigger the background job to update match history

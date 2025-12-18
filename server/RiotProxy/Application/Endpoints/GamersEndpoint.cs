@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RiotProxy.Infrastructure.External.Database.Repositories;
 using RiotProxy.Infrastructure.External.Riot;
+using RiotProxy.External.Domain.Entities;
 
 namespace RiotProxy.Application.Endpoints
 {
@@ -18,17 +19,26 @@ namespace RiotProxy.Application.Endpoints
             app.MapGet(Route, async (
                 [FromRoute] string userId,
                 [FromServices] GamerRepository gamerRepo,
+                [FromServices] UserGamerRepository userGamerRepo,
                 [FromServices] IRiotApiClient riotApiClient
                 ) =>
             {
                 try
                 {
                     var userIdInt = int.TryParse(userId, out var result) ? result : throw new ArgumentException($"Invalid userId: {userId}");
-                    var gamers = await gamerRepo.GetGamersByUserIdAsync(userIdInt);
+                    var puuids = await userGamerRepo.GetGamersPuuidByUserIdAsync(userIdInt);
                     var lolVersion = await riotApiClient.GetLolVersionAsync();
-                    foreach (var gamer in gamers)
+                    var gamers = new List<Gamer>();
+                    foreach (var puuid in puuids)
                     {
+                        var gamer = await gamerRepo.GetByPuuidAsync(puuid);
+                        if (gamer == null)
+                        {
+                            Console.WriteLine($"Gamer with puuid {puuid} not found in database.");
+                            continue;
+                        }
                         gamer.IconUrl = $"https://ddragon.leagueoflegends.com/cdn/{lolVersion}/img/profileicon/{gamer.IconId}.png";
+                        gamers.Add(gamer);
                     }
                 
                     return Results.Ok(gamers);
