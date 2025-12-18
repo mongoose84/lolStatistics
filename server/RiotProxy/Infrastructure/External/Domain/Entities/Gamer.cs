@@ -1,6 +1,6 @@
 namespace RiotProxy.External.Domain.Entities
 {
-    public class Gamer
+    public class Gamer : EntityBase
     {
         public string Puuid { get; set; } = string.Empty;
         public string GamerName { get; set; } = string.Empty;
@@ -9,5 +9,6 @@ namespace RiotProxy.External.Domain.Entities
         public string IconUrl { get; set; } = string.Empty;
         public long Level { get; set; }
         public DateTime LastChecked { get; set; }
+        public GamerStats Stats { get; set; } = new GamerStats();
     }
 }

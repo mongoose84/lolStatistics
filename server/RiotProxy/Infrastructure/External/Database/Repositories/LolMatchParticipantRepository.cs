@@ -56,5 +56,52 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             }
             return matchIds;
         }
+
+        internal async Task<int> GetWinsByPuuidAsync(string puuid)
+        {
+            const string sql = "SELECT COUNT(*) FROM LolMatchParticipant WHERE Puuid = @puuid AND Win = TRUE";
+            var wins = await GetIntegerValueFromDatabaseAsync(puuid, sql);
+            return wins;
+        }
+
+        internal async Task<int> GetMatchesCountByPuuidAsync(string puuid)
+        {
+            const string sql = "SELECT COUNT(*) FROM LolMatchParticipant WHERE Puuid = @puuid";
+            var totalMatches = await GetIntegerValueFromDatabaseAsync(puuid, sql);
+            return totalMatches;
+        }
+
+        internal async Task<int> GetTotalAssistsByPuuidAsync(string puuid)
+        {
+            const string sql = "SELECT SUM(Assists) FROM LolMatchParticipant WHERE Puuid = @puuid";
+            var totalAssists = await GetIntegerValueFromDatabaseAsync(puuid, sql);
+            return totalAssists;
+        }
+
+        internal async Task<int> GetTotalDeathsByPuuidAsync(string puuid)
+        {
+            const string sql = "SELECT SUM(Deaths) FROM LolMatchParticipant WHERE Puuid = @puuid";
+            var totalDeaths = await GetIntegerValueFromDatabaseAsync(puuid, sql);
+            return totalDeaths;
+        }
+
+        internal async Task<int> GetTotalKillsByPuuidAsync(string puuid)
+        {
+            const string sql = "SELECT SUM(Kills) FROM LolMatchParticipant WHERE Puuid = @puuid";
+            var totalKills = await GetIntegerValueFromDatabaseAsync(puuid, sql);
+            return totalKills;
+        }
+
+        private async Task<int> GetIntegerValueFromDatabaseAsync(string puuid, string sqlQuery)
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+            await using var cmd = new MySqlCommand(sqlQuery, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuid);
+            var result = await cmd.ExecuteScalarAsync();
+            if (result == null || result == DBNull.Value)
+                return 0;
+            return Convert.ToInt32(result);
+        }
     }
 }

@@ -1,6 +1,6 @@
 namespace RiotProxy.External.Domain.Entities
 {
-    public class LolMatch
+    public class LolMatch : EntityBase
     {
         public string MatchId { get; set; } = string.Empty;
         

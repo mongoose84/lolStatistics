@@ -20,7 +20,7 @@
     <div
       class="chart"
       role="img"
-      :aria-label="`Wins ${gamer.wins}, Losses ${gamer.losses}`"
+      :aria-label="`Wins ${wins}, Losses ${losses}`"
       :style="{ width: size + 'px', height: size + 'px' }"
     >
       <svg :width="size" :height="size" :viewBox="`0 0 ${size} ${size}`">
@@ -41,8 +41,11 @@
           />
         </g>
       </svg>
-      <div class="chart-label">{{ wins }} | {{ losses }}</div>
+      <div class="chart-label">{{ winRate }}%</div>
     </div>
+
+    <div class="game-info">{{ total }}G {{ wins }}W {{ losses }}L</div>
+    <div class="kda">{{ avgKills }} / {{ avgDeaths }} / {{ avgAssists }}</div>
   </div>
 </template>
 
@@ -61,15 +64,18 @@ const strokeWidth = 12
 const radius = (size - strokeWidth) / 2
 const center = size / 2
 
-const total = computed(() => {
-  const w = Number(props.gamer?.wins ?? 0)
-  const l = Number(props.gamer?.losses ?? 0)
-  return Math.max(0, w + l)
-})
+const stats = computed(() => props.gamer?.stats ?? {})
+
+const total = computed(() => Number(stats.value?.totalMatches ?? 0))
 
 const circumference = 2 * Math.PI * radius
-const wins = computed(() => Number(props.gamer?.wins ?? 0))
-const losses = computed(() => Number(props.gamer?.losses ?? 0))
+const wins = computed(() => Number(stats.value?.wins ?? 0))
+const losses = computed(() => Math.max(0, total.value - wins.value))
+
+const winRate = computed(() => {
+  if (!total.value) return 0
+  return Math.round((wins.value / total.value) * 100)
+})
 
 const dashArray = computed(() => {
   if (!total.value) return `0 ${circumference}`
@@ -78,8 +84,26 @@ const dashArray = computed(() => {
   return `${winLen} ${rest}`
 })
 
-const winColor = 'var(--color-primary)'
-const lossColor = '#dc3545'
+const winColor = 'var(--color-success)'
+const lossColor = 'var(--color-danger)'
+
+const avgKills = computed(() => {
+  const tk = Number(stats.value?.totalKills ?? 0)
+  if (!total.value) return '0.0'
+  return (tk / total.value).toFixed(1)
+})
+
+const avgDeaths = computed(() => {
+  const td = Number(stats.value?.totalDeaths ?? 0)
+  if (!total.value) return '0.0'
+  return (td / total.value).toFixed(1)
+})
+
+const avgAssists = computed(() => {
+  const ta = Number(stats.value?.totalAssists ?? 0)
+  if (!total.value) return '0.0'
+  return (ta / total.value).toFixed(1)
+})
 </script>
 
 <style scoped>
@@ -149,5 +173,17 @@ const lossColor = '#dc3545'
   color: var(--color-text);
   text-align: center;
   pointer-events: none;
+}
+
+.game-info {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.kda {
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 </style>

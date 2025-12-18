@@ -4,7 +4,7 @@
     <header class="brand brand--compact" aria-labelledby="app-title-user">
       <div class="brand-inner">
         <span class="logo compact" aria-hidden="true">
-          <AppLogo />
+          <AppLogo :size="56" />
         </span>
         <div class="titles">
           <h1 id="app-title-user" class="title compact">Do End</h1>
@@ -109,8 +109,8 @@ defineExpose({ load });
 
 .logo.compact {
   display: inline-flex;
-  width: 48px; /* smaller than HomeView (64px) */
-  height: 48px;
+  width: 56px;
+  height: 56px;
   color: var(--color-primary);
 }
 

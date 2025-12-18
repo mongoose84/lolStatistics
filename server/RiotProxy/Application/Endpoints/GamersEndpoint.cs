@@ -20,6 +20,7 @@ namespace RiotProxy.Application.Endpoints
                 [FromRoute] string userId,
                 [FromServices] GamerRepository gamerRepo,
                 [FromServices] UserGamerRepository userGamerRepo,
+                [FromServices] LolMatchParticipantRepository matchParticipantRepo,
                 [FromServices] IRiotApiClient riotApiClient
                 ) =>
             {
@@ -38,6 +39,21 @@ namespace RiotProxy.Application.Endpoints
                             continue;
                         }
                         gamer.IconUrl = $"https://ddragon.leagueoflegends.com/cdn/{lolVersion}/img/profileicon/{gamer.IconId}.png";
+                        
+                        var totalMatches = await matchParticipantRepo.GetMatchesCountByPuuidAsync(puuid);
+                        var wins = await matchParticipantRepo.GetWinsByPuuidAsync(puuid);
+                        var totalKills = await matchParticipantRepo.GetTotalKillsByPuuidAsync(puuid);
+                        var totalDeaths = await matchParticipantRepo.GetTotalDeathsByPuuidAsync(puuid);
+                        var totalAssists = await matchParticipantRepo.GetTotalAssistsByPuuidAsync(puuid);
+                         
+                        gamer.Stats = new GamerStats
+                        {
+                            Wins = wins,
+                            TotalKills = totalKills,
+                            TotalDeaths = totalDeaths,
+                            TotalAssists = totalAssists,
+                            TotalMatches = totalMatches
+                        };
                         gamers.Add(gamer);
                     }
                 
@@ -67,5 +83,6 @@ namespace RiotProxy.Application.Endpoints
                 }
             });
         }
+        
     }
 }
