@@ -109,9 +109,10 @@ namespace RiotProxy.Infrastructure.External.Riot
             return matchDoc;
         }
 
-        public async Task<Summoner?> GetSummonerByPuuidAsync(string tagline, string puuid, CancellationToken ct = default)
+        public async Task<Summoner?> GetSummonerByPuuidAsync(string tagLine, string puuid, CancellationToken ct = default)
         {
-            var summonerUrl = RiotUrlBuilder.GetSummonerUrl(tagline, puuid);
+            var encodedPuuid = HttpUtility.UrlEncode(puuid);
+            var summonerUrl = RiotUrlBuilder.GetSummonerUrl(tagLine, encodedPuuid);
             Metrics.SetLastUrlCalled("RiotServices.cs ln 134" + summonerUrl);
 
             await _perSecondBucket.WaitAsync(ct);
@@ -142,14 +143,14 @@ namespace RiotProxy.Infrastructure.External.Riot
                 var versions = JsonSerializer.Deserialize<List<string>>(json);
                 if (versions != null && versions.Count > 0)
                 {
-                    return versions[0]; // Return the latest version
+                    return versions[0];
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error fetching LoL version: {ex.Message}");
             }
-            return string.Empty;
+            throw new InvalidOperationException("Could not retrieve LoL version.");
         }
     }
 }
