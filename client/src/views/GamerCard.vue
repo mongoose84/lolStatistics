@@ -264,7 +264,6 @@ const assistsClass = computed(() => {
   opacity: 0.95;
 }
 
-.pm-item { }
 .pm-sep {
   margin: 0 0.35rem;
   opacity: 0.6;
