@@ -20,5 +20,6 @@ namespace RiotProxy.External.Domain.Entities
         public int PentaKills { get; set; }
         public int GoldEarned { get; set; }
         public int CreepScore { get; set; }
+        public int TimeBeingDeadSeconds { get; set; }
     }
 }

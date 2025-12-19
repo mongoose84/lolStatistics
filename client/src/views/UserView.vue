@@ -24,6 +24,9 @@
       <!-- Gamers list -->
       <section v-else class="gamers-list">
         <template v-if="gamers && gamers.length">
+          <div class="statistics-card-wrap">
+            <StatisticsCard :userId="userId" />
+          </div>
           <div class="gamer-cards">
             <GamerCard v-for="g in gamers" :key="g.puuid || g.iconUrl" :gamer="g" />
           </div>
@@ -39,6 +42,7 @@
 import { onMounted, watch, computed, ref } from 'vue';
 import getGamers from '@/assets/getGamers.js';
 import GamerCard from './GamerCard.vue';
+import StatisticsCard from './StatisticsCard.vue';
 import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
@@ -158,5 +162,10 @@ defineExpose({ load });
   gap: var(--card-gap);
   margin: 0;
   padding: 0;
+}
+
+.statistics-card-wrap {
+  /* Full width within the same centered container as the grid */
+  margin-bottom: var(--card-gap);
 }
 </style>
