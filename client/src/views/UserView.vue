@@ -24,11 +24,11 @@
       <!-- Gamers list -->
       <section v-else class="gamers-list">
         <template v-if="gamers && gamers.length">
-          <div class="statistics-card-wrap">
-            <StatisticsCard :userId="userId" />
-          </div>
           <div class="gamer-cards">
             <GamerCard v-for="g in gamers" :key="g.puuid || g.iconUrl" :gamer="g" />
+          </div>
+          <div class="comparison-strip-wrap">
+            <ComparisonStrip :userId="userId" />
           </div>
         </template>
         <div v-else class="empty-state">No linked gamers yet.</div>
@@ -42,7 +42,7 @@
 import { onMounted, watch, computed, ref } from 'vue';
 import getGamers from '@/assets/getGamers.js';
 import GamerCard from './GamerCard.vue';
-import StatisticsCard from './StatisticsCard.vue';
+import ComparisonStrip from './ComparisonStrip.vue';
 import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
@@ -164,8 +164,8 @@ defineExpose({ load });
   padding: 0;
 }
 
-.statistics-card-wrap {
+.comparison-strip-wrap {
   /* Full width within the same centered container as the grid */
-  margin-bottom: var(--card-gap);
+  margin-top: var(--card-gap);
 }
 </style>
