@@ -27,6 +27,7 @@
           <div class="comparison-strip-wrap">
             <ComparisonStrip :userId="userId" />
           </div>
+          <PerformanceCharts :userId="userId" />
         </template>
       </GamerCardsList>
     </div>
@@ -38,6 +39,7 @@
 import { computed } from 'vue';
 import { useGamers } from '@/composables/useGamers.js';
 import GamerCardsList from '@/components/GamerCardsList.vue';
+import PerformanceCharts from '@/components/PerformanceCharts.vue';
 import ComparisonStrip from './ComparisonStrip.vue';
 import AppLogo from '@/components/AppLogo.vue';
 

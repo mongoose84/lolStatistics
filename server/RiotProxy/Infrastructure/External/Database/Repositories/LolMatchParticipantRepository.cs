@@ -130,5 +130,66 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 return 0;
             return Convert.ToInt32(result);
         }
+
+        /// <summary>
+        /// Gets per-match performance data for a player, ordered by game end time (oldest first).
+        /// Used for performance timeline charts.
+        /// </summary>
+        /// <param name="puuId">Player's PUUID</param>
+        /// <param name="limit">Maximum number of games to return (default 100)</param>
+        /// <returns>List of match performance records ordered oldest to newest</returns>
+        public async Task<IList<MatchPerformanceRecord>> GetMatchPerformanceTimelineAsync(string puuId, int limit = 100)
+        {
+            var records = new List<MatchPerformanceRecord>();
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT 
+                    p.Win,
+                    p.GoldEarned,
+                    p.CreepScore,
+                    m.DurationSeconds,
+                    m.GameEndTimestamp
+                FROM LolMatchParticipant p
+                INNER JOIN LolMatch m ON p.MatchId = m.MatchId
+                WHERE p.Puuid = @puuid 
+                  AND m.InfoFetched = TRUE
+                  AND m.DurationSeconds > 0
+                ORDER BY m.GameEndTimestamp ASC
+                LIMIT @limit";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            cmd.Parameters.AddWithValue("@limit", limit);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var durationSeconds = reader.GetInt64(3);
+                var durationMinutes = durationSeconds / 60.0;
+
+                records.Add(new MatchPerformanceRecord(
+                    Win: reader.GetBoolean(0),
+                    GoldEarned: reader.GetInt32(1),
+                    CreepScore: reader.GetInt32(2),
+                    DurationMinutes: durationMinutes,
+                    GameEndTimestamp: reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime(4)
+                ));
+            }
+
+            return records;
+        }
     }
+
+    /// <summary>
+    /// Record representing per-match performance data for timeline charts.
+    /// </summary>
+    public record MatchPerformanceRecord(
+        bool Win,
+        int GoldEarned,
+        int CreepScore,
+        double DurationMinutes,
+        DateTime GameEndTimestamp
+    );
 }
