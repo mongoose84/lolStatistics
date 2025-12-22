@@ -2,7 +2,7 @@ namespace RiotProxy.External.Domain.Enums;
 
 public enum UserTypeEnum
 {
-    Solo = 0,
-    Duo = 1,
-    Team = 2
+    Solo = 1,
+    Duo = 2,
+    Team = 3
 }

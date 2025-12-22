@@ -14,6 +14,23 @@
         />
       </div>
 
+      <!-- User Type selector -->
+      <div class="usertype-container">
+        <label class="usertype-label">User Type</label>
+        <div class="usertype-buttons">
+          <button
+            v-for="ut in userTypes"
+            :key="ut.value"
+            type="button"
+            class="usertype-btn"
+            :class="{ active: userType === ut.value }"
+            @click="userType = ut.value"
+          >
+            {{ ut.label }}
+          </button>
+        </div>
+      </div>
+
       <!-- Multiple gameName/tagLine pairs -->
       <div class="username-fields">
         <div v-for="row in summoners" :key="row.id" class="username-row">
@@ -98,7 +115,14 @@ export default defineComponent({
       { value: 'RU', label: 'RU' },  { value: 'TR', label: 'TR' },
     ]
 
+    const userTypes = [
+      { value: 'Solo', label: 'Solo' },
+      { value: 'Duo', label: 'Duo' },
+      { value: 'Team', label: 'Team' },
+    ]
+
     const username = ref<string>('')
+    const userType = ref<string>('Solo')
     const summoners = ref<SummonerField[]>([
       { id: 1, gameName: '', tagLine: 'EUNE', showDropdown: false }
     ])
@@ -146,7 +170,7 @@ export default defineComponent({
         }
 
         if (typeof props.onCreate === 'function') {
-          await Promise.resolve(props.onCreate({ username: name, accounts }))
+          await Promise.resolve(props.onCreate({ username: name, userType: userType.value, accounts }))
         }
 
         success.value = 'Accounts created successfully.'
@@ -159,7 +183,7 @@ export default defineComponent({
       }
     }
 
-    return { options, username, summoners, handleAddRow, handleBlur, selectOption, handleCreate, busy, error, success }
+    return { options, userTypes, username, userType, summoners, handleAddRow, handleBlur, selectOption, handleCreate, busy, error, success }
   }
 })
 </script>
@@ -181,6 +205,43 @@ export default defineComponent({
   border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);
 }
 .username-input::placeholder { color: var(--color-text-muted); }
+
+.usertype-container {
+  margin-bottom: 1rem;
+}
+
+.usertype-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.usertype-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.usertype-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.usertype-btn:hover {
+  background: var(--color-bg-hover);
+}
+
+.usertype-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
 
 .username-fields { margin: 1rem 0; }
 .username-row { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elev); }
