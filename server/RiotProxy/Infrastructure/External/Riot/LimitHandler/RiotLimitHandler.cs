@@ -2,6 +2,7 @@ namespace RiotProxy.Infrastructure.External.Riot.LimitHandler;
 
 public class RiotLimitHandler : IRiotLimitHandler
 {
+    private bool _disposed = false;
     private readonly TokenBucket _perSecondBucket = new(15, TimeSpan.FromSeconds(1));
     private readonly TokenBucket _perTwoMinuteBucket = new(80, TimeSpan.FromMinutes(2));
 
@@ -10,6 +11,7 @@ public class RiotLimitHandler : IRiotLimitHandler
         _perSecondBucket.WaitingStartedEvent += OnWaitingStarted;
         _perTwoMinuteBucket.WaitingStartedEvent += OnWaitingStarted;
     }
+
     public async Task WaitAsync(CancellationToken cancellationToken = default)
     {
         await _perSecondBucket.WaitAsync(cancellationToken);
@@ -25,5 +27,14 @@ public class RiotLimitHandler : IRiotLimitHandler
                 : "unknown";
                 
         Console.WriteLine($"Rate limiting: waiting for token ({bucketName})");
+    }
+
+     public void Dispose()
+    {
+        if (_disposed) return;
+            _disposed = true;
+
+        _perSecondBucket.Dispose();
+        _perTwoMinuteBucket.Dispose();
     }
 }

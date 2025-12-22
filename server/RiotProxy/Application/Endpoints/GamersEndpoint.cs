@@ -27,28 +27,28 @@ namespace RiotProxy.Application.Endpoints
                 try
                 {
                     var userIdInt = int.TryParse(userId, out var result) ? result : throw new ArgumentException($"Invalid userId: {userId}");
-                    var puuids = await userGamerRepo.GetGamersPuuidByUserIdAsync(userIdInt);
+                    var puuIds = await userGamerRepo.GetGamersPuuIdByUserIdAsync(userIdInt);
                     var lolVersion = await riotApiClient.GetLolVersionAsync();
                     var gamers = new List<Gamer>();
-                    foreach (var puuid in puuids)
+                    foreach (var puuId in puuIds)
                     {
-                        var gamer = await gamerRepo.GetByPuuidAsync(puuid);
+                        var gamer = await gamerRepo.GetByPuuIdAsync(puuId);
                         if (gamer == null)
                         {
-                            Console.WriteLine($"Gamer with puuid {puuid} not found in database.");
+                            Console.WriteLine($"Gamer with puuid {puuId} not found in database.");
                             continue;
                         }
                         gamer.IconUrl = $"https://ddragon.leagueoflegends.com/cdn/{lolVersion}/img/profileicon/{gamer.IconId}.png";
                         
                         // Runtime of this is a N+1 query, could be optimized if needed
-                        var totalMatches = await matchParticipantRepo.GetMatchesCountByPuuidAsync(puuid);
-                        var wins = await matchParticipantRepo.GetWinsByPuuidAsync(puuid);
-                        var totalKills = await matchParticipantRepo.GetTotalKillsByPuuidAsync(puuid);
-                        var totalDeaths = await matchParticipantRepo.GetTotalDeathsByPuuidAsync(puuid);
-                        var totalAssists = await matchParticipantRepo.GetTotalAssistsByPuuidAsync(puuid);
-                        var totalCreepScore = await matchParticipantRepo.GetTotalCreepScoreByPuuidAsync(puuid);
-                        var totalGoldEarned = await matchParticipantRepo.GetTotalGoldEarnedByPuuidAsync(puuid);
-                        var totalDurationPlayedSeconds = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuid);
+                        var totalMatches = await matchParticipantRepo.GetMatchesCountByPuuIdAsync(puuId);
+                        var wins = await matchParticipantRepo.GetWinsByPuuIdAsync(puuId);
+                        var totalKills = await matchParticipantRepo.GetTotalKillsByPuuIdAsync(puuId);
+                        var totalDeaths = await matchParticipantRepo.GetTotalDeathsByPuuIdAsync(puuId);
+                        var totalAssists = await matchParticipantRepo.GetTotalAssistsByPuuIdAsync(puuId);
+                        var totalCreepScore = await matchParticipantRepo.GetTotalCreepScoreByPuuIdAsync(puuId);
+                        var totalGoldEarned = await matchParticipantRepo.GetTotalGoldEarnedByPuuIdAsync(puuId);
+                        var totalDurationPlayedSeconds = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuId);
                         
                         gamer.Stats = new GamerStats
                         {

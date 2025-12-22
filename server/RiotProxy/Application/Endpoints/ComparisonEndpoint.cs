@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using RiotProxy.Infrastructure.External.Database.Repositories;
-using static RiotProxy.Application.DTOs.ComparisionDto;
+using static RiotProxy.Application.DTOs.ComparisonDto;
 
 namespace RiotProxy.Application.Endpoints
 {
-    public sealed class OverallStatsEndpoint : IEndpoint
+    public sealed class ComparisonEndpoint : IEndpoint
     {
         public string Route { get; }
 
-        public OverallStatsEndpoint(string basePath)
+        public ComparisonEndpoint(string basePath)
         {
             Route = basePath + "/comparison/{userId}";
         }
@@ -33,10 +33,10 @@ namespace RiotProxy.Application.Endpoints
                     );
 
                     var userIdInt = int.TryParse(userId, out var result) ? result : throw new ArgumentException($"Invalid userId: {userId}");
-                    var puuids = await userGamerRepo.GetGamersPuuidByUserIdAsync(userIdInt);
-                    var distinctPuuids = (puuids ?? []).Distinct().ToArray();
+                    var puuIds = await userGamerRepo.GetGamersPuuIdByUserIdAsync(userIdInt);
+                    var distinctPuuIds = (puuIds ?? []).Distinct().ToArray();
                     
-                    if (distinctPuuids.Length == 0)
+                    if (distinctPuuIds.Length == 0)
                     {
                         return Results.Ok(emptyComparisonRequest);
                     }
@@ -46,27 +46,27 @@ namespace RiotProxy.Application.Endpoints
                     var goldPrMinRecords = new List<GamerRecord>();
                     var gamesPlayedRecords = new List<GamerRecord>();
 
-                    foreach (var puuid in distinctPuuids)
+                    foreach (var puuId in distinctPuuIds)
                     {
-                        var gamer = await gamerRepo.GetByPuuidAsync(puuid);
+                        var gamer = await gamerRepo.GetByPuuIdAsync(puuId);
                         if (gamer == null)
                         {
-                            Console.WriteLine($"Gamer with puuid {puuid} not found in database.");
+                            Console.WriteLine($"Gamer with puuid {puuId} not found in database.");
                             continue;
                         }
 
                         var gamerName = $"{gamer.GamerName}#{gamer.Tagline}";
-                        var totalDurationMinutes = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuid) / 60.0;
+                        var totalDurationMinutes = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuId) / 60.0;
 
-                        var winrate = await GetWinrateAsync(matchParticipantRepo, puuid);
+                        var winrate = await GetWinrateAsync(matchParticipantRepo, puuId);
                         winrateRecords.Add(new GamerRecord(winrate, gamerName));
-                        var kda = await GetKdaAsync(matchParticipantRepo, puuid);
+                        var kda = await GetKdaAsync(matchParticipantRepo, puuId);
                         kdaRecords.Add(new GamerRecord(kda, gamerName));
-                        var csPrMin = await GetCsPrMinAsync(matchParticipantRepo, puuid, totalDurationMinutes);
+                        var csPrMin = await GetCsPrMinAsync(matchParticipantRepo, puuId, totalDurationMinutes);
                         csPrMinRecords.Add(new GamerRecord(csPrMin, gamerName));
-                        var goldPrMin = await GetGoldPrMinAsync(matchParticipantRepo, puuid, totalDurationMinutes);
+                        var goldPrMin = await GetGoldPrMinAsync(matchParticipantRepo, puuId, totalDurationMinutes);
                         goldPrMinRecords.Add(new GamerRecord(goldPrMin, gamerName));
-                        var gamesPlayed = await matchParticipantRepo.GetMatchesCountByPuuidAsync(puuid);
+                        var gamesPlayed = await matchParticipantRepo.GetMatchesCountByPuuIdAsync(puuId);
                         gamesPlayedRecords.Add(new GamerRecord(gamesPlayed, gamerName));
                     }
                     
@@ -97,32 +97,36 @@ namespace RiotProxy.Application.Endpoints
 
         private async Task<double> GetWinrateAsync(LolMatchParticipantRepository repo, string puuId)
         {
-            var totalMatches = await repo.GetMatchesCountByPuuidAsync(puuId);
+            var totalMatches = await repo.GetMatchesCountByPuuIdAsync(puuId);
             if (totalMatches == 0) return 0;
             
-            var wins = await repo.GetWinsByPuuidAsync(puuId);
+            var wins = await repo.GetWinsByPuuIdAsync(puuId);
             return (double)wins / totalMatches * 100;
         }
 
         private async Task<double> GetKdaAsync(LolMatchParticipantRepository repo, string puuId)
         {
             var (kills, deaths, assists) = (
-                await repo.GetTotalKillsByPuuidAsync(puuId),
-                await repo.GetTotalDeathsByPuuidAsync(puuId),
-                await repo.GetTotalAssistsByPuuidAsync(puuId)
+                await repo.GetTotalKillsByPuuIdAsync(puuId),
+                await repo.GetTotalDeathsByPuuIdAsync(puuId),
+                await repo.GetTotalAssistsByPuuIdAsync(puuId)
             );
+
+            if (deaths == 0 && (kills + assists) == 0) return 0;
+
+            if (deaths == 0) return kills + assists;
             
             return deaths == 0 ? 0 : (double)(kills + assists) / deaths;
         }
         private async Task<double> GetCsPrMinAsync(LolMatchParticipantRepository repo, string puuId, double totalDurationMinutes)
         {
-            var totalCreepScore = await repo.GetTotalCreepScoreByPuuidAsync(puuId);
+            var totalCreepScore = await repo.GetTotalCreepScoreByPuuIdAsync(puuId);
             return totalDurationMinutes == 0 ? 0 : totalCreepScore / totalDurationMinutes;
         }
 
         private async Task<double> GetGoldPrMinAsync(LolMatchParticipantRepository repo, string puuId, double totalDurationMinutes)
         {
-            var totalGoldEarned = await repo.GetTotalGoldEarnedByPuuidAsync(puuId);
+            var totalGoldEarned = await repo.GetTotalGoldEarnedByPuuIdAsync(puuId);
             return totalDurationMinutes == 0 ? 0 : totalGoldEarned / totalDurationMinutes;
         }
         

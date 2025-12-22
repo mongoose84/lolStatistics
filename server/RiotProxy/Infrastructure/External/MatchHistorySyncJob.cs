@@ -290,7 +290,7 @@ namespace RiotProxy.Infrastructure.External
                         var participantEntity = new LolMatchParticipant
                         {
                             MatchId = matchId,
-                            Puuid = puuid,
+                            PuuId = puuid,
                             TeamId = teamId,
                             Lane = lane,
                             TeamPosition = teamPosition,

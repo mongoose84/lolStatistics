@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace RiotProxy.Application.DTOs;
 
-public class ComparisionDto
+public class ComparisonDto
 {
     public record ComparisonRequest(
        

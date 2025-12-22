@@ -28,7 +28,7 @@ namespace RiotProxy.Application
             var gamersEndpoint = new GamersEndpoint(_basePath);
             _endpoints.Add(gamersEndpoint);
 
-            var overallStatsEndpoint = new OverallStatsEndpoint(_basePath);
+            var overallStatsEndpoint = new ComparisonEndpoint(_basePath);
             _endpoints.Add(overallStatsEndpoint);
         }
 

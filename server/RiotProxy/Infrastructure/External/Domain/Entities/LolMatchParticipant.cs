@@ -3,7 +3,7 @@ namespace RiotProxy.External.Domain.Entities
     public class LolMatchParticipant : EntityBase
     {
         public string MatchId { get; set; } = string.Empty;
-        public string Puuid { get; set; } = string.Empty;
+        public string PuuId { get; set; } = string.Empty;
         public int TeamId { get; set; }
         public bool Win { get; set; }
         public string Role { get; set; } = string.Empty;
