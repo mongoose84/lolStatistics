@@ -12,21 +12,21 @@
         <!-- Heatmap Grid using player pairs -->
         <div class="heatmap-container">
           <svg :viewBox="`0 0 ${heatmapSize} ${heatmapSize}`" class="heatmap">
-            <!-- Column headers (player names) -->
-            <text v-for="(player, i) in players.slice(1)" :key="'col-' + i"
+            <!-- Column headers (all players) -->
+            <text v-for="(player, i) in players" :key="'col-' + i"
               :x="cellSize + cellSize * i + cellSize / 2" :y="20" text-anchor="middle" class="header-label">
               {{ getShortName(player.name) }}
             </text>
-            <text v-for="(player, i) in players.slice(1)" :key="'col-role-' + i"
+            <text v-for="(player, i) in players" :key="'col-role-' + i"
               :x="cellSize + cellSize * i + cellSize / 2" :y="32" text-anchor="middle" class="role-label">
               {{ getRoleShort(player.role) }}
             </text>
-            <!-- Row headers (player names) -->
-            <text v-for="(player, i) in players.slice(0, -1)" :key="'row-' + i"
+            <!-- Row headers (all players) -->
+            <text v-for="(player, i) in players" :key="'row-' + i"
               :x="cellSize - 5" :y="cellSize + cellSize * i + cellSize / 2 - 4" text-anchor="end" class="header-label">
               {{ getShortName(player.name) }}
             </text>
-            <text v-for="(player, i) in players.slice(0, -1)" :key="'row-role-' + i"
+            <text v-for="(player, i) in players" :key="'row-role-' + i"
               :x="cellSize - 5" :y="cellSize + cellSize * i + cellSize / 2 + 8" text-anchor="end" class="role-label">
               {{ getRoleShort(player.role) }}
             </text>
@@ -63,13 +63,13 @@ const loading = ref(false);
 const error = ref(null);
 const synergyData = ref(null);
 
-const cellSize = 60;
+const cellSize = 72;
 
 const hasData = computed(() => synergyData.value?.playerPairs?.length > 0);
 
 const players = computed(() => synergyData.value?.players || []);
 
-const heatmapSize = computed(() => cellSize * (players.value.length));
+const heatmapSize = computed(() => cellSize * (players.value.length + 1));
 
 function getShortName(fullName) {
   return fullName?.split('#')[0] || fullName;
@@ -101,22 +101,34 @@ const heatmapCells = computed(() => {
   const cells = [];
   const playerList = players.value;
 
-  // Create upper triangle matrix
-  for (let row = 0; row < playerList.length - 1; row++) {
-    for (let col = row + 1; col < playerList.length; col++) {
-      const pair = pairMap[`${playerList[row].name}|${playerList[col].name}`];
-      const hasPairData = pair && pair.gamesPlayed > 0;
-      let cellClass = 'cell-empty';
-      if (hasPairData) {
-        cellClass = pair.winRate >= 55 ? 'cell-high' : pair.winRate >= 45 ? 'cell-mid' : 'cell-low';
+  // Create full matrix (upper triangle has data, diagonal and lower are empty/disabled)
+  for (let row = 0; row < playerList.length; row++) {
+    for (let col = 0; col < playerList.length; col++) {
+      if (col <= row) {
+        // Diagonal or lower triangle - show as disabled
+        cells.push({
+          x: cellSize * col + cellSize + 2,
+          y: cellSize * row + cellSize + 2,
+          winRate: '',
+          hasData: false,
+          class: 'cell-disabled'
+        });
+      } else {
+        // Upper triangle - show pair data
+        const pair = pairMap[`${playerList[row].name}|${playerList[col].name}`];
+        const hasPairData = pair && pair.gamesPlayed > 0;
+        let cellClass = 'cell-empty';
+        if (hasPairData) {
+          cellClass = pair.winRate >= 55 ? 'cell-high' : pair.winRate >= 45 ? 'cell-mid' : 'cell-low';
+        }
+        cells.push({
+          x: cellSize * col + cellSize + 2,
+          y: cellSize * row + cellSize + 2,
+          winRate: hasPairData ? Math.round(pair.winRate) : '',
+          hasData: hasPairData,
+          class: cellClass
+        });
       }
-      cells.push({
-        x: cellSize * (col - 1) + 2,
-        y: cellSize * row + cellSize + 2,
-        winRate: hasPairData ? Math.round(pair.winRate) : '',
-        hasData: hasPairData,
-        class: cellClass
-      });
     }
   }
   return cells;
@@ -140,20 +152,23 @@ onMounted(load);
 </script>
 
 <style scoped>
-.team-role-pair-container { width: 100%; }
+.team-role-pair-container { width: 100%; height: 100%; display: flex; flex-direction: column; }
+.team-role-pair-container :deep(.chart-card) { height: 100%; display: flex; flex-direction: column; }
+.team-role-pair-container :deep(.chart-card-body) { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .role-loading, .role-error, .role-empty { padding: 2rem; text-align: center; color: var(--color-text-muted); }
 .role-error { color: var(--color-danger); }
 .role-empty .requirement-hint { display: block; margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7; }
-.role-content { padding: 1rem 0 0.5rem 0; display: flex; flex-direction: column; gap: 1rem; align-items: center; }
-.heatmap-container { display: flex; justify-content: center; }
-.heatmap { width: 100%; max-width: 280px; height: auto; }
-.header-label { fill: var(--color-text); font-size: 9px; font-weight: 600; }
-.role-label { fill: var(--color-text-muted); font-size: 8px; font-weight: 500; }
+.role-content { padding: 1rem 0 0.5rem 0; display: flex; flex-direction: column; gap: 1rem; align-items: center; justify-content: center; width: 100%; }
+.heatmap-container { display: flex; justify-content: center; width: 100%; }
+.heatmap { width: 100%; max-width: 600px; height: auto; }
+.header-label { fill: var(--color-text); font-size: 12px; font-weight: 600; }
+.role-label { fill: var(--color-text-muted); font-size: 11px; font-weight: 500; }
 .cell-empty { fill: var(--color-bg-elev); }
+.cell-disabled { fill: var(--color-bg-base); opacity: 0.3; }
 .cell-low { fill: rgba(239, 68, 68, 0.6); }
 .cell-mid { fill: rgba(245, 158, 11, 0.6); }
 .cell-high { fill: rgba(34, 197, 94, 0.6); }
-.cell-value { fill: var(--color-text); font-size: 10px; font-weight: 600; }
+.cell-value { fill: var(--color-text); font-size: 14px; font-weight: 600; }
 .legend { display: flex; justify-content: center; gap: 1rem; font-size: 0.75rem; }
 .legend-item { display: flex; align-items: center; gap: 0.25rem; }
 .swatch { width: 10px; height: 10px; border-radius: 2px; }
