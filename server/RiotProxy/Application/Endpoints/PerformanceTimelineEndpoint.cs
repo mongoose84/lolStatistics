@@ -25,17 +25,16 @@ namespace RiotProxy.Application.Endpoints
             {
                 try
                 {
-                    // Calculate date range based on period
-                    DateTime? fromDate = period switch
+                    // Calculate match limit based on period
+                    int? matchLimit = period switch
                     {
-                        "1w" => DateTime.UtcNow.AddDays(-7),
-                        "1m" => DateTime.UtcNow.AddMonths(-1),
-                        "3m" => DateTime.UtcNow.AddMonths(-3),
-                        "6m" => DateTime.UtcNow.AddMonths(-6),
+                        "20" => 20,
+                        "50" => 50,
+                        "100" => 100,
                         "all" => null,
-                        _ => DateTime.UtcNow.AddMonths(-3) // Default to 3 months
+                        _ => 50 // Default to 50 matches
                     };
-                    
+
                     // Rolling average window in days
                     const int rollingWindowDays = 7;
 
@@ -63,7 +62,7 @@ namespace RiotProxy.Application.Endpoints
                         }
 
                         var gamerName = $"{gamer.GamerName}#{gamer.Tagline}";
-                        var matchRecords = await matchParticipantRepo.GetMatchPerformanceTimelineAsync(puuId, fromDate);
+                        var matchRecords = await matchParticipantRepo.GetMatchPerformanceTimelineAsync(puuId, fromDate: null, limit: matchLimit);
                         
                         // Records are already ordered oldest to newest from SQL
                         var dataPoints = new List<PerformanceDataPoint>();

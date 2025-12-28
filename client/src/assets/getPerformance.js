@@ -4,10 +4,10 @@ import { getBaseApi } from './getHost.js';
 /**
  * Fetches performance timeline data for charts.
  * @param {string|number} userId - The user ID
- * @param {string} period - Time period: '1w', '1m', '3m', '6m', 'all'
+ * @param {string} period - Number of matches to return: '20', '50', '100', 'all'
  * @returns {Promise<{gamers: Array<{gamerName: string, dataPoints: Array}>}>}
  */
-export default async function getPerformance(userId, period = '3m') {
+export default async function getPerformance(userId, period = '50') {
 	const base = getBaseApi();
 	const { data } = await axios.get(`${base}/performance/${userId}`, {
 		params: { period }
