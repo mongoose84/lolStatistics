@@ -2,15 +2,17 @@
   <section class="userview">
     <!-- Smaller brand header -->
     <header class="brand brand--compact" aria-labelledby="app-title-user">
-      <div class="brand-inner">
-        <span class="logo compact" aria-hidden="true">
-          <AppLogo :size="56" />
-        </span>
-        <div class="titles">
-          <h1 id="app-title-user" class="title compact">{{ appTitle }}</h1>
-          <p class="subtitle compact">{{ appSubtitle }}</p>
+      <router-link to="/" class="brand-link">
+        <div class="brand-inner">
+          <span class="logo compact" aria-hidden="true">
+            <AppLogo :size="56" />
+          </span>
+          <div class="titles">
+            <h1 id="app-title-user" class="title compact">{{ appTitle }}</h1>
+            <p class="subtitle compact">{{ appSubtitle }}</p>
+          </div>
         </div>
-      </div>
+      </router-link>
     </header>
 
     <div class="user-container">
@@ -39,11 +41,21 @@
               <ChampionPerformanceSplit :userId="userId" />
             </div>
           </div>
+
+          <!-- New Row: Role Distribution, Death Efficiency, and Match Duration -->
+          <div class="new-cards-section">
+            <RoleDistribution :userId="userId" />
+            <DeathEfficiency :userId="userId" />
+            <MatchDuration :userId="userId" />
+          </div>
+
+          <!-- Summary Insights Panel -->
+          <SummaryInsights :userId="userId" />
         </template>
       </GamerCardsList>
     </div>
   </section>
-  
+
 </template>
 
 <script setup>
@@ -53,6 +65,10 @@ import PerformanceCharts from '@/components/PerformanceCharts.vue';
 import ComparisonStrip from './ComparisonStrip.vue';
 import RadarChart from '@/components/RadarChart.vue';
 import ChampionPerformanceSplit from '@/components/ChampionPerformanceSplit.vue';
+import RoleDistribution from '@/components/RoleDistribution.vue';
+import DeathEfficiency from '@/components/DeathEfficiency.vue';
+import MatchDuration from '@/components/MatchDuration.vue';
+import SummaryInsights from '@/components/SummaryInsights.vue';
 import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
@@ -95,6 +111,18 @@ defineExpose({ load });
   width: 100%;
   /* keep header left-aligned, avoid auto-centering */
   margin: 0 0 0.5rem 0;
+}
+
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: opacity 0.2s ease;
+}
+
+.brand-link:hover {
+  opacity: 0.8;
+  cursor: pointer;
 }
 
 .brand-inner {
@@ -153,6 +181,21 @@ defineExpose({ load });
   min-width: 0; /* Allow flex items to shrink below content size */
 }
 
+/* New cards section - three cards per row */
+.new-cards-section {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* Ensure all grid items have the same height */
+.new-cards-section > * {
+  height: 100%;
+}
+
 /* Responsive: stack vertically on smaller screens */
 @media (max-width: 1200px) {
   .radar-champion-section {
@@ -162,6 +205,17 @@ defineExpose({ load });
   .radar-wrapper,
   .champion-wrapper {
     width: 100%;
+  }
+
+  .new-cards-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Medium screens: 2 cards per row */
+@media (min-width: 768px) and (max-width: 1200px) {
+  .new-cards-section {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

@@ -276,6 +276,80 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
 
             return records;
         }
+
+        /// <summary>
+        /// Get role/position distribution for a specific puuid.
+        /// Returns count of games played in each role/position.
+        /// </summary>
+        internal async Task<IList<RoleDistributionRecord>> GetRoleDistributionByPuuIdAsync(string puuId)
+        {
+            var records = new List<RoleDistributionRecord>();
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Use TeamPosition as it's more reliable than Role or Lane in modern League
+            const string sql = @"
+                SELECT
+                    COALESCE(NULLIF(TeamPosition, ''), 'UNKNOWN') as Position,
+                    COUNT(*) as GamesPlayed
+                FROM LolMatchParticipant
+                WHERE Puuid = @puuid
+                GROUP BY Position
+                ORDER BY GamesPlayed DESC";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var position = reader.GetString("Position");
+                var gamesPlayed = reader.GetInt32("GamesPlayed");
+
+                records.Add(new RoleDistributionRecord(position, gamesPlayed));
+            }
+
+            return records;
+        }
+
+        /// <summary>
+        /// Get match duration statistics (wins/total games) grouped by duration buckets for a specific puuid.
+        /// </summary>
+        internal async Task<IList<DurationBucketRecord>> GetDurationStatsByPuuIdAsync(string puuId)
+        {
+            var records = new List<DurationBucketRecord>();
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Group matches into 5-minute buckets
+            const string sql = @"
+                SELECT
+                    FLOOR(m.DurationSeconds / 300) * 5 as MinMinutes,
+                    COUNT(*) as GamesPlayed,
+                    SUM(CASE WHEN p.Win = 1 THEN 1 ELSE 0 END) as Wins
+                FROM LolMatchParticipant p
+                INNER JOIN LolMatch m ON p.MatchId = m.MatchId
+                WHERE p.Puuid = @puuid
+                  AND m.InfoFetched = TRUE
+                  AND m.DurationSeconds > 0
+                GROUP BY MinMinutes
+                ORDER BY MinMinutes ASC";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var minMinutes = reader.GetInt32("MinMinutes");
+                var gamesPlayed = reader.GetInt32("GamesPlayed");
+                var wins = reader.GetInt32("Wins");
+
+                records.Add(new DurationBucketRecord(minMinutes, minMinutes + 5, gamesPlayed, wins));
+            }
+
+            return records;
+        }
     }
 
     /// <summary>
@@ -295,6 +369,24 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
     public record ChampionStatsRecord(
         int ChampionId,
         string ChampionName,
+        int GamesPlayed,
+        int Wins
+    );
+
+    /// <summary>
+    /// Record representing role/position distribution for a specific puuid.
+    /// </summary>
+    public record RoleDistributionRecord(
+        string Position,
+        int GamesPlayed
+    );
+
+    /// <summary>
+    /// Record representing match duration bucket statistics.
+    /// </summary>
+    public record DurationBucketRecord(
+        int MinMinutes,
+        int MaxMinutes,
         int GamesPlayed,
         int Wins
     );

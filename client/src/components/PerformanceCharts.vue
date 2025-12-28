@@ -306,7 +306,7 @@ function getIntervalGoldPoints(gamer) {
   const interval = 10;
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
-  const max = maxEconValue.value * 30;
+  const max = maxEconValue.value; // maxEconValue is already in correct units
   const intervals = [];
   for (let i = 0; i < points.length; i += interval) {
     const chunk = points.slice(i, i + interval);
@@ -410,10 +410,10 @@ const maxEconValue = computed(() => {
   let max = 10;
   chartData.value.forEach(g => {
     g.dataPoints?.forEach(d => {
-      max = Math.max(max, d.goldPerMin / 30); // Only gold for gold chart
+      max = Math.max(max, d.goldPerMin); // goldPerMin is already in correct units
     });
   });
-  return Math.ceil(max / 2) * 2; // Round up to even number
+  return Math.ceil(max / 100) * 100; // Round up to nearest 100 for gold values
 });
 
 const yGridLinesEcon = computed(() => {
