@@ -202,88 +202,106 @@ watch(() => props.userId, () => {
 
 <style scoped>
 .duo-vs-enemy-matrix {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-elev);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px 0 rgba(44, 11, 58, 0.08);
 }
 
 .matrix-header {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .matrix-header h3 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .subtitle {
   margin: 0;
-  font-size: 13px;
-  color: #666;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .matrix-loading,
 .matrix-error,
 .matrix-empty {
-  padding: 40px;
+  padding: 2rem;
   text-align: center;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .matrix-error {
-  color: #d32f2f;
+  color: var(--color-danger);
 }
 
 .duo-selector {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .duo-selector label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .duo-combo-select {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  background: white;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: var(--color-bg-elev);
+  color: var(--color-text);
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.duo-combo-select:hover,
+.duo-combo-select:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
+}
+
+.duo-combo-select option {
+  background: var(--color-bg-elev);
+  color: var(--color-text);
 }
 
 .lane-selector {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
 .lane-btn {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elev);
+  color: var(--color-text);
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.8rem;
   transition: all 0.2s;
 }
 
 .lane-btn:hover {
-  background: #f5f5f5;
+  background: var(--color-bg-hover);
+  border-color: var(--color-primary);
 }
 
 .lane-btn.active {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
+  background: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-primary);
 }
 
 .heatmap-container {
@@ -293,18 +311,19 @@ watch(() => props.userId, () => {
 .heatmap-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.875rem;
 }
 
 .corner-cell,
 .winrate-header,
 .games-header {
-  background: #f5f5f5;
-  padding: 10px;
+  background: var(--color-bg);
+  padding: 0.75rem;
   text-align: left;
   font-weight: 600;
-  border: 1px solid #ddd;
-  font-size: 12px;
+  border: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text);
 }
 
 .winrate-header {
@@ -321,26 +340,28 @@ watch(() => props.userId, () => {
 }
 
 .enemy-row:hover {
-  background: #f9f9f9;
+  background: var(--color-bg-hover);
 }
 
 .champion-name {
-  padding: 10px;
+  padding: 0.75rem;
   font-weight: 500;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .winrate-cell {
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
 }
 
 .winrate-bar-container {
   position: relative;
   height: 24px;
-  background: #f0f0f0;
+  background: var(--color-bg);
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--color-border);
 }
 
 .winrate-bar {
@@ -358,41 +379,41 @@ watch(() => props.userId, () => {
   justify-content: center;
   height: 100%;
   font-weight: 600;
-  font-size: 12px;
-  color: #333;
+  font-size: 0.8rem;
+  color: var(--color-text);
   z-index: 1;
 }
 
 .games-cell {
-  padding: 10px;
+  padding: 0.75rem;
   text-align: center;
-  border: 1px solid #ddd;
-  color: #666;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
 }
 
 /* Win rate color classes for rows */
 .wr-excellent .winrate-bar {
-  background: #4caf50;
+  background: var(--color-success);
 }
 
 .wr-good .winrate-bar {
-  background: #8bc34a;
+  background: rgba(33, 156, 78, 0.7);
 }
 
 .wr-neutral .winrate-bar {
-  background: #ffc107;
+  background: rgba(124, 58, 237, 0.6);
 }
 
 .wr-bad .winrate-bar {
-  background: #ff9800;
+  background: rgba(168, 66, 66, 0.6);
 }
 
 .wr-terrible .winrate-bar {
-  background: #f44336;
+  background: var(--color-danger);
 }
 
 .low-sample .winrate-bar {
-  background: #e0e0e0;
+  background: rgba(124, 58, 237, 0.2);
 }
 
 .low-sample .champion-name {

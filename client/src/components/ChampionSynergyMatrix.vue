@@ -208,65 +208,70 @@ watch(() => props.userId, () => {
 
 <style scoped>
 .champion-synergy-matrix {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-elev);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px 0 rgba(44, 11, 58, 0.08);
 }
 
 .matrix-header {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .matrix-header h3 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .subtitle {
   margin: 0;
-  font-size: 13px;
-  color: #666;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .matrix-loading,
 .matrix-error,
 .matrix-empty {
-  padding: 40px;
+  padding: 2rem;
   text-align: center;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .matrix-error {
-  color: #d32f2f;
+  color: var(--color-danger);
 }
 
 .filter-buttons {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .filter-btn {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elev);
+  color: var(--color-text);
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.875rem;
   transition: all 0.2s;
 }
 
 .filter-btn:hover {
-  background: #f5f5f5;
+  background: var(--color-bg-hover);
+  border-color: var(--color-primary);
 }
 
 .filter-btn.active {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
+  background: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-primary);
 }
 
 .heatmap-container {
@@ -276,36 +281,37 @@ watch(() => props.userId, () => {
 .heatmap-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.8rem;
 }
 
 .corner-cell {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
 }
 
 .champion-header {
-  background: #f5f5f5;
-  padding: 8px;
+  background: var(--color-bg);
+  padding: 0.5rem;
   text-align: center;
   font-weight: 600;
-  border: 1px solid #ddd;
-  font-size: 11px;
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
   min-width: 70px;
+  color: var(--color-text);
 }
 
 .synergy-cell {
-  padding: 4px;
+  padding: 0.25rem;
   text-align: center;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   cursor: help;
-  transition: transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .synergy-cell:hover {
   transform: scale(1.05);
   z-index: 1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
 .cell-content {
@@ -317,48 +323,48 @@ watch(() => props.userId, () => {
 
 .winrate {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 0.85rem;
 }
 
 .games {
-  font-size: 10px;
-  color: #666;
+  font-size: 0.7rem;
+  opacity: 0.8;
 }
 
 /* Win rate color classes */
 .no-data {
-  background: #f5f5f5;
-  color: #999;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
 }
 
 .low-sample {
-  background: #fff9e6;
-  color: #666;
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--color-text-muted);
 }
 
 .wr-excellent {
-  background: #4caf50;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-text);
 }
 
 .wr-good {
-  background: #8bc34a;
-  color: white;
+  background: rgba(33, 156, 78, 0.7);
+  color: var(--color-text);
 }
 
 .wr-neutral {
-  background: #ffc107;
-  color: #333;
+  background: rgba(124, 58, 237, 0.4);
+  color: var(--color-text);
 }
 
 .wr-bad {
-  background: #ff9800;
-  color: white;
+  background: rgba(168, 66, 66, 0.6);
+  color: var(--color-text);
 }
 
 .wr-terrible {
-  background: #f44336;
-  color: white;
+  background: var(--color-danger);
+  color: var(--color-text);
 }
 </style>
 

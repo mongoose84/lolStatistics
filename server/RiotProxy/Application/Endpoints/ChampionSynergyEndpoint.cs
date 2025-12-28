@@ -1,13 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
-using RiotProxy.Application.DTOs;
 using RiotProxy.Infrastructure.External.Database.Repositories;
 using static RiotProxy.Application.DTOs.ChampionSynergyDto;
 
 namespace RiotProxy.Application.Endpoints;
 
-public class ChampionSynergyEndpoint : IEndpoint
+public sealed class ChampionSynergyEndpoint : IEndpoint
 {
-    public string Route => "/api/champion-synergy/{userId}";
+    public string Route { get; }
+
+    public ChampionSynergyEndpoint(string basePath)
+    {
+        Route = basePath + "/champion-synergy/{userId}";
+    }
 
     public void Configure(WebApplication app)
     {

@@ -5,9 +5,14 @@ using static RiotProxy.Application.DTOs.DuoVsEnemyDto;
 
 namespace RiotProxy.Application.Endpoints;
 
-public class DuoVsEnemyEndpoint : IEndpoint
+public sealed class DuoVsEnemyEndpoint : IEndpoint
 {
-    public string Route => "/api/duo-vs-enemy/{userId}";
+    public string Route { get; }
+
+    public DuoVsEnemyEndpoint(string basePath)
+    {
+        Route = basePath + "/duo-vs-enemy/{userId}";
+    }
 
     public void Configure(WebApplication app)
     {
