@@ -1607,8 +1607,9 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             // Group by all champion IDs and Puuids
             var groupByColumns = Enumerable.Range(0, puuIds.Length).Select(i => $"p{i}.ChampionId, p{i}.ChampionName, p{i}.Puuid");
             sql += $" GROUP BY {string.Join(", ", groupByColumns)}";
-            // Show all combos - even those played once - to provide value with smaller datasets
-            sql += " ORDER BY Wins DESC, GamesPlayed DESC LIMIT @limit";
+            // Sort by win rate (descending), then by games played (descending) as tiebreaker
+            // This ensures combinations with higher win rates appear first
+            sql += " ORDER BY (SUM(CASE WHEN p0.Win = 1 THEN 1 ELSE 0 END) / COUNT(*)) DESC, GamesPlayed DESC LIMIT @limit";
 
             await using var cmd = new MySqlCommand(sql, conn);
             for (int i = 0; i < puuIds.Length; i++)
