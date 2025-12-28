@@ -8,10 +8,9 @@
       <div class="role-content">
         <!-- Pie chart for each server -->
         <div v-for="gamer in roleData.gamers" :key="gamer.gamerName" class="pie-chart-wrapper">
-          <h5 class="server-title">{{ gamer.serverName }}</h5>
           <svg :viewBox="`0 0 ${pieSize} ${pieSize}`" class="pie-chart" :aria-label="`Role distribution for ${gamer.serverName}`">
             <!-- Pie slices -->
-            <g v-for="(slice, index) in getPieSlices(gamer.roles)" :key="index">
+            <g v-for="(slice, index) in getPieSlices(getTop3Roles(gamer.roles))" :key="index">
               <path
                 :d="slice.path"
                 :fill="getRoleColor(slice.position)"
@@ -20,20 +19,18 @@
                 class="pie-slice"
               />
             </g>
-            
-            <!-- Center label -->
-            <text :x="pieCenter" :y="pieCenter" text-anchor="middle" dominant-baseline="middle" class="pie-center-label">
-              {{ gamer.roles.length }} roles
-            </text>
           </svg>
 
           <!-- Legend -->
           <div class="legend">
-            <div v-for="role in gamer.roles" :key="role.position" class="legend-item">
+            <div v-for="role in getTop3Roles(gamer.roles)" :key="role.position" class="legend-item">
               <span class="legend-color" :style="{ backgroundColor: getRoleColor(role.position) }"></span>
               <span class="legend-label">{{ formatPosition(role.position) }}: {{ role.percentage.toFixed(1) }}%</span>
             </div>
           </div>
+
+          <!-- Gamer name at bottom -->
+          <div class="gamer-name">{{ gamer.gamerName }}</div>
         </div>
       </div>
     </ChartCard>
@@ -62,14 +59,14 @@ const pieRadius = 60;
 
 const hasData = computed(() => roleData.value?.gamers?.length > 0);
 
-// Role color mapping
+// Role color mapping - aligned with app color scheme
 const roleColors = {
-  TOP: '#FF6B6B',
-  JUNGLE: '#4ECDC4',
-  MIDDLE: '#45B7D1',
-  BOTTOM: '#FFA07A',
-  UTILITY: '#98D8C8',
-  UNKNOWN: '#95A5A6'
+  TOP: '#7c3aed',      // Purple (var(--color-primary))
+  JUNGLE: '#219c4e',   // Green (var(--color-success))
+  MIDDLE: '#f59e0b',   // Amber
+  BOTTOM: '#ec4899',   // Pink
+  UTILITY: '#06b6d4',  // Cyan
+  UNKNOWN: '#d1c4e9'   // Muted text color
 };
 
 function getRoleColor(position) {
@@ -83,9 +80,23 @@ function formatPosition(position) {
     MIDDLE: 'Mid',
     BOTTOM: 'ADC',
     UTILITY: 'Support',
-    UNKNOWN: 'Unknown'
+    UNKNOWN: 'Other'
   };
   return positionMap[position] || position;
+}
+
+// Get top 3 roles by percentage
+function getTop3Roles(roles) {
+  if (!roles || roles.length === 0) return [];
+  // Roles are already sorted by gamesPlayed DESC from backend
+  // Take top 3 and recalculate percentages to sum to 100%
+  const top3 = roles.slice(0, 3);
+  const totalGames = top3.reduce((sum, role) => sum + role.gamesPlayed, 0);
+
+  return top3.map(role => ({
+    ...role,
+    percentage: totalGames > 0 ? (role.gamesPlayed / totalGames) * 100 : 0
+  }));
 }
 
 // Calculate pie slice paths
@@ -249,6 +260,14 @@ onMounted(load);
 .legend-label {
   color: var(--color-text);
   white-space: nowrap;
+}
+
+.gamer-name {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-weight: 500;
 }
 
 /* Responsive: stack vertically on smaller screens */
