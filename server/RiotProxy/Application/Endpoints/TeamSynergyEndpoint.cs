@@ -40,9 +40,18 @@ namespace RiotProxy.Application.Endpoints
                     // Get pairwise synergy data
                     var synergyRecords = await matchParticipantRepo.GetTeamPairSynergyByPuuIdsAsync(distinctPuuIds, gameMode);
 
+                    // Get role distribution to find most common role per player
+                    var roleRecords = await matchParticipantRepo.GetTeamRoleDistributionByPuuIdsAsync(distinctPuuIds, gameMode);
+                    var playerRoles = roleRecords
+                        .GroupBy(r => r.PuuId)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => FormatRole(g.OrderByDescending(r => r.GamesPlayed).First().Position)
+                        );
+
                     // Build player name lookup
                     var playerNames = new Dictionary<string, string>();
-                    var playerList = new List<string>();
+                    var playerList = new List<PlayerInfo>();
                     foreach (var puuId in distinctPuuIds)
                     {
                         var gamer = await gamerRepo.GetByPuuIdAsync(puuId);
@@ -50,7 +59,8 @@ namespace RiotProxy.Application.Endpoints
                         {
                             var name = $"{gamer.GamerName}#{gamer.Tagline.ToUpperInvariant()}";
                             playerNames[puuId] = name;
-                            playerList.Add(name);
+                            var role = playerRoles.GetValueOrDefault(puuId, "Unknown");
+                            playerList.Add(new PlayerInfo(name, role));
                         }
                     }
 
@@ -59,7 +69,9 @@ namespace RiotProxy.Application.Endpoints
                         .Where(r => playerNames.ContainsKey(r.PuuId1) && playerNames.ContainsKey(r.PuuId2))
                         .Select(r => new PlayerPairSynergy(
                             Player1: playerNames[r.PuuId1],
+                            Player1Role: playerRoles.GetValueOrDefault(r.PuuId1, "Unknown"),
                             Player2: playerNames[r.PuuId2],
+                            Player2Role: playerRoles.GetValueOrDefault(r.PuuId2, "Unknown"),
                             GamesPlayed: r.GamesPlayed,
                             Wins: r.Wins,
                             WinRate: r.GamesPlayed > 0 ? Math.Round((double)r.Wins / r.GamesPlayed * 100, 1) : 0.0
@@ -87,6 +99,16 @@ namespace RiotProxy.Application.Endpoints
                 }
             });
         }
+
+        private static string FormatRole(string position) => position?.ToUpperInvariant() switch
+        {
+            "TOP" => "Top",
+            "JUNGLE" => "Jungle",
+            "MIDDLE" => "Mid",
+            "BOTTOM" => "Bot",
+            "UTILITY" => "Support",
+            _ => position ?? "Unknown"
+        };
     }
 }
 

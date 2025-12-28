@@ -10,7 +10,15 @@ public static class TeamSynergyDto
     /// </summary>
     public record TeamSynergyResponse(
         [property: JsonPropertyName("playerPairs")] IList<PlayerPairSynergy> PlayerPairs,
-        [property: JsonPropertyName("players")] IList<string> Players
+        [property: JsonPropertyName("players")] IList<PlayerInfo> Players
+    );
+
+    /// <summary>
+    /// Player info with name and most common role
+    /// </summary>
+    public record PlayerInfo(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("role")] string Role
     );
 
     /// <summary>
@@ -18,7 +26,9 @@ public static class TeamSynergyDto
     /// </summary>
     public record PlayerPairSynergy(
         [property: JsonPropertyName("player1")] string Player1,
+        [property: JsonPropertyName("player1Role")] string Player1Role,
         [property: JsonPropertyName("player2")] string Player2,
+        [property: JsonPropertyName("player2Role")] string Player2Role,
         [property: JsonPropertyName("gamesPlayed")] int GamesPlayed,
         [property: JsonPropertyName("wins")] int Wins,
         [property: JsonPropertyName("winRate")] double WinRate

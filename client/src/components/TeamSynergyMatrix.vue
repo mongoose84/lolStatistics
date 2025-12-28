@@ -7,16 +7,22 @@
     <ChartCard v-else title="🤝 Player Pair Synergies">
       <div class="synergy-content">
         <div class="synergy-grid">
-          <div 
-            v-for="pair in synergyData.playerPairs" 
+          <div
+            v-for="pair in synergyData.playerPairs"
             :key="`${pair.player1}-${pair.player2}`"
             class="synergy-pair"
             :class="getWinRateClass(pair.winRate)"
           >
             <div class="pair-names">
-              <span class="player-name">{{ getShortName(pair.player1) }}</span>
+              <div class="player-with-role">
+                <span class="player-name">{{ getShortName(pair.player1) }}</span>
+                <span class="player-role">{{ getRoleShort(pair.player1Role) }}</span>
+              </div>
               <span class="pair-separator">+</span>
-              <span class="player-name">{{ getShortName(pair.player2) }}</span>
+              <div class="player-with-role">
+                <span class="player-name">{{ getShortName(pair.player2) }}</span>
+                <span class="player-role">{{ getRoleShort(pair.player2Role) }}</span>
+              </div>
             </div>
             <div class="pair-stats">
               <span class="win-rate" :class="getWinRateClass(pair.winRate)">{{ pair.winRate }}%</span>
@@ -49,6 +55,17 @@ const hasData = computed(() => synergyData.value?.playerPairs?.length > 0);
 
 function getShortName(fullName) {
   return fullName?.split('#')[0] || fullName;
+}
+
+function getRoleShort(role) {
+  const roleMap = {
+    'Top': 'TOP',
+    'Jungle': 'JNG',
+    'Mid': 'MID',
+    'Bot': 'BOT',
+    'Support': 'SUP'
+  };
+  return roleMap[role] || role;
 }
 
 function getWinRateClass(winRate) {
@@ -128,7 +145,21 @@ onMounted(load);
   gap: 0.4rem;
 }
 
+.player-with-role {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .player-name { font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
+.player-role {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
 .pair-separator { color: var(--color-text-muted); font-size: 0.8rem; }
 
 .pair-stats {
