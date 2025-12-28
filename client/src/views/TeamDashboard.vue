@@ -53,17 +53,11 @@
             <TeamDurationAnalysis :userId="userId" />
           </div>
 
-          <!-- Synergy Matrix & Champion Combos (Two-column layout) -->
-          <div class="team-features-grid">
-            <TeamSynergyMatrix :userId="userId" />
-            <TeamChampionCombos :userId="userId" />
-          </div>
-
-          <!-- Role Distribution, Role Pair Effectiveness & Individual Performance (Three-column layout) -->
+          <!-- Synergy, Matrix & Champion Combos (Three-column layout) -->
           <div class="team-features-grid-3">
-            <TeamRoleComposition :userId="userId" />
+            <TeamSynergyMatrix :userId="userId" />
             <TeamRolePairEffectiveness :userId="userId" />
-            <TeamPerformanceChart :userId="userId" class="compact-performance" />
+            <TeamChampionCombos :userId="userId" />
           </div>
 
           <!-- Death Analysis (Four-column layout) -->
@@ -93,8 +87,6 @@ import GamerCard from '@/views/GamerCard.vue';
 import AppLogo from '@/components/AppLogo.vue';
 import getTeamStats from '@/assets/getTeamStats.js';
 import TeamSynergyMatrix from '@/components/TeamSynergyMatrix.vue';
-import TeamRoleComposition from '@/components/TeamRoleComposition.vue';
-import TeamPerformanceChart from '@/components/TeamPerformanceChart.vue';
 import TeamImprovementSummary from '@/components/TeamImprovementSummary.vue';
 import TeamWinRateTrend from '@/components/TeamWinRateTrend.vue';
 import TeamDurationAnalysis from '@/components/TeamDurationAnalysis.vue';
