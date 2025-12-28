@@ -26,7 +26,7 @@
 
 ## Conventions & Patterns
 - **Client**: Uses Vue SFCs, composition API, and composables for state/data logic. API calls are abstracted in `assets/`.
-- **Server**: Endpoints are organized by resource in `Application/Endpoints/`. DTOs are used for request/response shapes. Secrets are not checked in.
+- **Server**: Endpoints are organized by resource in `Application/Endpoints/`. DTOs are used for request/response shapes. Secrets are not checked in. Use SOLID principles for maintainability.  
 - **Testing**: Uses Vitest for client unit tests. No server-side test convention is documented.
 - **Secrets**: Never commit `RiotSecret.txt` or `DatabaseSecret.txt`.
 
