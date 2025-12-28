@@ -19,27 +19,33 @@
     <div v-else-if="!hasData" class="charts-empty">No performance data available yet.</div>
     
     <div v-else class="charts-grid">
-      <!-- Winrate Chart -->
+      <!-- Win-rate Over Time (10-game intervals) -->
       <div class="chart-card">
-        <h4>Winrate Over Time</h4>
-        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="line-chart" aria-label="Winrate chart">
-          <!-- Grid lines -->
+        <h4>Win-rate Over Time (10-game intervals)</h4>
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="line-chart" aria-label="Win-rate over time">
+          <!-- Y-axis grid lines and labels (0% to 100%) -->
           <g class="grid">
-            <line v-for="y in yGridLines" :key="'wr-grid-' + y" 
+            <line v-for="y in [0, 0.25, 0.5, 0.75, 1]" :key="'wr-grid-' + y"
               :x1="padding.left" :x2="chartWidth - padding.right"
-              :y1="y" :y2="y" />
+              :y1="barY(y)" :y2="barY(y)" />
           </g>
-          <!-- Y-axis labels -->
           <g class="y-labels">
-            <text v-for="(label, i) in yLabelsWinrate" :key="'wr-y-' + i"
-              :x="padding.left - 8" :y="yGridLines[i]" text-anchor="end" dominant-baseline="middle">
+            <text v-for="(label, i) in [100, 75, 50, 25, 0]" :key="'wr-y-' + i"
+              :x="padding.left - 8" :y="barY(label/100)" text-anchor="end" dominant-baseline="middle">
               {{ label }}%
             </text>
           </g>
-          <!-- Lines for each gamer -->
+          <!-- X-axis: game intervals -->
+          <g class="x-labels">
+            <text v-for="(tick, i) in winrateXTicks" :key="'wr-x-' + i"
+              :x="tick.x" :y="chartHeight - padding.bottom + 14" text-anchor="middle" dominant-baseline="hanging">
+              {{ tick.label }}
+            </text>
+          </g>
+          <!-- Win-rate lines for each gamer/server -->
           <g v-for="(gamer, gi) in chartData" :key="'wr-line-' + gi">
-            <polyline 
-              :points="getWinratePoints(gamer)"
+            <polyline
+              :points="getIntervalWinratePoints(gamer)"
               :stroke="getColor(gi)"
               fill="none"
               stroke-width="2"
@@ -49,25 +55,36 @@
           <!-- Legend -->
           <g class="legend" :transform="`translate(${padding.left}, ${chartHeight - 10})`">
             <g v-for="(gamer, gi) in chartData" :key="'wr-leg-' + gi" 
-              :transform="`translate(${gi * 120}, 0)`">
+              :transform="`translate(${gi * 160}, 0)`">
               <rect :fill="getColor(gi)" width="12" height="12" rx="2" />
-              <text x="16" y="10" class="legend-text">{{ gamer.shortName }}</text>
+              <text x="16" y="12" class="legend-text">{{ gamer.gamerName }}</text>
             </g>
           </g>
         </svg>
       </div>
 
-      <!-- Gold/CS Chart -->
+
+
+
+
+      <!-- Gold/min Chart (10-game intervals) -->
       <div class="chart-card">
-        <h4>Gold/min & CS/min</h4>
-        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="line-chart" aria-label="Economy chart">
+        <h4>Gold/min (10-game intervals)</h4>
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="line-chart" aria-label="Gold per 10 games">
           <!-- Grid lines -->
           <g class="grid">
-            <line v-for="y in yGridLinesEcon" :key="'econ-grid-' + y" 
+            <line v-for="y in yGridLinesEcon" :key="'gold-grid-' + y" 
               :x1="padding.left" :x2="chartWidth - padding.right"
               :y1="y" :y2="y" />
           </g>
-          <!-- Y-axis labels (left = gold, right = CS) -->
+          <!-- X-axis interval labels -->
+          <g class="x-labels">
+            <text v-for="(tick, i) in econIntervalXTicks" :key="'gold-x-' + i"
+              :x="tick.x" :y="chartHeight - padding.bottom + 14" text-anchor="middle" dominant-baseline="hanging">
+              {{ tick.label }}
+            </text>
+          </g>
+          <!-- Y-axis labels -->
           <g class="y-labels">
             <text v-for="(label, i) in yLabelsGold" :key="'gold-y-' + i"
               :x="padding.left - 8" :y="yGridLinesEcon[i]" text-anchor="end" dominant-baseline="middle">
@@ -77,36 +94,67 @@
           <!-- Gold lines (solid) -->
           <g v-for="(gamer, gi) in chartData" :key="'gold-line-' + gi">
             <polyline 
-              :points="getGoldPoints(gamer)"
+              :points="getIntervalGoldPoints(gamer)"
               :stroke="getColor(gi)"
               fill="none"
               stroke-width="2"
               stroke-linejoin="round"
-            />
-          </g>
-          <!-- CS lines (dashed) -->
-          <g v-for="(gamer, gi) in chartData" :key="'cs-line-' + gi">
-            <polyline 
-              :points="getCsPoints(gamer)"
-              :stroke="getColor(gi)"
-              fill="none"
-              stroke-width="2"
-              stroke-dasharray="4 3"
-              stroke-linejoin="round"
-              opacity="0.7"
             />
           </g>
           <!-- Legend -->
           <g class="legend" :transform="`translate(${padding.left}, ${chartHeight - 10})`">
-            <g v-for="(gamer, gi) in chartData" :key="'econ-leg-' + gi" 
-              :transform="`translate(${gi * 120}, 0)`">
-              <line :stroke="getColor(gi)" x1="0" y1="6" x2="12" y2="6" stroke-width="2" />
-              <line :stroke="getColor(gi)" x1="14" y1="6" x2="26" y2="6" stroke-width="2" stroke-dasharray="4 3" opacity="0.7" />
-              <text x="30" y="10" class="legend-text">{{ gamer.shortName }}</text>
+            <g v-for="(gamer, gi) in chartData" :key="'gold-leg-' + gi" 
+              :transform="`translate(${gi * 160}, 0)`">
+              <rect :fill="getColor(gi)" width="12" height="12" rx="2" />
+              <text x="16" y="12" class="legend-text">{{ gamer.gamerName }}</text>
             </g>
           </g>
         </svg>
-        <div class="chart-footnote">Solid = Gold/min, Dashed = CS/min</div>
+      </div>
+
+      <!-- CS/min Chart (10-game intervals) -->
+      <div class="chart-card">
+        <h4>CS/min (10-game intervals)</h4>
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="line-chart" aria-label="CS per 10 games">
+          <!-- Grid lines -->
+          <g class="grid">
+            <line v-for="y in yGridLinesCs" :key="'cs-grid-' + y" 
+              :x1="padding.left" :x2="chartWidth - padding.right"
+              :y1="y" :y2="y" />
+          </g>
+          <!-- X-axis interval labels -->
+          <g class="x-labels">
+            <text v-for="(tick, i) in econIntervalXTicks" :key="'cs-x-' + i"
+              :x="tick.x" :y="chartHeight - padding.bottom + 14" text-anchor="middle" dominant-baseline="hanging">
+              {{ tick.label }}
+            </text>
+          </g>
+          <!-- Y-axis labels -->
+          <g class="y-labels">
+            <text v-for="(label, i) in yLabelsCs" :key="'cs-y-' + i"
+              :x="padding.left - 8" :y="yGridLinesCs[i]" text-anchor="end" dominant-baseline="middle">
+              {{ label }}
+            </text>
+          </g>
+          <!-- CS lines (solid) -->
+          <g v-for="(gamer, gi) in chartData" :key="'cs-line-' + gi">
+            <polyline 
+              :points="getIntervalCsPoints(gamer)"
+              :stroke="getColor(gi)"
+              fill="none"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          </g>
+          <!-- Legend -->
+          <g class="legend" :transform="`translate(${padding.left}, ${chartHeight - 10})`">
+            <g v-for="(gamer, gi) in chartData" :key="'cs-leg-' + gi" 
+              :transform="`translate(${gi * 160}, 0)`">
+              <rect :fill="getColor(gi)" width="12" height="12" rx="2" />
+              <text x="16" y="12" class="legend-text">{{ gamer.gamerName }}</text>
+            </g>
+          </g>
+        </svg>
       </div>
     </div>
   </div>
@@ -129,10 +177,128 @@ const loading = ref(false);
 const error = ref(null);
 const performanceData = ref(null);
 
-// Chart dimensions
-const chartWidth = 400;
-const chartHeight = 200;
-const padding = { top: 20, right: 20, bottom: 30, left: 45 };
+// Helper: Compute win-rate over time in 10-game intervals for each gamer
+function getIntervalWinratePoints(gamer) {
+  const points = gamer.dataPoints || [];
+  if (points.length === 0) return '';
+  const interval = 10;
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  const intervals = [];
+  for (let i = 0; i < points.length; i += interval) {
+    const chunk = points.slice(i, i + interval);
+    if (chunk.length === 0) continue;
+    const wins = chunk.filter(d => d.win).length;
+    const winrate = wins / chunk.length;
+    intervals.push({
+      idx: i / interval,
+      winrate,
+      start: i,
+      end: i + chunk.length - 1
+    });
+  }
+  const denom = Math.max(1, intervals.length - 1);
+  return intervals.map((d, i) => {
+    const x = padding.left + (i / denom) * plotWidth;
+    const y = padding.top + plotHeight * (1 - d.winrate);
+    return `${x},${y}`;
+  }).join(' ');
+}
+
+// Helper: X-axis ticks for win-rate over time chart
+const winrateXTicks = computed(() => {
+  // Use the gamer with the most data points as reference
+  const maxGames = Math.max(...chartData.value.map(g => g.dataPoints?.length || 0));
+  if (!maxGames) return [];
+  const interval = 10;
+  const nIntervals = Math.ceil(maxGames / interval);
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const ticks = [];
+  for (let i = 0; i < nIntervals; i++) {
+    const x = padding.left + (i / Math.max(1, nIntervals - 1)) * plotWidth;
+    const label = `${i * interval + 1}`;
+    ticks.push({ x, label });
+  }
+  return ticks;
+});
+
+// Helper: X-axis ticks for gold/cs interval chart
+const econIntervalXTicks = computed(() => {
+  const maxGames = Math.max(...chartData.value.map(g => g.dataPoints?.length || 0));
+  if (!maxGames) return [];
+  const interval = 10;
+  const nIntervals = Math.ceil(maxGames / interval);
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const ticks = [];
+  for (let i = 0; i < nIntervals; i++) {
+    const x = padding.left + (i / Math.max(1, nIntervals - 1)) * plotWidth;
+    const label = `${i * interval + 1}`;
+    ticks.push({ x, label });
+  }
+  return ticks;
+});
+
+// Helper: Gold/min points over 10-game intervals
+function getIntervalGoldPoints(gamer) {
+  const points = gamer.dataPoints || [];
+  if (points.length === 0) return '';
+  const interval = 10;
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  const max = maxEconValue.value * 30;
+  const intervals = [];
+  for (let i = 0; i < points.length; i += interval) {
+    const chunk = points.slice(i, i + interval);
+    if (chunk.length === 0) continue;
+    const avgGold = chunk.reduce((sum, d) => sum + (d.goldPerMin || 0), 0) / chunk.length;
+    intervals.push({
+      idx: i / interval,
+      avgGold,
+      start: i,
+      end: i + chunk.length - 1
+    });
+  }
+  const denom = Math.max(1, intervals.length - 1);
+  return intervals.map((d, i) => {
+    const x = padding.left + (i / denom) * plotWidth;
+    const y = padding.top + plotHeight * (1 - Math.min(d.avgGold, max) / max);
+    return `${x},${y}`;
+  }).join(' ');
+}
+
+// Helper: CS/min points over 10-game intervals (fixed y-axis max = 15)
+function getIntervalCsPoints(gamer) {
+  const points = gamer.dataPoints || [];
+  if (points.length === 0) return '';
+  const interval = 10;
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  const max = 15;
+  const intervals = [];
+  for (let i = 0; i < points.length; i += interval) {
+    const chunk = points.slice(i, i + interval);
+    if (chunk.length === 0) continue;
+    const avgCs = chunk.reduce((sum, d) => sum + (d.csPerMin || 0), 0) / chunk.length;
+    intervals.push({
+      idx: i / interval,
+      avgCs,
+      start: i,
+      end: i + chunk.length - 1
+    });
+  }
+  const denom = Math.max(1, intervals.length - 1);
+  return intervals.map((d, i) => {
+    const x = padding.left + (i / denom) * plotWidth;
+    const y = padding.top + plotHeight * (1 - Math.min(d.avgCs, max) / max);
+    return `${x},${y}`;
+  }).join(' ');
+}
+
+// Chart dimensions (wider graph area, side-by-side layout)
+const chartWidth = 520;
+const chartHeight = 220;
+const padding = { top: 28, right: 32, bottom: 38, left: 55 };
+
 
 const colors = [
   'var(--color-primary)',      // Purple
@@ -144,30 +310,45 @@ const colors = [
 
 const getColor = (index) => colors[index % colors.length];
 
+
+// Compute win-rate and loss-rate per gamer/server
 const chartData = computed(() => {
   if (!performanceData.value?.gamers) return [];
-  return performanceData.value.gamers.map(g => ({
-    ...g,
-    shortName: g.gamerName,
-  }));
+  return performanceData.value.gamers.map(g => {
+    const total = g.dataPoints?.length || 0;
+    const wins = g.dataPoints?.filter(d => d.win).length || 0;
+    const losses = total - wins;
+    return {
+      ...g,
+      shortName: g.gamerName,
+      winRate: total > 0 ? wins / total : 0,
+      lossRate: total > 0 ? losses / total : 0,
+    };
+  });
 });
+// Bar chart helpers
+const barWidth = 28;
+const barGap = 12;
+
+function barY(rate) {
+  // rate: 0-1
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  return padding.top + plotHeight * (1 - rate);
+}
+function getServerLabel(name) {
+  // Try to extract server from name (e.g., "user#EUW")
+  const match = name.match(/#([A-Z0-9]+)/i);
+  return match ? match[1].toUpperCase() : name;
+}
 
 const hasData = computed(() => chartData.value.length > 0 && chartData.value.some(g => g.dataPoints?.length > 0));
 
-// Y-axis grid lines for winrate (0-100%)
-const yGridLines = computed(() => {
-  const plotHeight = chartHeight - padding.top - padding.bottom;
-  return [0, 25, 50, 75, 100].map(pct => padding.top + plotHeight * (1 - pct / 100));
-});
-
-const yLabelsWinrate = [0, 25, 50, 75, 100];
-
-// Y-axis for economy (gold/cs per min) - dynamic based on data
+// Y-axis for Gold/min (dynamic)
 const maxEconValue = computed(() => {
   let max = 10;
   chartData.value.forEach(g => {
     g.dataPoints?.forEach(d => {
-      max = Math.max(max, d.goldPerMin / 30, d.csPerMin); // Scale gold down for comparison
+      max = Math.max(max, d.goldPerMin / 30); // Only gold for gold chart
     });
   });
   return Math.ceil(max / 2) * 2; // Round up to even number
@@ -183,53 +364,15 @@ const yLabelsGold = computed(() => {
   return [max, max * 0.75, max * 0.5, max * 0.25, 0].map(v => Math.round(v));
 });
 
-// Convert data points to SVG polyline points
-function getWinratePoints(gamer) {
-  const points = gamer.dataPoints || [];
-  if (points.length === 0) return '';
-  
-  const plotWidth = chartWidth - padding.left - padding.right;
+// Y-axis for CS/min (fixed at 15)
+const yGridLinesCs = computed(() => {
   const plotHeight = chartHeight - padding.top - padding.bottom;
-  const maxGames = Math.max(...chartData.value.map(g => g.dataPoints?.length || 0));
-  
-  return points.map((d, i) => {
-    const x = padding.left + (i / Math.max(1, maxGames - 1)) * plotWidth;
-    const y = padding.top + plotHeight * (1 - d.winrate / 100);
-    return `${x},${y}`;
-  }).join(' ');
-}
+  return [0, 0.25, 0.5, 0.75, 1].map(frac => padding.top + plotHeight * frac);
+});
+const yLabelsCs = [15, 11, 8, 4, 0];
 
-function getGoldPoints(gamer) {
-  const points = gamer.dataPoints || [];
-  if (points.length === 0) return '';
-  
-  const plotWidth = chartWidth - padding.left - padding.right;
-  const plotHeight = chartHeight - padding.top - padding.bottom;
-  const maxGames = Math.max(...chartData.value.map(g => g.dataPoints?.length || 0));
-  const max = maxEconValue.value * 30; // Scale gold back up
-  
-  return points.map((d, i) => {
-    const x = padding.left + (i / Math.max(1, maxGames - 1)) * plotWidth;
-    const y = padding.top + plotHeight * (1 - Math.min(d.goldPerMin, max) / max);
-    return `${x},${y}`;
-  }).join(' ');
-}
 
-function getCsPoints(gamer) {
-  const points = gamer.dataPoints || [];
-  if (points.length === 0) return '';
-  
-  const plotWidth = chartWidth - padding.left - padding.right;
-  const plotHeight = chartHeight - padding.top - padding.bottom;
-  const maxGames = Math.max(...chartData.value.map(g => g.dataPoints?.length || 0));
-  const max = maxEconValue.value;
-  
-  return points.map((d, i) => {
-    const x = padding.left + (i / Math.max(1, maxGames - 1)) * plotWidth;
-    const y = padding.top + plotHeight * (1 - Math.min(d.csPerMin, max) / max);
-    return `${x},${y}`;
-  }).join(' ');
-}
+
 
 async function load() {
   if (!props.userId) return;
@@ -314,45 +457,65 @@ watch(limit, load);
   color: var(--color-danger);
 }
 
+
+
 .charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: flex-start;
 }
 
+/* Chart card border and background styling */
 .chart-card {
-  background: var(--color-bg);
-  border-radius: 8px;
-  padding: 1rem;
+  background: var(--color-bg-elev);
   border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.2rem 1.2rem 0.7rem 1.2rem;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px 0 rgba(44, 11, 58, 0.08);
+  min-width: 0;
+  width: 520px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  position: relative;
 }
 
 .chart-card h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
+  margin: 0;
+  font-size: 1.05rem;
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  align-self: flex-start;
+  position: absolute;
+  top: 0.7rem;
+  left: 1.2rem;
+  z-index: 2;
+  background: transparent;
 }
+
 
 .line-chart {
   width: 100%;
-  height: auto;
-  max-height: 200px;
+  height: 220px;
+  display: block;
 }
 
-.line-chart .grid line {
-  stroke: var(--color-border);
-  stroke-width: 1;
-}
 
-.line-chart .y-labels text {
-  font-size: 10px;
-  fill: var(--color-text-muted);
-}
-
+    
+/* Style for SVG legend text */
 .line-chart .legend-text {
-  font-size: 10px;
-  fill: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+.line-chart text,
+.line-chart .legend-text {
+  fill: #fff !important;
 }
 
 .chart-footnote {
@@ -364,14 +527,18 @@ watch(limit, load);
 }
 
 /* Mobile stacking */
-@media (max-width: 768px) {
-  .charts-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
+@media (max-width: 1200px) {
   .charts-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .chart-card {
+    min-width: 0;
+    max-width: 100vw;
+  }
+  .line-chart {
+    min-width: 0;
+    max-width: 100vw;
   }
 }
 </style>
