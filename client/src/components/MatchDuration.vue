@@ -108,17 +108,19 @@ function getBarWidth(winrate) {
   return Math.min(100, Math.max(0, winrate));
 }
 
-// Get color for each gamer (server)
+// Get color for each gamer (server) - using index-based approach for consistency
 function getGamerColor(gamerName) {
+  const allGamers = durationData.value?.gamers?.map(g => g.gamerName) || [];
+  const uniqueGamers = [...new Set(allGamers)];
+  const index = uniqueGamers.indexOf(gamerName);
+
   const colors = [
-    '#7c3aed', // purple
-    '#3b82f6', // blue
-    '#10b981', // green
-    '#f59e0b', // amber
+    'var(--color-primary)',      // Purple - First gamer (EUNE)
+    'var(--color-success)',      // Green - Second gamer (EUW)
+    '#f59e0b',                   // Amber
+    '#ec4899',                   // Pink
   ];
-  
-  const hash = gamerName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
+  return colors[index] || 'var(--color-text)';
 }
 
 async function load() {

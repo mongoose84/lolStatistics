@@ -624,9 +624,9 @@ onMounted(load);
 
 /* Individual insight card - matching GamerCard style */
 .insight-card {
-  width: 200px;
+  width: 240px;
   min-height: 380px;
-  padding: 1rem;
+  padding: 1.25rem;
   background: var(--color-bg-elev);
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -719,7 +719,7 @@ onMounted(load);
 /* Visual indicator - matching win/loss chart */
 .insight-visual {
   margin-top: 0.4rem;
-  width: 120px;
+  width: 140px;
   height: 120px;
   position: relative;
   display: flex;
@@ -730,9 +730,9 @@ onMounted(load);
 
 .visual-bar {
   width: 100%;
-  height: 12px;
+  height: 14px;
   background: var(--color-bg);
-  border-radius: 6px;
+  border-radius: 7px;
   overflow: hidden;
   border: 1px solid var(--color-border);
   position: relative;
@@ -811,7 +811,7 @@ onMounted(load);
 
 @media (max-width: 768px) {
   .insight-card {
-    width: 180px;
+    width: 220px;
     min-height: 360px;
   }
 }
