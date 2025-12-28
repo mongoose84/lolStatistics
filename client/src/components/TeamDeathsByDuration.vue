@@ -128,13 +128,35 @@ onMounted(load);
 </script>
 
 <style scoped>
-.deaths-duration-container { width: 100%; }
+.deaths-duration-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.deaths-duration-container :deep(.chart-card) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .loading, .error, .empty { padding: 2rem; text-align: center; color: var(--color-text-muted); }
 .error { color: var(--color-danger); }
 
-.chart-content { padding: 1rem 0; }
+.chart-content {
+  padding: 1rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
-.bar-chart { width: 100%; height: auto; }
+.bar-chart {
+  width: 100%;
+  flex: 1;
+  min-height: 120px;
+}
+
 .grid line { stroke: var(--color-border); stroke-dasharray: 2,2; }
 .y-labels text { fill: var(--color-text-muted); font-size: 10px; }
 .x-labels text { fill: var(--color-text-muted); font-size: 10px; }
@@ -144,7 +166,8 @@ onMounted(load);
   display: flex;
   justify-content: center;
   gap: 1.5rem;
-  margin-top: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
 }
 
 .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--color-text-muted); }

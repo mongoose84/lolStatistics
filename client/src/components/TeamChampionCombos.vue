@@ -10,7 +10,7 @@
     <ChartCard v-else title="🏆 Best Champion Combinations">
       <div class="combos-content">
         <div class="combos-list">
-          <div v-for="(combo, i) in combosData.combos" :key="i" class="combo-row" :class="getWinRateClass(combo.winRate)">
+          <div v-for="(combo, i) in topCombos" :key="i" class="combo-row" :class="getWinRateClass(combo.winRate)">
             <span class="combo-rank">#{{ i + 1 }}</span>
             <div class="combo-champions">
               <div v-for="(champ, j) in combo.champions" :key="j" class="champion-pick">
@@ -30,7 +30,7 @@
           </div>
         </div>
         <div class="combos-footer">
-          <span>{{ combosData.totalUniqueCompos }} unique team compositions found</span>
+          <span>Top 5 combinations</span>
         </div>
       </div>
     </ChartCard>
@@ -49,6 +49,11 @@ const error = ref(null);
 const combosData = ref(null);
 
 const hasData = computed(() => combosData.value?.combos?.length > 0);
+
+const topCombos = computed(() => {
+  if (!combosData.value?.combos) return [];
+  return combosData.value.combos.slice(0, 5);
+});
 
 function getChampionIcon(championName) {
   const formatted = championName.replace(/[^a-zA-Z]/g, '');
@@ -83,11 +88,31 @@ onMounted(load);
 </script>
 
 <style scoped>
-.team-combos-container { width: 100%; }
+.team-combos-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-combos-container :deep(.chart-card) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .combos-loading, .combos-error, .combos-empty { padding: 2rem; text-align: center; color: var(--color-text-muted); }
 .combos-error { color: var(--color-danger); }
 .combos-empty .requirement-hint { display: block; margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7; }
-.combos-content { padding: 2rem 0 0.5rem 0; }
+
+.combos-content {
+  padding: 1rem 0 0.5rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .combos-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .combo-row { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--color-bg-elev); border-radius: 6px; border-left: 3px solid var(--color-border); }
 .combo-row.wr-high { border-left-color: var(--color-success); }

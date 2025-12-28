@@ -53,9 +53,10 @@
             <TeamDurationAnalysis :userId="userId" />
           </div>
 
-          <!-- Synergy Matrix (Full width) -->
-          <div class="team-performance-section">
+          <!-- Synergy Matrix & Champion Combos (Two-column layout) -->
+          <div class="team-features-grid">
             <TeamSynergyMatrix :userId="userId" />
+            <TeamChampionCombos :userId="userId" />
           </div>
 
           <!-- Role Distribution, Role Pair Effectiveness & Individual Performance (Three-column layout) -->
@@ -65,20 +66,11 @@
             <TeamPerformanceChart :userId="userId" class="compact-performance" />
           </div>
 
-          <!-- Champion Combos & Death Timer Impact (Two-column layout) -->
-          <div class="team-features-grid">
-            <TeamChampionCombos :userId="userId" />
+          <!-- Death Analysis (Four-column layout) -->
+          <div class="team-features-grid-4">
             <TeamDeathTimerImpact :userId="userId" />
-          </div>
-
-          <!-- Deaths by Duration & Death Share (Two-column layout) -->
-          <div class="team-features-grid">
             <TeamDeathsByDuration :userId="userId" />
             <TeamDeathShare :userId="userId" />
-          </div>
-
-          <!-- Deaths Trend (Full width) -->
-          <div class="team-performance-section">
             <TeamDeathsTrend :userId="userId" />
           </div>
 
@@ -346,6 +338,27 @@ defineExpose({ load });
   flex: 1;
 }
 
+.team-features-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.team-features-grid-4 > * {
+  height: 100%;
+}
+
+.team-features-grid-4 :deep(.chart-card) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-features-grid-4 :deep(.chart-card > div:last-child) {
+  flex: 1;
+}
+
 .team-performance-section,
 .team-summary-section {
   width: 100%;
@@ -357,6 +370,12 @@ defineExpose({ load });
 }
 
 /* Mobile responsiveness */
+@media (max-width: 1400px) {
+  .team-features-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1200px) {
   .team-features-grid-3 {
     grid-template-columns: 1fr 1fr;
@@ -368,6 +387,9 @@ defineExpose({ load });
     grid-template-columns: 1fr;
   }
   .team-features-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .team-features-grid-4 {
     grid-template-columns: 1fr;
   }
 }

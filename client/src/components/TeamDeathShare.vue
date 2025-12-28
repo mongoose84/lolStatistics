@@ -97,11 +97,28 @@ onMounted(load);
 </script>
 
 <style scoped>
-.death-share-container { width: 100%; }
+.death-share-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.death-share-container :deep(.chart-card) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .loading, .error, .empty { padding: 2rem; text-align: center; color: var(--color-text-muted); }
 .error { color: var(--color-danger); }
 
-.share-content { padding: 1rem 0; }
+.share-content {
+  padding: 1rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
 .total-header {
   display: flex;
@@ -115,7 +132,12 @@ onMounted(load);
 .total-label { font-size: 0.85rem; color: var(--color-text-muted); }
 .total-value { font-size: 1.1rem; font-weight: 600; color: var(--color-danger); }
 
-.player-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+}
 
 .player-row {
   display: flex;
@@ -159,7 +181,8 @@ onMounted(load);
 }
 
 .insight {
-  margin-top: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
   font-size: 0.8rem;
   padding: 0.5rem;
   background: var(--color-bg-elev);
