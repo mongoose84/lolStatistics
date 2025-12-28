@@ -1,0 +1,249 @@
+<template>
+  <div class="death-efficiency-container">
+    <div v-if="loading" class="death-loading">Loading death efficiency data…</div>
+    <div v-else-if="error" class="death-error">{{ error }}</div>
+    <div v-else-if="!hasData" class="death-empty">No death efficiency data available.</div>
+
+    <ChartCard v-else title="Death & Efficiency Analysis">
+      <div class="death-content">
+        <!-- Average Deaths Chart -->
+        <div class="chart-section">
+          <h5 class="chart-title">Avg Deaths</h5>
+          <div class="bar-chart">
+            <div 
+              v-for="record in deathData.avgDeaths" 
+              :key="record.gamerName"
+              class="bar-row"
+            >
+              <div class="bar-label">{{ getServerFromGamerName(record.gamerName) }}</div>
+              <div class="bar-container">
+                <div 
+                  class="bar"
+                  :style="{ 
+                    width: getBarWidth(record.value, maxDeaths) + '%',
+                    backgroundColor: getGamerColor(record.gamerName)
+                  }"
+                >
+                  <span class="bar-value">{{ record.value.toFixed(1) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Time Dead Chart -->
+        <div class="chart-section">
+          <h5 class="chart-title">Time Dead (sec)</h5>
+          <div class="bar-chart">
+            <div 
+              v-for="record in deathData.avgTimeDeadSeconds" 
+              :key="record.gamerName"
+              class="bar-row"
+            >
+              <div class="bar-label">{{ getServerFromGamerName(record.gamerName) }}</div>
+              <div class="bar-container">
+                <div 
+                  class="bar"
+                  :style="{ 
+                    width: getBarWidth(record.value, maxTimeDead) + '%',
+                    backgroundColor: getGamerColor(record.gamerName)
+                  }"
+                >
+                  <span class="bar-value">{{ record.value.toFixed(0) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ChartCard>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
+import ChartCard from './ChartCard.vue';
+import getComparison from '@/assets/getComparison.js';
+
+const props = defineProps({
+  userId: {
+    type: [String, Number],
+    required: true,
+  },
+});
+
+const loading = ref(false);
+const error = ref(null);
+const deathData = ref(null);
+
+const hasData = computed(() => 
+  deathData.value?.avgDeaths?.length > 0 && 
+  deathData.value?.avgTimeDeadSeconds?.length > 0
+);
+
+// Calculate max values for scaling bars
+const maxDeaths = computed(() => {
+  if (!deathData.value?.avgDeaths?.length) return 10;
+  return Math.max(...deathData.value.avgDeaths.map(r => r.value), 10);
+});
+
+const maxTimeDead = computed(() => {
+  if (!deathData.value?.avgTimeDeadSeconds?.length) return 100;
+  return Math.max(...deathData.value.avgTimeDeadSeconds.map(r => r.value), 100);
+});
+
+// Get bar width as percentage
+function getBarWidth(value, max) {
+  if (max === 0) return 0;
+  return Math.min((value / max) * 100, 100);
+}
+
+// Extract server name from gamer name (e.g., "PlayerName#EUW" -> "EUW")
+function getServerFromGamerName(gamerName) {
+  const parts = gamerName.split('#');
+  return parts.length > 1 ? parts[1] : gamerName;
+}
+
+// Get color based on gamer name (matching app color scheme)
+function getGamerColor(gamerName) {
+  const allGamers = [
+    ...(deathData.value?.avgDeaths || []).map(r => r.gamerName),
+  ];
+  const uniqueGamers = [...new Set(allGamers)];
+  const index = uniqueGamers.indexOf(gamerName);
+  
+  const colors = [
+    'var(--color-primary)',      // Purple - First gamer (EUNE)
+    'var(--color-success)',      // Green - Second gamer (EUW)
+    '#f59e0b',                   // Amber
+    '#ec4899',                   // Pink
+  ];
+  return colors[index] || 'var(--color-text)';
+}
+
+async function fetchData() {
+  if (!props.userId) return;
+  
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const data = await getComparison(props.userId);
+    deathData.value = data;
+  } catch (err) {
+    console.error('Error fetching death efficiency data:', err);
+    error.value = 'Failed to load death efficiency data';
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Watch for userId changes
+watch(() => props.userId, fetchData, { immediate: false });
+
+onMounted(() => {
+  fetchData();
+});
+</script>
+
+<style scoped>
+/* Match RoleDistribution height */
+.death-efficiency-container :deep(.chart-card) {
+  max-width: 100%;
+  height: auto;
+  min-height: 250px;
+}
+
+.death-loading,
+.death-error,
+.death-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.death-error {
+  color: var(--color-danger);
+}
+
+.death-content {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+
+.chart-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chart-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bar-label {
+  min-width: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.bar-container {
+  flex: 1;
+  height: 28px;
+  background-color: var(--color-bg-elev);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+  min-width: 40px;
+}
+
+.bar-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive: stack vertically on smaller screens */
+@media (max-width: 768px) {
+  .death-content {
+    flex-direction: column;
+  }
+}
+</style>
+
