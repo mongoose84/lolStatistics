@@ -2,7 +2,10 @@
   <div class="team-duration-container">
     <div v-if="loading" class="duration-loading">Loading duration analysis…</div>
     <div v-else-if="error" class="duration-error">{{ error }}</div>
-    <div v-else-if="!hasData" class="duration-empty">Not enough data for duration analysis.</div>
+    <div v-else-if="!hasData" class="duration-empty">
+      Not enough data for duration analysis.
+      <span class="requirement-hint">(Minimum: 1 game where all team members played together)</span>
+    </div>
 
     <ChartCard v-else title="⏱️ Game Duration Analysis">
       <div class="duration-content">
@@ -112,6 +115,7 @@ onMounted(load);
 .team-duration-container { width: 100%; }
 .duration-loading, .duration-error, .duration-empty { padding: 2rem; text-align: center; color: var(--color-text-muted); }
 .duration-error { color: var(--color-danger); }
+.duration-empty .requirement-hint { display: block; margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7; }
 .duration-content { padding: 0.5rem 0; display: flex; flex-direction: column; gap: 1rem; }
 .best-duration { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--color-bg-elev); border-radius: 6px; }
 .best-label { color: var(--color-text-muted); font-size: 0.9rem; }

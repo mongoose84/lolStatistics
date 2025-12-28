@@ -1516,7 +1516,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                         ELSE 'late'
                     END as DurationBucket,
                     COUNT(*) as GamesPlayed,
-                    SUM(CASE WHEN p0.Win THEN 1 ELSE 0 END) as Wins
+                    SUM(CASE WHEN p0.Win = 1 THEN 1 ELSE 0 END) as Wins
                 FROM LolMatchParticipant p0
                 {string.Join("", joinClauses)}
                 INNER JOIN LolMatch m ON p0.MatchId = m.MatchId
@@ -1588,7 +1588,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 SELECT
                     {string.Join(", ", selectColumns)},
                     COUNT(*) as GamesPlayed,
-                    SUM(CASE WHEN p0.Win THEN 1 ELSE 0 END) as Wins
+                    SUM(CASE WHEN p0.Win = 1 THEN 1 ELSE 0 END) as Wins
                 FROM LolMatchParticipant p0
                 {string.Join("", joinClauses)}
                 INNER JOIN LolMatch m ON p0.MatchId = m.MatchId

@@ -29,11 +29,14 @@ public class TeamWinRateTrendEndpoint : IEndpoint
                 var puuIds = await userGamerRepo.GetGamersPuuIdByUserIdAsync(userIdInt);
                 var distinctPuuIds = (puuIds ?? []).Distinct().ToArray();
 
+                Console.WriteLine($"[TeamWinRateTrend] userId={userIdInt}, puuIds count={distinctPuuIds.Length}");
+
                 if (distinctPuuIds.Length < 3)
                 {
                     return Results.BadRequest("Team analytics requires at least 3 players.");
                 }
                 var matchResults = await participantRepo.GetTeamMatchResultsByPuuIdsAsync(distinctPuuIds, 50);
+                Console.WriteLine($"[TeamWinRateTrend] matchResults count={matchResults.Count}");
 
                 if (matchResults.Count == 0)
                 {

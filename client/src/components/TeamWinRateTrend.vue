@@ -2,7 +2,10 @@
   <div class="team-trend-container">
     <div v-if="loading" class="trend-loading">Loading win rate trend…</div>
     <div v-else-if="error" class="trend-error">{{ error }}</div>
-    <div v-else-if="!hasData" class="trend-empty">Not enough data for trend analysis.</div>
+    <div v-else-if="!hasData" class="trend-empty">
+      Not enough data for trend analysis.
+      <span class="requirement-hint">(Minimum: 1 game where all team members played together)</span>
+    </div>
 
     <ChartCard v-else title="📈 Win Rate Trend">
       <div class="trend-content">
@@ -119,6 +122,7 @@ onMounted(load);
 .team-trend-container { width: 100%; }
 .trend-loading, .trend-error, .trend-empty { padding: 2rem; text-align: center; color: var(--color-text-muted); }
 .trend-error { color: var(--color-danger); }
+.trend-empty .requirement-hint { display: block; margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7; }
 .trend-content { padding: 0.5rem 0; display: flex; flex-direction: column; gap: 1rem; }
 .trend-indicator { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
 .trend-arrow { font-size: 1.5rem; }
