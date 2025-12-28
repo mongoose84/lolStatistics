@@ -50,14 +50,16 @@
                     {{ server.winrate.toFixed(0) }}
                   </text>
                 </g>
-                <!-- Champion name label below the group -->
-                <text
-                  :x="getChampionLabelX(champIndex, champ.servers.length)"
-                  :y="chartHeight - padding.bottom + 16"
-                  text-anchor="middle"
-                  class="champion-label">
-                  {{ champ.championName }}
-                </text>
+                <!-- Champion image below the group -->
+                <image
+                  :x="getChampionLabelX(champIndex, champ.servers.length) - 20"
+                  :y="chartHeight - padding.bottom + 4"
+                  width="40"
+                  height="40"
+                  :href="getChampionImageUrl(champ.championName)"
+                  class="champion-image"
+                  :aria-label="champ.championName"
+                />
               </g>
             </g>
 
@@ -105,7 +107,7 @@ const hoveredBar = ref(null);
 // Chart dimensions - match RadarChart aspect ratio (400x400)
 const chartWidth = 600;
 const chartHeight = 400;
-const padding = { top: 20, right: 20, bottom: 60, left: 50 };
+const padding = { top: 20, right: 20, bottom: 70, left: 50 }; // Increased bottom padding for champion images
 const barWidth = 35;
 const barGap = 5; // Gap between bars in a group
 const groupGap = 20; // Gap between champion groups
@@ -139,8 +141,13 @@ const gamerNames = computed(() => {
       }
     });
   });
-  // Sort to ensure EUW comes before EUNE for consistent color mapping
-  return Array.from(names).sort();
+  // Sort to ensure EUNE comes first, then EUW for consistent color mapping
+  return Array.from(names).sort((a, b) => {
+    // EUNE should come before EUW
+    if (a.includes('EUNE') && b.includes('EUW')) return -1;
+    if (a.includes('EUW') && b.includes('EUNE')) return 1;
+    return a.localeCompare(b);
+  });
 });
 
 // Chart helper functions
@@ -216,6 +223,16 @@ function getServerColor(serverName) {
 
 function setHoveredBar(championName, server) {
   hoveredBar.value = { championName, server };
+}
+
+// Get champion image URL from Data Dragon CDN
+// Using the latest version (14.24.1) - you may want to make this dynamic
+function getChampionImageUrl(championName) {
+  // Data Dragon uses specific champion keys that sometimes differ from display names
+  // Most champions use their name, but some have special cases
+  const championKey = championName.replace(/['\s]/g, ''); // Remove apostrophes and spaces
+  const version = '14.24.1'; // Latest LoL version
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${championKey}.png`;
 }
 
 // Load data
@@ -304,6 +321,16 @@ onMounted(load);
   fill: var(--color-text);
   font-size: 12px;
   font-weight: 600;
+}
+
+.champion-image {
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.champion-image:hover {
+  transform: scale(1.1);
 }
 
 .winrate-label {

@@ -155,16 +155,17 @@ describe('ChampionPerformanceSplit', () => {
 
     await flushPromises()
 
-    // Should have champion labels for top 5
-    const championLabels = wrapper.findAll('.champion-label')
-    expect(championLabels.length).toBe(5)
-    
+    // Should have champion images for top 5
+    const championImages = wrapper.findAll('.champion-image')
+    expect(championImages.length).toBe(5)
+
     // Top 5 by total games: Jinx (95), Caitlyn (78), Ashe (65), Vayne (53), Ezreal (42)
-    expect(championLabels[0].text()).toBe('Jinx')
-    expect(championLabels[1].text()).toBe('Caitlyn')
-    expect(championLabels[2].text()).toBe('Ashe')
-    expect(championLabels[3].text()).toBe('Vayne')
-    expect(championLabels[4].text()).toBe('Ezreal')
+    // Check that images have correct aria-labels
+    expect(championImages[0].attributes('aria-label')).toBe('Jinx')
+    expect(championImages[1].attributes('aria-label')).toBe('Caitlyn')
+    expect(championImages[2].attributes('aria-label')).toBe('Ashe')
+    expect(championImages[3].attributes('aria-label')).toBe('Vayne')
+    expect(championImages[4].attributes('aria-label')).toBe('Ezreal')
   })
 
   it('renders grouped bars for each champion', async () => {
@@ -337,5 +338,25 @@ describe('ChampionPerformanceSplit', () => {
     // Note: We can't easily test CSS variables in tests, but we can verify the structure exists
     expect(legendRects[0].attributes('fill')).toBeDefined()
     expect(legendRects[1].attributes('fill')).toBeDefined()
+  })
+
+  it('renders champion images with correct URLs', async () => {
+    const wrapper = mount(ChampionPerformanceSplit, {
+      props: { userId: 1 },
+      global: {
+        stubs: { ChartCard: { template: '<div><slot /></div>' } }
+      }
+    })
+
+    await flushPromises()
+
+    const championImages = wrapper.findAll('.champion-image')
+    expect(championImages.length).toBe(5)
+
+    // Check that images have correct Data Dragon URLs
+    expect(championImages[0].attributes('href')).toContain('ddragon.leagueoflegends.com')
+    expect(championImages[0].attributes('href')).toContain('Jinx.png')
+    expect(championImages[1].attributes('href')).toContain('Caitlyn.png')
+    expect(championImages[2].attributes('href')).toContain('Ashe.png')
   })
 })
