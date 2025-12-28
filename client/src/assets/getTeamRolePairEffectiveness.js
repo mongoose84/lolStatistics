@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getBaseApi } from './getHost.js';
 
 /**
  * Fetch team role pair effectiveness data for a user.
@@ -6,7 +7,8 @@ import axios from 'axios';
  * @returns {Promise<Object>} The role pair effectiveness data.
  */
 export default async function getTeamRolePairEffectiveness(userId) {
-  const response = await axios.get(`/api/v1.0/team-role-pair-effectiveness/${userId}`);
+  const base = getBaseApi();
+  const response = await axios.get(`${base}/team-role-pair-effectiveness/${userId}`);
   return response.data;
 }
 

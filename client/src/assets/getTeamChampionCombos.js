@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getBaseApi } from './getHost.js';
 
 /**
  * Fetch best team champion combinations for a user.
@@ -6,7 +7,8 @@ import axios from 'axios';
  * @returns {Promise<Object>} The team champion combos data.
  */
 export default async function getTeamChampionCombos(userId) {
-  const response = await axios.get(`/api/v1.0/team-champion-combos/${userId}`);
+  const base = getBaseApi();
+  const response = await axios.get(`${base}/team-champion-combos/${userId}`);
   return response.data;
 }
 

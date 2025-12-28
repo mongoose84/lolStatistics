@@ -1570,7 +1570,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
 
             // Build join clauses and select columns for all team members
             var joinClauses = new List<string>();
-            var selectColumns = new List<string> { "p0.Puuid as Puuid0", "p0.ChampionId as ChampionId0", "p0.ChampionName as ChampionName0", "p0.RiotIdGameName as GameName0" };
+            var selectColumns = new List<string> { "p0.Puuid as Puuid0", "p0.ChampionId as ChampionId0", "p0.ChampionName as ChampionName0" };
             for (int i = 1; i < puuIds.Length; i++)
             {
                 joinClauses.Add($@"
@@ -1581,7 +1581,6 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 selectColumns.Add($"p{i}.Puuid as Puuid{i}");
                 selectColumns.Add($"p{i}.ChampionId as ChampionId{i}");
                 selectColumns.Add($"p{i}.ChampionName as ChampionName{i}");
-                selectColumns.Add($"p{i}.RiotIdGameName as GameName{i}");
             }
 
             var sql = $@"
@@ -1601,8 +1600,8 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 sql += " AND m.GameMode = @gameMode";
             }
 
-            // Group by all champion IDs
-            var groupByColumns = Enumerable.Range(0, puuIds.Length).Select(i => $"p{i}.ChampionId, p{i}.ChampionName, p{i}.RiotIdGameName, p{i}.Puuid");
+            // Group by all champion IDs and Puuids
+            var groupByColumns = Enumerable.Range(0, puuIds.Length).Select(i => $"p{i}.ChampionId, p{i}.ChampionName, p{i}.Puuid");
             sql += $" GROUP BY {string.Join(", ", groupByColumns)}";
             sql += " HAVING COUNT(*) >= 2"; // Only show combos played at least twice
             sql += " ORDER BY Wins DESC, GamesPlayed DESC LIMIT @limit";
@@ -1622,6 +1621,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
+                // GameName is looked up separately in the endpoint from the Gamer table
                 var champions = new List<(string Puuid, int ChampionId, string ChampionName, string GameName)>();
                 for (int i = 0; i < puuIds.Length; i++)
                 {
@@ -1629,7 +1629,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                         reader.GetString($"Puuid{i}"),
                         reader.GetInt32($"ChampionId{i}"),
                         reader.GetString($"ChampionName{i}"),
-                        reader.IsDBNull(reader.GetOrdinal($"GameName{i}")) ? "" : reader.GetString($"GameName{i}")
+                        "" // GameName is populated by endpoint using gamerNames lookup
                     ));
                 }
 
