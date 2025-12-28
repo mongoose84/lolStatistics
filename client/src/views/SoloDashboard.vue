@@ -40,10 +40,11 @@
             </div>
           </div>
 
-          <!-- New Row: Role Distribution and Death Efficiency -->
+          <!-- New Row: Role Distribution, Death Efficiency, and Match Duration -->
           <div class="new-cards-section">
             <RoleDistribution :userId="userId" />
             <DeathEfficiency :userId="userId" />
+            <MatchDuration :userId="userId" />
           </div>
         </template>
       </GamerCardsList>
@@ -61,6 +62,7 @@ import RadarChart from '@/components/RadarChart.vue';
 import ChampionPerformanceSplit from '@/components/ChampionPerformanceSplit.vue';
 import RoleDistribution from '@/components/RoleDistribution.vue';
 import DeathEfficiency from '@/components/DeathEfficiency.vue';
+import MatchDuration from '@/components/MatchDuration.vue';
 import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----

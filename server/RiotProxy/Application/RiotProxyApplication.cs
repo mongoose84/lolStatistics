@@ -39,6 +39,9 @@ namespace RiotProxy.Application
 
             var roleDistributionEndpoint = new RoleDistributionEndpoint(_basePath);
             _endpoints.Add(roleDistributionEndpoint);
+
+            var matchDurationEndpoint = new MatchDurationEndpoint(_basePath);
+            _endpoints.Add(matchDurationEndpoint);
         }
 
         public void ConfigureEndpoints()
