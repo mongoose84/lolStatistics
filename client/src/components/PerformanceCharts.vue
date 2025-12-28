@@ -242,6 +242,18 @@ const winrateXTicks = computed(() => {
       ticks.push({ x, label });
     }
   }
+
+  // Always add the last game date as the final tick if not already included
+  const lastPointIndex = points.length - 1;
+  const lastIntervalIndex = Math.floor(lastPointIndex / interval);
+  const lastTickIntervalIndex = Math.floor((nIntervals - 1) / tickStep) * tickStep;
+
+  if (lastIntervalIndex !== lastTickIntervalIndex && points.length > 0) {
+    const x = padding.left + plotWidth; // Rightmost position
+    const label = formatDate(points[lastPointIndex].gameEndTimestamp);
+    ticks.push({ x, label });
+  }
+
   return ticks;
 });
 
@@ -272,6 +284,18 @@ const econIntervalXTicks = computed(() => {
       ticks.push({ x, label });
     }
   }
+
+  // Always add the last game date as the final tick if not already included
+  const lastPointIndex = points.length - 1;
+  const lastIntervalIndex = Math.floor(lastPointIndex / interval);
+  const lastTickIntervalIndex = Math.floor((nIntervals - 1) / tickStep) * tickStep;
+
+  if (lastIntervalIndex !== lastTickIntervalIndex && points.length > 0) {
+    const x = padding.left + plotWidth; // Rightmost position
+    const label = formatDate(points[lastPointIndex].gameEndTimestamp);
+    ticks.push({ x, label });
+  }
+
   return ticks;
 });
 
@@ -410,6 +434,18 @@ async function load() {
     console.log('Loading performance data with period:', period.value);
     filteredPerformanceData.value = await getPerformance(props.userId, period.value);
     console.log('Loaded data:', filteredPerformanceData.value);
+
+    // Debug: Log date range for each gamer
+    if (filteredPerformanceData.value?.gamers) {
+      filteredPerformanceData.value.gamers.forEach(gamer => {
+        const points = gamer.dataPoints || [];
+        if (points.length > 0) {
+          const firstDate = points[0].gameEndTimestamp;
+          const lastDate = points[points.length - 1].gameEndTimestamp;
+          console.log(`${gamer.gamerName}: ${points.length} games from ${firstDate} to ${lastDate}`);
+        }
+      });
+    }
   } catch (e) {
     console.error('Error loading performance data:', e);
     error.value = e?.message || 'Failed to load performance data.';

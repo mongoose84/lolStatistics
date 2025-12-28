@@ -152,18 +152,20 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             if (limit.HasValue)
             {
                 // Get the latest N matches ordered chronologically (oldest to newest)
+                // Using a subquery to first get the most recent N matches, then order them chronologically
                 sql = @"
-                    SELECT
-                        p.Win,
-                        p.GoldEarned,
-                        p.CreepScore,
-                        m.DurationSeconds,
-                        m.GameEndTimestamp
-                    FROM LolMatchParticipant p
-                    INNER JOIN LolMatch m ON p.MatchId = m.MatchId
-                    WHERE p.Puuid = @puuid
-                      AND m.InfoFetched = TRUE
-                      AND m.DurationSeconds > 0";
+                    SELECT * FROM (
+                        SELECT
+                            p.Win,
+                            p.GoldEarned,
+                            p.CreepScore,
+                            m.DurationSeconds,
+                            m.GameEndTimestamp
+                        FROM LolMatchParticipant p
+                        INNER JOIN LolMatch m ON p.MatchId = m.MatchId
+                        WHERE p.Puuid = @puuid
+                          AND m.InfoFetched = TRUE
+                          AND m.DurationSeconds > 0";
 
                 if (fromDate.HasValue)
                 {
@@ -171,8 +173,10 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 }
 
                 sql += @"
-                    ORDER BY m.GameEndTimestamp DESC
-                    LIMIT @limit";
+                        ORDER BY m.GameEndTimestamp DESC
+                        LIMIT @limit
+                    ) AS recent_matches
+                    ORDER BY GameEndTimestamp ASC";
             }
             else
             {
@@ -224,12 +228,8 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 ));
             }
 
-            // If we used LIMIT with DESC order, reverse the list to get chronological order (oldest to newest)
-            if (limit.HasValue)
-            {
-                records.Reverse();
-            }
-
+            // No need to reverse - the SQL query now handles ordering correctly
+            // Both limited and unlimited queries return results in chronological order (oldest to newest)
             return records;
         }
     }
