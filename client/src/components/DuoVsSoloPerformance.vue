@@ -12,104 +12,104 @@
     <div v-else class="charts-grid">
       <!-- Winrate Chart -->
       <ChartCard title="Win Rate %">
-        <div class="chart-container">
-          <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="Win rate comparison">
-            <!-- Y-axis grid lines and labels (0% to 100%) -->
-            <g class="grid">
-              <line v-for="y in [0, 25, 50, 75, 100]" :key="'wr-grid-' + y"
-                :x1="padding.left" :x2="chartWidth - padding.right"
-                :y1="getY(y)" :y2="getY(y)" />
-            </g>
-            <g class="y-labels">
-              <text v-for="label in [100, 75, 50, 25, 0]" :key="'wr-y-' + label"
-                :x="padding.left - 8" :y="getY(label)" text-anchor="end" dominant-baseline="middle">
-                {{ label }}
-              </text>
-            </g>
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="Win rate comparison">
+          <!-- Y-axis grid lines and labels (0% to 100%) -->
+          <g class="grid">
+            <line v-for="y in [0, 25, 50, 75, 100]" :key="'wr-grid-' + y"
+              :x1="padding.left" :x2="chartWidth - padding.right"
+              :y1="getY(y)" :y2="getY(y)" />
+          </g>
+          <g class="y-labels">
+            <text v-for="label in [100, 75, 50, 25, 0]" :key="'wr-y-' + label"
+              :x="padding.left - 8" :y="getY(label)" text-anchor="end" dominant-baseline="middle">
+              {{ label }}
+            </text>
+          </g>
 
-            <!-- Bars -->
-            <g class="bars">
-              <rect v-for="(bar, i) in winRateBars" :key="'wr-bar-' + i"
-                :x="bar.x" :y="bar.y" :width="bar.width" :height="bar.height"
-                :fill="bar.color" rx="3"
-                @mouseenter="showTooltip($event, bar.value, '%', bar.label)"
-                @mousemove="moveTooltip($event)"
-                @mouseleave="hideTooltip" />
-            </g>
-          </svg>
-          <div v-if="tooltip.visible" class="chart-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-            <div class="tooltip-label">{{ tooltip.label }}</div>
-            <div class="tooltip-value">{{ tooltip.value }}{{ tooltip.unit }}</div>
-          </div>
-        </div>
+          <!-- Bars -->
+          <g class="bars">
+            <rect v-for="(bar, i) in winRateBars" :key="'wr-bar-' + i"
+              :x="bar.x" :y="bar.y" :width="bar.width" :height="bar.height"
+              :fill="bar.color" rx="3" />
+          </g>
+
+          <!-- Value labels inside bars -->
+          <g class="bar-labels">
+            <text v-for="(bar, i) in winRateBars" :key="'wr-label-' + i"
+              :x="bar.x + bar.width / 2" :y="bar.y + 12"
+              text-anchor="middle" class="bar-value-text">
+              {{ bar.value }}%
+            </text>
+          </g>
+        </svg>
       </ChartCard>
 
       <!-- Gold/min Chart -->
       <ChartCard title="Gold/min">
-        <div class="chart-container">
-          <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="Gold per minute comparison">
-            <!-- Y-axis grid lines and labels -->
-            <g class="grid">
-              <line v-for="y in goldYTicks" :key="'gold-grid-' + y"
-                :x1="padding.left" :x2="chartWidth - padding.right"
-                :y1="getY(y, maxGold)" :y2="getY(y, maxGold)" />
-            </g>
-            <g class="y-labels">
-              <text v-for="label in goldYTicks" :key="'gold-y-' + label"
-                :x="padding.left - 8" :y="getY(label, maxGold)" text-anchor="end" dominant-baseline="middle">
-                {{ Math.round(label) }}
-              </text>
-            </g>
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="Gold per minute comparison">
+          <!-- Y-axis grid lines and labels -->
+          <g class="grid">
+            <line v-for="y in goldYTicks" :key="'gold-grid-' + y"
+              :x1="padding.left" :x2="chartWidth - padding.right"
+              :y1="getY(y, maxGold)" :y2="getY(y, maxGold)" />
+          </g>
+          <g class="y-labels">
+            <text v-for="label in goldYTicks" :key="'gold-y-' + label"
+              :x="padding.left - 8" :y="getY(label, maxGold)" text-anchor="end" dominant-baseline="middle">
+              {{ Math.round(label) }}
+            </text>
+          </g>
 
-            <!-- Bars -->
-            <g class="bars">
-              <rect v-for="(bar, i) in goldBars" :key="'gold-bar-' + i"
-                :x="bar.x" :y="bar.y" :width="bar.width" :height="bar.height"
-                :fill="bar.color" rx="3"
-                @mouseenter="showTooltip($event, bar.value, ' gold/min', bar.label)"
-                @mousemove="moveTooltip($event)"
-                @mouseleave="hideTooltip" />
-            </g>
-          </svg>
-          <div v-if="tooltip.visible" class="chart-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-            <div class="tooltip-label">{{ tooltip.label }}</div>
-            <div class="tooltip-value">{{ tooltip.value }}{{ tooltip.unit }}</div>
-          </div>
-        </div>
+          <!-- Bars -->
+          <g class="bars">
+            <rect v-for="(bar, i) in goldBars" :key="'gold-bar-' + i"
+              :x="bar.x" :y="bar.y" :width="bar.width" :height="bar.height"
+              :fill="bar.color" rx="3" />
+          </g>
+
+          <!-- Value labels inside bars -->
+          <g class="bar-labels">
+            <text v-for="(bar, i) in goldBars" :key="'gold-label-' + i"
+              :x="bar.x + bar.width / 2" :y="bar.y + 12"
+              text-anchor="middle" class="bar-value-text">
+              {{ bar.value }}
+            </text>
+          </g>
+        </svg>
       </ChartCard>
 
       <!-- KDA Chart -->
       <ChartCard title="KDA">
-        <div class="chart-container">
-          <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="KDA comparison">
-            <!-- Y-axis grid lines and labels -->
-            <g class="grid">
-              <line v-for="y in kdaYTicks" :key="'kda-grid-' + y"
-                :x1="padding.left" :x2="chartWidth - padding.right"
-                :y1="getY(y, maxKda)" :y2="getY(y, maxKda)" />
-            </g>
-            <g class="y-labels">
-              <text v-for="label in kdaYTicks" :key="'kda-y-' + label"
-                :x="padding.left - 8" :y="getY(label, maxKda)" text-anchor="end" dominant-baseline="middle">
-                {{ label.toFixed(1) }}
-              </text>
-            </g>
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="KDA comparison">
+          <!-- Y-axis grid lines and labels -->
+          <g class="grid">
+            <line v-for="y in kdaYTicks" :key="'kda-grid-' + y"
+              :x1="padding.left" :x2="chartWidth - padding.right"
+              :y1="getY(y, maxKda)" :y2="getY(y, maxKda)" />
+          </g>
+          <g class="y-labels">
+            <text v-for="label in kdaYTicks" :key="'kda-y-' + label"
+              :x="padding.left - 8" :y="getY(label, maxKda)" text-anchor="end" dominant-baseline="middle">
+              {{ label.toFixed(1) }}
+            </text>
+          </g>
 
-            <!-- Bars -->
-            <g class="bars">
-              <rect v-for="(bar, i) in kdaBars" :key="'kda-bar-' + i"
-                :x="bar.x" :y="bar.y" :width="bar.width" :height="bar.height"
-                :fill="bar.color" rx="3"
-                @mouseenter="showTooltip($event, bar.value, ' KDA', bar.label)"
-                @mousemove="moveTooltip($event)"
-                @mouseleave="hideTooltip" />
-            </g>
-          </svg>
-          <div v-if="tooltip.visible" class="chart-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-            <div class="tooltip-label">{{ tooltip.label }}</div>
-            <div class="tooltip-value">{{ tooltip.value }}{{ tooltip.unit }}</div>
-          </div>
-        </div>
+          <!-- Bars -->
+          <g class="bars">
+            <rect v-for="(bar, i) in kdaBars" :key="'kda-bar-' + i"
+              :x="bar.x" :y="bar.y" :width="bar.width" :height="bar.height"
+              :fill="bar.color" rx="3" />
+          </g>
+
+          <!-- Value labels inside bars -->
+          <g class="bar-labels">
+            <text v-for="(bar, i) in kdaBars" :key="'kda-label-' + i"
+              :x="bar.x + bar.width / 2" :y="bar.y + 12"
+              text-anchor="middle" class="bar-value-text">
+              {{ bar.value }}
+            </text>
+          </g>
+        </svg>
       </ChartCard>
     </div>
 
@@ -151,16 +151,6 @@ const loading = ref(false);
 const error = ref(null);
 const performanceData = ref(null);
 
-// Tooltip state
-const tooltip = ref({
-  visible: false,
-  x: 0,
-  y: 0,
-  value: '',
-  unit: '',
-  label: ''
-});
-
 // Chart dimensions
 const chartWidth = 320;
 const chartHeight = 180;
@@ -182,25 +172,6 @@ function getY(value, max = 100) {
 // Gamer names for legend
 const gamer1Name = computed(() => props.gamers?.[0]?.gamerName || 'Player 1');
 const gamer2Name = computed(() => props.gamers?.[1]?.gamerName || 'Player 2');
-
-// Tooltip functions
-function showTooltip(event, value, unit, label) {
-  tooltip.value.visible = true;
-  tooltip.value.value = value;
-  tooltip.value.unit = unit;
-  tooltip.value.label = label;
-  moveTooltip(event);
-}
-
-function moveTooltip(event) {
-  const rect = event.target.closest('.chart-container').getBoundingClientRect();
-  tooltip.value.x = event.clientX - rect.left + 10;
-  tooltip.value.y = event.clientY - rect.top - 10;
-}
-
-function hideTooltip() {
-  tooltip.value.visible = false;
-}
 
 // Win rate bars
 const winRateBars = computed(() => {
@@ -461,11 +432,7 @@ defineExpose({ load });
   gap: 1rem;
 }
 
-.chart-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
+
 
 .bar-chart {
   width: 100%;
@@ -499,38 +466,13 @@ defineExpose({ load });
   transition: opacity 0.2s ease;
 }
 
-.bar-chart .bars rect {
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.bar-chart .bars rect:hover {
-  opacity: 0.8;
-}
-
-/* Tooltip */
-.chart-tooltip {
-  position: absolute;
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  pointer-events: none;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  white-space: nowrap;
-}
-
-.tooltip-label {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  margin-bottom: 0.25rem;
-}
-
-.tooltip-value {
-  font-size: 1rem;
+/* Bar value labels */
+.bar-value-text {
+  font-size: 11px;
   font-weight: 600;
-  color: var(--color-text);
+  fill: white;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* Legend */
