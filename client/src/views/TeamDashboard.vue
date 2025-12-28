@@ -53,33 +53,33 @@
             <TeamDurationAnalysis :userId="userId" />
           </div>
 
-          <!-- Synergy & Role Composition (Two-column layout) -->
-          <div class="team-features-grid">
-            <TeamSynergyMatrix :userId="userId" />
-            <TeamRoleComposition :userId="userId" />
-          </div>
-
-          <!-- Role Pair Effectiveness & Champion Combos (Two-column layout) -->
-          <div class="team-features-grid">
-            <TeamRolePairEffectiveness :userId="userId" />
-            <TeamChampionCombos :userId="userId" />
-          </div>
-
-          <!-- Death Analysis Section (Two-column layout) -->
-          <div class="team-features-grid">
-            <TeamDeathTimerImpact :userId="userId" />
-            <TeamDeathsByDuration :userId="userId" />
-          </div>
-
-          <!-- Death Share & Trend (Two-column layout) -->
-          <div class="team-features-grid">
-            <TeamDeathShare :userId="userId" />
-            <TeamDeathsTrend :userId="userId" />
-          </div>
-
-          <!-- Performance Chart (Full width) -->
+          <!-- Synergy Matrix (Full width) -->
           <div class="team-performance-section">
-            <TeamPerformanceChart :userId="userId" />
+            <TeamSynergyMatrix :userId="userId" />
+          </div>
+
+          <!-- Role Distribution, Role Pair Effectiveness & Individual Performance (Three-column layout) -->
+          <div class="team-features-grid-3">
+            <TeamRoleComposition :userId="userId" />
+            <TeamRolePairEffectiveness :userId="userId" />
+            <TeamPerformanceChart :userId="userId" class="compact-performance" />
+          </div>
+
+          <!-- Champion Combos & Death Timer Impact (Two-column layout) -->
+          <div class="team-features-grid">
+            <TeamChampionCombos :userId="userId" />
+            <TeamDeathTimerImpact :userId="userId" />
+          </div>
+
+          <!-- Deaths by Duration & Death Share (Two-column layout) -->
+          <div class="team-features-grid">
+            <TeamDeathsByDuration :userId="userId" />
+            <TeamDeathShare :userId="userId" />
+          </div>
+
+          <!-- Deaths Trend (Full width) -->
+          <div class="team-performance-section">
+            <TeamDeathsTrend :userId="userId" />
           </div>
 
           <!-- Improvement Summary (Full width) -->
@@ -308,6 +308,42 @@ defineExpose({ load });
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  align-items: stretch;
+}
+
+.team-features-grid > * {
+  height: 100%;
+}
+
+.team-features-grid :deep(.chart-card) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-features-grid :deep(.chart-card > div:last-child) {
+  flex: 1;
+}
+
+.team-features-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.team-features-grid-3 > * {
+  height: 100%;
+}
+
+.team-features-grid-3 :deep(.chart-card) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-features-grid-3 :deep(.chart-card > div:last-child) {
+  flex: 1;
 }
 
 .team-performance-section,
@@ -321,8 +357,17 @@ defineExpose({ load });
 }
 
 /* Mobile responsiveness */
+@media (max-width: 1200px) {
+  .team-features-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .team-features-grid {
+    grid-template-columns: 1fr;
+  }
+  .team-features-grid-3 {
     grid-template-columns: 1fr;
   }
 }
@@ -339,5 +384,19 @@ defineExpose({ load });
   .context-stat {
     font-size: 0.8rem;
   }
+}
+
+/* Compact performance chart when in grid */
+.compact-performance :deep(.performance-content) {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.compact-performance :deep(.player-row) {
+  padding: 0.4rem 0;
+}
+
+.compact-performance :deep(.metric-bars) {
+  gap: 0.2rem;
 }
 </style>
