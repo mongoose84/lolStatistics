@@ -46,6 +46,9 @@
 
         <!-- Fallback: Show regular gamer cards list if not exactly 2 gamers -->
         <GamerCardsList v-else :gamers="gamers" />
+
+        <!-- Duo vs Solo Performance Charts -->
+        <DuoVsSoloPerformance v-if="gamers.length === 2" :userId="userId" />
       </template>
     </div>
   </section>
@@ -59,6 +62,7 @@ import GamerCardsList from '@/components/GamerCardsList.vue';
 import GamerCard from '@/views/GamerCard.vue';
 import AppLogo from '@/components/AppLogo.vue';
 import getDuoStats from '@/assets/getDuoStats.js';
+import DuoVsSoloPerformance from '@/components/DuoVsSoloPerformance.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({
