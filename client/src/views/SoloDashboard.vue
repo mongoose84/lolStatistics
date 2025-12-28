@@ -39,6 +39,11 @@
               <ChampionPerformanceSplit :userId="userId" />
             </div>
           </div>
+
+          <!-- New Row: Role Distribution -->
+          <div class="new-cards-section">
+            <RoleDistribution :userId="userId" />
+          </div>
         </template>
       </GamerCardsList>
     </div>
@@ -53,6 +58,7 @@ import PerformanceCharts from '@/components/PerformanceCharts.vue';
 import ComparisonStrip from './ComparisonStrip.vue';
 import RadarChart from '@/components/RadarChart.vue';
 import ChampionPerformanceSplit from '@/components/ChampionPerformanceSplit.vue';
+import RoleDistribution from '@/components/RoleDistribution.vue';
 import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
@@ -153,6 +159,15 @@ defineExpose({ load });
   min-width: 0; /* Allow flex items to shrink below content size */
 }
 
+/* New cards section - single row below radar and champion */
+.new-cards-section {
+  margin-top: 1.2rem;
+  display: flex;
+  gap: 1.2rem;
+  width: 100%;
+  align-items: flex-start;
+}
+
 /* Responsive: stack vertically on smaller screens */
 @media (max-width: 1200px) {
   .radar-champion-section {
@@ -162,6 +177,10 @@ defineExpose({ load });
   .radar-wrapper,
   .champion-wrapper {
     width: 100%;
+  }
+
+  .new-cards-section {
+    flex-direction: column;
   }
 }
 </style>

@@ -36,6 +36,9 @@ namespace RiotProxy.Application
 
             var championPerformanceEndpoint = new ChampionPerformanceEndpoint(_basePath);
             _endpoints.Add(championPerformanceEndpoint);
+
+            var roleDistributionEndpoint = new RoleDistributionEndpoint(_basePath);
+            _endpoints.Add(roleDistributionEndpoint);
         }
 
         public void ConfigureEndpoints()
