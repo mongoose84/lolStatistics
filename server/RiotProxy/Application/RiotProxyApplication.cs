@@ -88,6 +88,18 @@ namespace RiotProxy.Application
 
             var teamImprovementSummaryEndpoint = new TeamImprovementSummaryEndpoint(_basePath);
             _endpoints.Add(teamImprovementSummaryEndpoint);
+
+            var teamWinRateTrendEndpoint = new TeamWinRateTrendEndpoint(_basePath);
+            _endpoints.Add(teamWinRateTrendEndpoint);
+
+            var teamDurationAnalysisEndpoint = new TeamDurationAnalysisEndpoint(_basePath);
+            _endpoints.Add(teamDurationAnalysisEndpoint);
+
+            var teamChampionCombosEndpoint = new TeamChampionCombosEndpoint(_basePath);
+            _endpoints.Add(teamChampionCombosEndpoint);
+
+            var teamRolePairEffectivenessEndpoint = new TeamRolePairEffectivenessEndpoint(_basePath);
+            _endpoints.Add(teamRolePairEffectivenessEndpoint);
         }
 
         public void ConfigureEndpoints()

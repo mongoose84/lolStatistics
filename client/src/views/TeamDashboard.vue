@@ -47,10 +47,22 @@
 
         <!-- Team Features Container -->
         <div v-if="gamers.length >= 3" class="team-features-container">
+          <!-- Win Rate Trend & Duration Analysis (Two-column layout) -->
+          <div class="team-features-grid">
+            <TeamWinRateTrend :userId="userId" />
+            <TeamDurationAnalysis :userId="userId" />
+          </div>
+
           <!-- Synergy & Role Composition (Two-column layout) -->
           <div class="team-features-grid">
             <TeamSynergyMatrix :userId="userId" />
             <TeamRoleComposition :userId="userId" />
+          </div>
+
+          <!-- Role Pair Effectiveness & Champion Combos (Two-column layout) -->
+          <div class="team-features-grid">
+            <TeamRolePairEffectiveness :userId="userId" />
+            <TeamChampionCombos :userId="userId" />
           </div>
 
           <!-- Performance Chart (Full width) -->
@@ -80,6 +92,10 @@ import TeamSynergyMatrix from '@/components/TeamSynergyMatrix.vue';
 import TeamRoleComposition from '@/components/TeamRoleComposition.vue';
 import TeamPerformanceChart from '@/components/TeamPerformanceChart.vue';
 import TeamImprovementSummary from '@/components/TeamImprovementSummary.vue';
+import TeamWinRateTrend from '@/components/TeamWinRateTrend.vue';
+import TeamDurationAnalysis from '@/components/TeamDurationAnalysis.vue';
+import TeamChampionCombos from '@/components/TeamChampionCombos.vue';
+import TeamRolePairEffectiveness from '@/components/TeamRolePairEffectiveness.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({

@@ -1415,6 +1415,341 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
 
             return null;
         }
+
+        /// <summary>
+        /// Get team match results for win rate trend analysis.
+        /// </summary>
+        internal async Task<IList<TeamMatchResultRecord>> GetTeamMatchResultsByPuuIdsAsync(string[] puuIds, int limit = 50, string? gameMode = null)
+        {
+            if (puuIds == null || puuIds.Length < 3)
+            {
+                return new List<TeamMatchResultRecord>();
+            }
+
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Build join clauses for all team members
+            var joinClauses = new List<string>();
+            for (int i = 1; i < puuIds.Length; i++)
+            {
+                joinClauses.Add($@"
+                    INNER JOIN LolMatchParticipant p{i}
+                        ON p0.MatchId = p{i}.MatchId
+                        AND p0.TeamId = p{i}.TeamId
+                        AND p{i}.Puuid = @puuid{i}");
+            }
+
+            var sql = $@"
+                SELECT
+                    m.MatchId,
+                    p0.Win,
+                    m.GameEndTimestamp
+                FROM LolMatchParticipant p0
+                {string.Join("", joinClauses)}
+                INNER JOIN LolMatch m ON p0.MatchId = m.MatchId
+                WHERE p0.Puuid = @puuid0
+                  AND m.InfoFetched = TRUE
+                  AND m.DurationSeconds > 0";
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                sql += " AND m.GameMode = @gameMode";
+            }
+
+            sql += " ORDER BY m.GameEndTimestamp DESC LIMIT @limit";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            for (int i = 0; i < puuIds.Length; i++)
+            {
+                cmd.Parameters.AddWithValue($"@puuid{i}", puuIds[i]);
+            }
+            cmd.Parameters.AddWithValue("@limit", limit);
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                cmd.Parameters.AddWithValue("@gameMode", gameMode);
+            }
+
+            var results = new List<TeamMatchResultRecord>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                results.Add(new TeamMatchResultRecord(
+                    MatchId: reader.GetString("MatchId"),
+                    Win: reader.GetBoolean("Win"),
+                    GameEndTimestamp: reader.GetDateTime("GameEndTimestamp")
+                ));
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Get team game duration statistics for duration analysis.
+        /// </summary>
+        internal async Task<IList<TeamDurationRecord>> GetTeamDurationStatsByPuuIdsAsync(string[] puuIds, string? gameMode = null)
+        {
+            if (puuIds == null || puuIds.Length < 3)
+            {
+                return new List<TeamDurationRecord>();
+            }
+
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Build join clauses for all team members
+            var joinClauses = new List<string>();
+            for (int i = 1; i < puuIds.Length; i++)
+            {
+                joinClauses.Add($@"
+                    INNER JOIN LolMatchParticipant p{i}
+                        ON p0.MatchId = p{i}.MatchId
+                        AND p0.TeamId = p{i}.TeamId
+                        AND p{i}.Puuid = @puuid{i}");
+            }
+
+            var sql = $@"
+                SELECT
+                    CASE
+                        WHEN m.DurationSeconds < 1500 THEN 'early'
+                        WHEN m.DurationSeconds < 2100 THEN 'mid'
+                        ELSE 'late'
+                    END as DurationBucket,
+                    COUNT(*) as GamesPlayed,
+                    SUM(CASE WHEN p0.Win THEN 1 ELSE 0 END) as Wins
+                FROM LolMatchParticipant p0
+                {string.Join("", joinClauses)}
+                INNER JOIN LolMatch m ON p0.MatchId = m.MatchId
+                WHERE p0.Puuid = @puuid0
+                  AND m.InfoFetched = TRUE
+                  AND m.DurationSeconds > 0";
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                sql += " AND m.GameMode = @gameMode";
+            }
+
+            sql += " GROUP BY DurationBucket";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            for (int i = 0; i < puuIds.Length; i++)
+            {
+                cmd.Parameters.AddWithValue($"@puuid{i}", puuIds[i]);
+            }
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                cmd.Parameters.AddWithValue("@gameMode", gameMode);
+            }
+
+            var results = new List<TeamDurationRecord>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                results.Add(new TeamDurationRecord(
+                    DurationBucket: reader.GetString("DurationBucket"),
+                    GamesPlayed: reader.GetInt32("GamesPlayed"),
+                    Wins: reader.GetInt32("Wins")
+                ));
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Get team champion combinations for combo analysis.
+        /// </summary>
+        internal async Task<IList<TeamChampionComboRecord>> GetTeamChampionCombosByPuuIdsAsync(string[] puuIds, int limit = 10, string? gameMode = null)
+        {
+            if (puuIds == null || puuIds.Length < 3)
+            {
+                return new List<TeamChampionComboRecord>();
+            }
+
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Build join clauses and select columns for all team members
+            var joinClauses = new List<string>();
+            var selectColumns = new List<string> { "p0.Puuid as Puuid0", "p0.ChampionId as ChampionId0", "p0.ChampionName as ChampionName0", "p0.RiotIdGameName as GameName0" };
+            for (int i = 1; i < puuIds.Length; i++)
+            {
+                joinClauses.Add($@"
+                    INNER JOIN LolMatchParticipant p{i}
+                        ON p0.MatchId = p{i}.MatchId
+                        AND p0.TeamId = p{i}.TeamId
+                        AND p{i}.Puuid = @puuid{i}");
+                selectColumns.Add($"p{i}.Puuid as Puuid{i}");
+                selectColumns.Add($"p{i}.ChampionId as ChampionId{i}");
+                selectColumns.Add($"p{i}.ChampionName as ChampionName{i}");
+                selectColumns.Add($"p{i}.RiotIdGameName as GameName{i}");
+            }
+
+            var sql = $@"
+                SELECT
+                    {string.Join(", ", selectColumns)},
+                    COUNT(*) as GamesPlayed,
+                    SUM(CASE WHEN p0.Win THEN 1 ELSE 0 END) as Wins
+                FROM LolMatchParticipant p0
+                {string.Join("", joinClauses)}
+                INNER JOIN LolMatch m ON p0.MatchId = m.MatchId
+                WHERE p0.Puuid = @puuid0
+                  AND m.InfoFetched = TRUE
+                  AND m.DurationSeconds > 0";
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                sql += " AND m.GameMode = @gameMode";
+            }
+
+            // Group by all champion IDs
+            var groupByColumns = Enumerable.Range(0, puuIds.Length).Select(i => $"p{i}.ChampionId, p{i}.ChampionName, p{i}.RiotIdGameName, p{i}.Puuid");
+            sql += $" GROUP BY {string.Join(", ", groupByColumns)}";
+            sql += " HAVING COUNT(*) >= 2"; // Only show combos played at least twice
+            sql += " ORDER BY Wins DESC, GamesPlayed DESC LIMIT @limit";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            for (int i = 0; i < puuIds.Length; i++)
+            {
+                cmd.Parameters.AddWithValue($"@puuid{i}", puuIds[i]);
+            }
+            cmd.Parameters.AddWithValue("@limit", limit);
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                cmd.Parameters.AddWithValue("@gameMode", gameMode);
+            }
+
+            var results = new List<TeamChampionComboRecord>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var champions = new List<(string Puuid, int ChampionId, string ChampionName, string GameName)>();
+                for (int i = 0; i < puuIds.Length; i++)
+                {
+                    champions.Add((
+                        reader.GetString($"Puuid{i}"),
+                        reader.GetInt32($"ChampionId{i}"),
+                        reader.GetString($"ChampionName{i}"),
+                        reader.IsDBNull(reader.GetOrdinal($"GameName{i}")) ? "" : reader.GetString($"GameName{i}")
+                    ));
+                }
+
+                results.Add(new TeamChampionComboRecord(
+                    Champions: champions,
+                    GamesPlayed: reader.GetInt32("GamesPlayed"),
+                    Wins: reader.GetInt32("Wins")
+                ));
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Get role pair effectiveness statistics.
+        /// </summary>
+        internal async Task<IList<TeamRolePairRecord>> GetTeamRolePairStatsByPuuIdsAsync(string[] puuIds, string? gameMode = null)
+        {
+            if (puuIds == null || puuIds.Length < 3)
+            {
+                return new List<TeamRolePairRecord>();
+            }
+
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Build join clauses for all team members
+            var joinClauses = new List<string>();
+            for (int i = 1; i < puuIds.Length; i++)
+            {
+                joinClauses.Add($@"
+                    INNER JOIN LolMatchParticipant p{i}
+                        ON p0.MatchId = p{i}.MatchId
+                        AND p0.TeamId = p{i}.TeamId
+                        AND p{i}.Puuid = @puuid{i}");
+            }
+
+            // We need to query all matches first, then aggregate role pairs in code
+            // because role pairs are dynamic based on which players filled which roles
+            var selectColumns = new List<string> { "p0.TeamPosition as Role0" };
+            for (int i = 1; i < puuIds.Length; i++)
+            {
+                selectColumns.Add($"p{i}.TeamPosition as Role{i}");
+            }
+
+            var sql = $@"
+                SELECT
+                    {string.Join(", ", selectColumns)},
+                    p0.Win
+                FROM LolMatchParticipant p0
+                {string.Join("", joinClauses)}
+                INNER JOIN LolMatch m ON p0.MatchId = m.MatchId
+                WHERE p0.Puuid = @puuid0
+                  AND m.InfoFetched = TRUE
+                  AND m.DurationSeconds > 0";
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                sql += " AND m.GameMode = @gameMode";
+            }
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            for (int i = 0; i < puuIds.Length; i++)
+            {
+                cmd.Parameters.AddWithValue($"@puuid{i}", puuIds[i]);
+            }
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                cmd.Parameters.AddWithValue("@gameMode", gameMode);
+            }
+
+            // Aggregate role pair stats in code
+            var rolePairStats = new Dictionary<string, (int Games, int Wins)>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var roles = new List<string>();
+                for (int i = 0; i < puuIds.Length; i++)
+                {
+                    var role = reader.IsDBNull(reader.GetOrdinal($"Role{i}")) ? "" : reader.GetString($"Role{i}");
+                    if (!string.IsNullOrEmpty(role))
+                    {
+                        roles.Add(role);
+                    }
+                }
+
+                var win = reader.GetBoolean("Win");
+
+                // Generate all unique role pairs from this match
+                for (int i = 0; i < roles.Count; i++)
+                {
+                    for (int j = i + 1; j < roles.Count; j++)
+                    {
+                        // Sort roles to ensure consistent key
+                        var pair = string.Compare(roles[i], roles[j]) <= 0
+                            ? $"{roles[i]}|{roles[j]}"
+                            : $"{roles[j]}|{roles[i]}";
+
+                        if (!rolePairStats.ContainsKey(pair))
+                        {
+                            rolePairStats[pair] = (0, 0);
+                        }
+
+                        var current = rolePairStats[pair];
+                        rolePairStats[pair] = (current.Games + 1, current.Wins + (win ? 1 : 0));
+                    }
+                }
+            }
+
+            return rolePairStats.Select(kvp =>
+            {
+                var parts = kvp.Key.Split('|');
+                return new TeamRolePairRecord(
+                    Role1: parts[0],
+                    Role2: parts[1],
+                    GamesPlayed: kvp.Value.Games,
+                    Wins: kvp.Value.Wins
+                );
+            }).ToList();
+        }
     }
 
     /// <summary>
@@ -1600,5 +1935,42 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
     public record TeamKillsDeathsRecord(
         int TeamKills,
         int TeamDeaths
+    );
+
+    /// <summary>
+    /// Record representing a single team match result for trend analysis.
+    /// </summary>
+    public record TeamMatchResultRecord(
+        string MatchId,
+        bool Win,
+        DateTime GameEndTimestamp
+    );
+
+    /// <summary>
+    /// Record representing game duration bucket statistics.
+    /// </summary>
+    public record TeamDurationRecord(
+        string DurationBucket,
+        int GamesPlayed,
+        int Wins
+    );
+
+    /// <summary>
+    /// Record representing a team champion combination.
+    /// </summary>
+    public record TeamChampionComboRecord(
+        IList<(string Puuid, int ChampionId, string ChampionName, string GameName)> Champions,
+        int GamesPlayed,
+        int Wins
+    );
+
+    /// <summary>
+    /// Record representing role pair statistics.
+    /// </summary>
+    public record TeamRolePairRecord(
+        string Role1,
+        string Role2,
+        int GamesPlayed,
+        int Wins
     );
 }
