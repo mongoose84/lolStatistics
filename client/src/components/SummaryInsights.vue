@@ -1,42 +1,72 @@
 <template>
   <div class="summary-insights">
+    <h3 class="insights-header">📊 Summary Insights</h3>
+    <p class="insights-subtitle">Key performance highlights and actionable goals</p>
+
     <div v-if="loading" class="insights-loading">Loading insights…</div>
     <div v-else-if="error" class="insights-error">{{ error }}</div>
     <div v-else-if="!hasData" class="insights-empty">Not enough data for insights.</div>
 
-    <ChartCard v-else title="📊 Summary Insights">
-      <div class="insights-content">
-        <p class="insights-subtitle">Key performance highlights and cross-server comparison</p>
-        
-        <div class="insights-grid">
-          <div 
-            v-for="(insight, index) in insights" 
-            :key="index" 
-            class="insight-card"
-            :class="insight.type"
-          >
-            <div class="insight-icon">{{ insight.icon }}</div>
-            <div class="insight-body">
-              <h4 class="insight-title">{{ insight.title }}</h4>
-              <p class="insight-description">{{ insight.description }}</p>
-              <div v-if="insight.action" class="insight-action">
-                <span class="action-label">💡 Goal:</span>
-                <span class="action-text">{{ insight.action }}</span>
-              </div>
-            </div>
+    <div v-else class="insights-row">
+      <div
+        v-for="(insight, index) in insights"
+        :key="index"
+        class="insight-card"
+        :class="insight.type"
+      >
+        <!-- Icon at top (like profile picture) -->
+        <div class="insight-icon-wrap">
+          <div class="insight-icon" :class="insight.type">{{ insight.icon }}</div>
+        </div>
+
+        <!-- Type label (like level) -->
+        <div class="insight-type-label">{{ getTypeLabel(insight.type) }}</div>
+
+        <!-- Title (like gamer name) -->
+        <div class="insight-title">{{ insight.title }}</div>
+
+        <!-- Visual indicator (like win/loss chart) -->
+        <div class="insight-visual">
+          <div class="visual-bar" :class="insight.type">
+            <div class="visual-fill" :style="{ width: insight.visualPercent + '%' }"></div>
           </div>
+          <div class="visual-label">{{ insight.visualLabel }}</div>
+        </div>
+
+        <!-- Main stat (like game info) -->
+        <div class="insight-stat">{{ insight.stat }}</div>
+
+        <!-- Description (like KDA) -->
+        <div class="insight-description">{{ insight.description }}</div>
+
+        <!-- Action/Goal (like per-minute stats) -->
+        <div v-if="insight.action" class="insight-action">
+          💡 {{ insight.action }}
+        </div>
+        <div v-else class="insight-action positive">
+          ✓ Keep it up!
         </div>
       </div>
-    </ChartCard>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import ChartCard from './ChartCard.vue';
 import getComparison from '@/assets/getComparison.js';
 import getMatchDuration from '@/assets/getMatchDuration.js';
 import getChampionPerformance from '@/assets/getChampionPerformance.js';
+
+// Helper to get type label
+function getTypeLabel(type) {
+  switch (type) {
+    case 'positive': return 'Strength';
+    case 'improvement': return 'Focus Area';
+    case 'comparison': return 'Server Gap';
+    case 'neutral': return 'Balanced';
+    default: return 'Insight';
+  }
+}
 
 const props = defineProps({
   userId: {
@@ -117,8 +147,11 @@ const insights = computed(() => {
         icon: '🌾',
         title: 'Farm Efficiency',
         type: 'improvement',
-        description: `Your CS/min is ${cs1.toFixed(1)}. Improving your farming will significantly boost your gold income.`,
-        action: `Practice last-hitting to reach ${csTarget}+ CS/min`
+        stat: `${cs1.toFixed(1)} CS/min`,
+        visualPercent: Math.min((cs1 / csTarget) * 100, 100),
+        visualLabel: `${Math.round((cs1 / csTarget) * 100)}% of target`,
+        description: `Below optimal farming rate`,
+        action: `Reach ${csTarget}+ CS/min`
       });
     } else {
       allInsights.push({
@@ -126,7 +159,10 @@ const insights = computed(() => {
         icon: '🌾',
         title: 'Farm Efficiency',
         type: 'positive',
-        description: `Strong CS/min at ${cs1.toFixed(1)}. You're farming efficiently and maintaining good gold income.`,
+        stat: `${cs1.toFixed(1)} CS/min`,
+        visualPercent: 100,
+        visualLabel: 'Excellent',
+        description: `Strong farming consistency`,
         action: null
       });
     }
@@ -143,8 +179,11 @@ const insights = computed(() => {
         icon: '🌾',
         title: 'Farm Efficiency Gap',
         type: 'comparison',
-        description: `${higherCS} has ${csDiff.toFixed(1)} more CS/min than ${lowerCS} (${higherVal.toFixed(1)} vs ${lowerVal.toFixed(1)}). This suggests more consistent farming patterns.`,
-        action: `Match ${higherCS}'s farming discipline on ${lowerCS}`
+        stat: `${higherVal.toFixed(1)} vs ${lowerVal.toFixed(1)}`,
+        visualPercent: (lowerVal / higherVal) * 100,
+        visualLabel: `${csDiff.toFixed(1)} CS/min gap`,
+        description: `${higherCS} farms better`,
+        action: `Match ${higherCS} on ${lowerCS}`
       });
     } else {
       allInsights.push({
@@ -152,7 +191,10 @@ const insights = computed(() => {
         icon: '🌾',
         title: 'Consistent Farming',
         type: 'positive',
-        description: `Similar CS/min across both servers (${cs1.toFixed(1)} vs ${cs2.toFixed(1)}). Your farming is consistent.`,
+        stat: `${cs1.toFixed(1)} CS/min`,
+        visualPercent: 100,
+        visualLabel: 'Balanced',
+        description: `Similar across servers`,
         action: null
       });
     }
@@ -167,8 +209,11 @@ const insights = computed(() => {
         icon: '💀',
         title: 'Death Prevention',
         type: 'improvement',
-        description: `Averaging ${deaths1.toFixed(1)} deaths per game. Reducing deaths will improve your impact and winrate.`,
-        action: `Focus on positioning and map awareness to reach <${deathTarget} deaths/game`
+        stat: `${deaths1.toFixed(1)} deaths/game`,
+        visualPercent: Math.max(100 - ((deaths1 - deathTarget) / deathTarget) * 100, 0),
+        visualLabel: `${(deaths1 - deathTarget).toFixed(1)} above target`,
+        description: `Too many deaths`,
+        action: `Reduce to <${deathTarget}/game`
       });
     } else {
       allInsights.push({
@@ -176,7 +221,10 @@ const insights = computed(() => {
         icon: '💀',
         title: 'Death Prevention',
         type: 'positive',
-        description: `Low death average at ${deaths1.toFixed(1)} per game. You're playing safely and avoiding unnecessary risks.`,
+        stat: `${deaths1.toFixed(1)} deaths/game`,
+        visualPercent: 100,
+        visualLabel: 'Excellent',
+        description: `Safe positioning`,
         action: null
       });
     }
@@ -191,10 +239,13 @@ const insights = computed(() => {
       allInsights.push({
         priority: deathDiff * 10,
         icon: '💀',
-        title: 'Safer Play on One Server',
+        title: 'Safety Gap',
         type: 'comparison',
-        description: `${lowerDeaths} has ${deathDiff.toFixed(1)} fewer deaths than ${higherDeaths} (${lowerVal.toFixed(1)} vs ${higherVal.toFixed(1)}). This indicates more cautious positioning.`,
-        action: `Apply ${lowerDeaths}'s safer playstyle to ${higherDeaths}`
+        stat: `${lowerVal.toFixed(1)} vs ${higherVal.toFixed(1)}`,
+        visualPercent: (lowerVal / higherVal) * 100,
+        visualLabel: `${deathDiff.toFixed(1)} fewer on ${lowerDeaths}`,
+        description: `${lowerDeaths} plays safer`,
+        action: `Copy ${lowerDeaths} style`
       });
     } else {
       allInsights.push({
@@ -202,7 +253,10 @@ const insights = computed(() => {
         icon: '💀',
         title: 'Consistent Safety',
         type: 'positive',
-        description: `Similar death rates across servers (${deaths1.toFixed(1)} vs ${deaths2.toFixed(1)}). Your risk management is consistent.`,
+        stat: `${deaths1.toFixed(1)} deaths/game`,
+        visualPercent: 100,
+        visualLabel: 'Balanced',
+        description: `Similar risk management`,
         action: null
       });
     }
@@ -216,7 +270,10 @@ const insights = computed(() => {
         icon: '🏆',
         title: 'Strong Winrate',
         type: 'positive',
-        description: `Excellent ${wr1.toFixed(1)}% winrate! You're climbing effectively and winning more than you lose.`,
+        stat: `${wr1.toFixed(1)}% WR`,
+        visualPercent: Math.min(wr1, 100),
+        visualLabel: 'Climbing',
+        description: `Winning consistently`,
         action: null
       });
     } else if (wr1 >= 50) {
@@ -225,17 +282,23 @@ const insights = computed(() => {
         icon: '🏆',
         title: 'Balanced Winrate',
         type: 'neutral',
-        description: `${wr1.toFixed(1)}% winrate shows you're holding your own. Small improvements can push you higher.`,
-        action: 'Focus on consistency to push above 55%'
+        stat: `${wr1.toFixed(1)}% WR`,
+        visualPercent: wr1,
+        visualLabel: 'Even',
+        description: `Holding steady`,
+        action: 'Push to 55%+'
       });
     } else {
       allInsights.push({
         priority: (50 - wr1) * 0.5,
         icon: '🏆',
-        title: 'Winrate Improvement',
+        title: 'Winrate Growth',
         type: 'improvement',
-        description: `${wr1.toFixed(1)}% winrate suggests room for growth. Focus on your weakest areas to turn more losses into wins.`,
-        action: 'Target 50%+ winrate by reducing deaths and improving CS'
+        stat: `${wr1.toFixed(1)}% WR`,
+        visualPercent: wr1,
+        visualLabel: `${(50 - wr1).toFixed(1)}% below 50%`,
+        description: `Room to improve`,
+        action: 'Target 50%+ WR'
       });
     }
   } else {
@@ -251,16 +314,22 @@ const insights = computed(() => {
         icon: '🏆',
         title: 'Winrate Variance',
         type: 'comparison',
-        description: `${higherWR} has ${wrDiff.toFixed(1)}% higher winrate than ${lowerWR} (${higherVal.toFixed(1)}% vs ${lowerVal.toFixed(1)}%). Different meta or playstyle may be factors.`,
-        action: `Analyze what works on ${higherWR} and apply it to ${lowerWR}`
+        stat: `${higherVal.toFixed(1)}% vs ${lowerVal.toFixed(1)}%`,
+        visualPercent: (lowerVal / higherVal) * 100,
+        visualLabel: `${wrDiff.toFixed(1)}% gap`,
+        description: `${higherWR} performs better`,
+        action: `Study ${higherWR} games`
       });
     } else {
       allInsights.push({
         priority: 3,
         icon: '🏆',
-        title: 'Consistent Performance',
+        title: 'Consistent WR',
         type: 'positive',
-        description: `Similar winrates across servers (${wr1.toFixed(1)}% vs ${wr2.toFixed(1)}%). Your skill translates well across regions.`,
+        stat: `${wr1.toFixed(1)}% WR`,
+        visualPercent: Math.max(wr1, wr2),
+        visualLabel: 'Balanced',
+        description: `Similar across servers`,
         action: null
       });
     }
@@ -274,26 +343,35 @@ const insights = computed(() => {
         icon: '⚔️',
         title: 'Combat Excellence',
         type: 'positive',
-        description: `Outstanding ${kda1.toFixed(1)} KDA! You're getting kills and assists while staying alive.`,
+        stat: `${kda1.toFixed(1)} KDA`,
+        visualPercent: Math.min((kda1 / 5) * 100, 100),
+        visualLabel: 'Outstanding',
+        description: `Efficient teamfighting`,
         action: null
       });
     } else if (kda1 >= 2.5) {
       allInsights.push({
         priority: 3,
         icon: '⚔️',
-        title: 'Solid Combat Stats',
+        title: 'Solid Combat',
         type: 'neutral',
-        description: `${kda1.toFixed(1)} KDA is respectable. Continue participating in fights while staying safe.`,
-        action: 'Push for 3.0+ KDA by reducing risky plays'
+        stat: `${kda1.toFixed(1)} KDA`,
+        visualPercent: (kda1 / 5) * 100,
+        visualLabel: 'Good',
+        description: `Respectable stats`,
+        action: 'Push for 3.0+ KDA'
       });
     } else {
       allInsights.push({
         priority: (3 - kda1) * 5,
         icon: '⚔️',
-        title: 'Combat Improvement Needed',
+        title: 'Combat Focus',
         type: 'improvement',
-        description: `${kda1.toFixed(1)} KDA suggests you're dying too often relative to your kills and assists.`,
-        action: 'Focus on safer positioning and better fight selection to reach 2.5+ KDA'
+        stat: `${kda1.toFixed(1)} KDA`,
+        visualPercent: (kda1 / 3) * 100,
+        visualLabel: `${(3 - kda1).toFixed(1)} below target`,
+        description: `Dying too often`,
+        action: 'Reach 2.5+ KDA'
       });
     }
   } else {
@@ -307,10 +385,13 @@ const insights = computed(() => {
       allInsights.push({
         priority: kdaDiff * 6,
         icon: '⚔️',
-        title: 'Combat Effectiveness Gap',
+        title: 'Combat Gap',
         type: 'comparison',
-        description: `${higherKDA} shows better combat stats with ${kdaDiff.toFixed(1)} higher KDA (${higherVal.toFixed(1)} vs ${lowerVal.toFixed(1)}). More efficient trading and teamfighting.`,
-        action: `Study your ${higherKDA} replays to improve ${lowerKDA} performance`
+        stat: `${higherVal.toFixed(1)} vs ${lowerVal.toFixed(1)}`,
+        visualPercent: (lowerVal / higherVal) * 100,
+        visualLabel: `${kdaDiff.toFixed(1)} KDA gap`,
+        description: `${higherKDA} fights better`,
+        action: `Study ${higherKDA} replays`
       });
     } else {
       allInsights.push({
@@ -318,7 +399,10 @@ const insights = computed(() => {
         icon: '⚔️',
         title: 'Consistent Combat',
         type: 'positive',
-        description: `Similar KDA across servers (${kda1.toFixed(1)} vs ${kda2.toFixed(1)}). Your fighting style is consistent.`,
+        stat: `${kda1.toFixed(1)} KDA`,
+        visualPercent: Math.min((Math.max(kda1, kda2) / 5) * 100, 100),
+        visualLabel: 'Balanced',
+        description: `Similar fighting style`,
         action: null
       });
     }
@@ -333,8 +417,11 @@ const insights = computed(() => {
         icon: '💰',
         title: 'Gold Generation',
         type: 'improvement',
-        description: `${gold1.toFixed(0)} gold/min can be improved. More gold means faster item spikes and stronger impact.`,
-        action: `Improve farming and objective participation to reach ${goldTarget}+ gold/min`
+        stat: `${gold1.toFixed(0)} G/min`,
+        visualPercent: (gold1 / goldTarget) * 100,
+        visualLabel: `${Math.round((gold1 / goldTarget) * 100)}% of target`,
+        description: `Can farm more gold`,
+        action: `Reach ${goldTarget}+ G/min`
       });
     } else {
       allInsights.push({
@@ -342,7 +429,10 @@ const insights = computed(() => {
         icon: '💰',
         title: 'Gold Efficiency',
         type: 'positive',
-        description: `Strong ${gold1.toFixed(0)} gold/min. You're efficiently converting time into gold through farming and objectives.`,
+        stat: `${gold1.toFixed(0)} G/min`,
+        visualPercent: 100,
+        visualLabel: 'Excellent',
+        description: `Strong gold income`,
         action: null
       });
     }
@@ -357,18 +447,24 @@ const insights = computed(() => {
       allInsights.push({
         priority: goldDiff * 0.15,
         icon: '💰',
-        title: 'Gold Income Difference',
+        title: 'Gold Income Gap',
         type: 'comparison',
-        description: `${higherGold} generates ${goldDiff.toFixed(0)} more gold/min than ${lowerGold} (${higherVal.toFixed(0)} vs ${lowerVal.toFixed(0)}). Better farming or objective control.`,
-        action: `Match ${higherGold}'s farming efficiency on ${lowerGold}`
+        stat: `${higherVal.toFixed(0)} vs ${lowerVal.toFixed(0)}`,
+        visualPercent: (lowerVal / higherVal) * 100,
+        visualLabel: `${goldDiff.toFixed(0)} G/min gap`,
+        description: `${higherGold} earns more`,
+        action: `Match ${higherGold} income`
       });
     } else {
       allInsights.push({
         priority: 3,
         icon: '💰',
-        title: 'Consistent Gold Income',
+        title: 'Consistent Gold',
         type: 'positive',
-        description: `Similar gold generation across servers (${gold1.toFixed(0)} vs ${gold2.toFixed(0)}). Your economic play is stable.`,
+        stat: `${gold1.toFixed(0)} G/min`,
+        visualPercent: 100,
+        visualLabel: 'Balanced',
+        description: `Similar gold income`,
         action: null
       });
     }
@@ -385,28 +481,37 @@ const insights = computed(() => {
       allInsights.push({
         priority: 4,
         icon: '🎮',
-        title: 'Flexible Champion Pool',
+        title: 'Flexible Pool',
         type: 'positive',
-        description: `Playing ${totalChamps} different champions with ${champsWithMultipleGames} played frequently. Good adaptability to team needs.`,
+        stat: `${totalChamps} champions`,
+        visualPercent: Math.min((champsWithMultipleGames / 8) * 100, 100),
+        visualLabel: `${champsWithMultipleGames} mastered`,
+        description: `Great adaptability`,
         action: null
       });
     } else if (totalChamps < 5) {
       allInsights.push({
         priority: 3,
         icon: '🎮',
-        title: 'Limited Champion Pool',
+        title: 'Limited Pool',
         type: 'improvement',
-        description: `Only ${totalChamps} champions played. Expanding your pool can help in more team compositions.`,
-        action: 'Learn 2-3 more champions to increase flexibility'
+        stat: `${totalChamps} champions`,
+        visualPercent: (totalChamps / 8) * 100,
+        visualLabel: 'Narrow',
+        description: `Expand champion pool`,
+        action: 'Learn 2-3 more champs'
       });
     } else {
       allInsights.push({
         priority: 2,
         icon: '🎮',
-        title: 'Moderate Champion Pool',
+        title: 'Moderate Pool',
         type: 'neutral',
-        description: `${totalChamps} champions played. Consider mastering a few more for better draft flexibility.`,
-        action: 'Add 1-2 comfort picks to your rotation'
+        stat: `${totalChamps} champions`,
+        visualPercent: (totalChamps / 10) * 100,
+        visualLabel: 'Decent',
+        description: `Room to expand`,
+        action: 'Add 1-2 comfort picks'
       });
     }
   }
@@ -427,14 +532,17 @@ const insights = computed(() => {
     });
 
     if (bestBucket && bestWR >= 55) {
-      const duration = bestBucket.label;
+      const duration = bestBucket.durationRange || 'Unknown';
       allInsights.push({
         priority: 5,
         icon: '⏱️',
-        title: 'Game Duration Strength',
+        title: 'Duration Strength',
         type: 'positive',
-        description: `${bestWR.toFixed(0)}% winrate in ${duration} games. You excel at this game pace.`,
-        action: `Try to steer games toward ${duration} through your playstyle`
+        stat: `${bestWR.toFixed(0)}% WR`,
+        visualPercent: bestWR,
+        visualLabel: `${duration} min`,
+        description: `Excel at this pace`,
+        action: `Steer to ${duration} min`
       });
     }
   }
@@ -474,7 +582,23 @@ onMounted(load);
 <style scoped>
 .summary-insights {
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
+  padding: 0 1rem;
+}
+
+.insights-header {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.insights-subtitle {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-align: center;
 }
 
 .insights-loading,
@@ -489,119 +613,206 @@ onMounted(load);
   color: var(--color-danger);
 }
 
-.insights-content {
+/* Row of insight cards - matching GamerCardsList layout */
+.insights-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+/* Individual insight card - matching GamerCard style */
+.insight-card {
+  width: 200px;
+  min-height: 380px;
+  padding: 1rem;
+  background: var(--color-bg-elev);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  color: var(--color-text);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.insights-subtitle {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-  text-align: center;
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.insight-card {
-  display: flex;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: var(--color-bg);
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
 }
 
 .insight-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: var(--color-bg-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* Border colors based on type */
 .insight-card.positive {
   border-color: var(--color-success);
-  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(34, 197, 94, 0.05) 100%);
+  border-width: 2px;
 }
 
 .insight-card.improvement {
   border-color: var(--color-warning);
-  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border-width: 2px;
 }
 
 .insight-card.comparison {
   border-color: var(--color-primary);
-  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-width: 2px;
 }
 
 .insight-card.neutral {
   border-color: var(--color-border);
 }
 
+/* Icon wrap - matching profile icon style */
+.insight-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .insight-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-  line-height: 1;
-  margin-top: 0.2rem;
-}
-
-.insight-body {
-  flex: 1;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  background: var(--color-bg);
 }
 
-.insight-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text);
-  line-height: 1.3;
+.insight-icon.positive {
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(34, 197, 94, 0.1) 100%);
+  border-color: var(--color-success);
 }
 
-.insight-description {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--color-text);
+.insight-icon.improvement {
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(245, 158, 11, 0.1) 100%);
+  border-color: var(--color-warning);
 }
 
-.insight-action {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem;
-  background: var(--color-bg-elev);
-  border-radius: 6px;
-  border-left: 3px solid var(--color-primary);
+.insight-icon.comparison {
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-color: var(--color-primary);
+}
+
+/* Type label - matching level style */
+.insight-type-label {
   margin-top: 0.25rem;
-}
-
-.action-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-primary);
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.action-text {
-  font-size: 0.85rem;
+/* Title - matching gamer name style */
+.insight-title {
+  margin-top: 0.2rem;
   font-weight: 600;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Visual indicator - matching win/loss chart */
+.insight-visual {
+  margin-top: 0.4rem;
+  width: 120px;
+  height: 120px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.visual-bar {
+  width: 100%;
+  height: 12px;
+  background: var(--color-bg);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+
+.visual-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+  border-radius: 6px;
+}
+
+.insight-card.positive .visual-fill {
+  background: var(--color-success);
+}
+
+.insight-card.improvement .visual-fill {
+  background: var(--color-warning);
+}
+
+.insight-card.comparison .visual-fill {
+  background: var(--color-primary);
+}
+
+.insight-card.neutral .visual-fill {
+  background: var(--color-text-muted);
+}
+
+.visual-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
   color: var(--color-text);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Main stat - matching game info style */
+.insight-stat {
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+/* Description - matching KDA style */
+.insight-description {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Action - matching per-minute style */
+.insight-action {
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg);
+  border-radius: 6px;
   line-height: 1.4;
 }
 
+.insight-action.positive {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
 /* Responsive */
+@media (max-width: 1200px) {
+  .insights-row {
+    justify-content: center;
+  }
+}
+
 @media (max-width: 768px) {
-  .insights-grid {
-    grid-template-columns: 1fr;
+  .insight-card {
+    width: 180px;
+    min-height: 360px;
   }
 }
 </style>
