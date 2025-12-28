@@ -617,6 +617,156 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
 
             return null;
         }
+
+        /// <summary>
+        /// Get champion synergy statistics for duo games.
+        /// Returns win rates for each champion pair combination when two players play together.
+        /// </summary>
+        internal async Task<IList<ChampionSynergyRecord>> GetChampionSynergyByPuuIdsAsync(string puuId1, string puuId2, string? gameMode = null)
+        {
+            if (string.IsNullOrWhiteSpace(puuId1) || string.IsNullOrWhiteSpace(puuId2))
+            {
+                return new List<ChampionSynergyRecord>();
+            }
+
+            var records = new List<ChampionSynergyRecord>();
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Find all champion combinations when both players were on the same team
+            var sql = @"
+                SELECT
+                    p1.ChampionId as ChampionId1,
+                    p1.ChampionName as ChampionName1,
+                    p2.ChampionId as ChampionId2,
+                    p2.ChampionName as ChampionName2,
+                    COUNT(DISTINCT p1.MatchId) as GamesPlayed,
+                    SUM(CASE WHEN p1.Win = 1 THEN 1 ELSE 0 END) as Wins
+                FROM LolMatchParticipant p1
+                INNER JOIN LolMatchParticipant p2
+                    ON p1.MatchId = p2.MatchId
+                    AND p1.TeamId = p2.TeamId
+                    AND p1.Puuid != p2.Puuid
+                INNER JOIN LolMatch m ON p1.MatchId = m.MatchId
+                WHERE p1.Puuid = @puuid1
+                  AND p2.Puuid = @puuid2
+                  AND m.InfoFetched = TRUE";
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                sql += " AND m.GameMode = @gameMode";
+            }
+
+            sql += @"
+                GROUP BY p1.ChampionId, p1.ChampionName, p2.ChampionId, p2.ChampionName
+                ORDER BY GamesPlayed DESC";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid1", puuId1);
+            cmd.Parameters.AddWithValue("@puuid2", puuId2);
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                cmd.Parameters.AddWithValue("@gameMode", gameMode);
+            }
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                records.Add(new ChampionSynergyRecord(
+                    ChampionId1: reader.GetInt32("ChampionId1"),
+                    ChampionName1: reader.GetString("ChampionName1"),
+                    ChampionId2: reader.GetInt32("ChampionId2"),
+                    ChampionName2: reader.GetString("ChampionName2"),
+                    GamesPlayed: reader.GetInt32("GamesPlayed"),
+                    Wins: reader.GetInt32("Wins")
+                ));
+            }
+
+            return records;
+        }
+
+        /// <summary>
+        /// Get duo champion combination vs enemy champion statistics.
+        /// Returns win rates for duo champion combos vs specific enemy lane champions.
+        /// </summary>
+        internal async Task<IList<DuoVsEnemyRecord>> GetDuoVsEnemyByPuuIdsAsync(string puuId1, string puuId2, string? gameMode = null)
+        {
+            if (string.IsNullOrWhiteSpace(puuId1) || string.IsNullOrWhiteSpace(puuId2))
+            {
+                return new List<DuoVsEnemyRecord>();
+            }
+
+            var records = new List<DuoVsEnemyRecord>();
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            // Find duo champion combinations and their performance vs enemy lane champions
+            var sql = @"
+                SELECT
+                    p1.ChampionId as DuoChampionId1,
+                    p1.ChampionName as DuoChampionName1,
+                    p2.ChampionId as DuoChampionId2,
+                    p2.ChampionName as DuoChampionName2,
+                    enemy.TeamPosition as EnemyLane,
+                    enemy.ChampionId as EnemyChampionId,
+                    enemy.ChampionName as EnemyChampionName,
+                    COUNT(DISTINCT p1.MatchId) as GamesPlayed,
+                    SUM(CASE WHEN p1.Win = 1 THEN 1 ELSE 0 END) as Wins
+                FROM LolMatchParticipant p1
+                INNER JOIN LolMatchParticipant p2
+                    ON p1.MatchId = p2.MatchId
+                    AND p1.TeamId = p2.TeamId
+                    AND p1.Puuid != p2.Puuid
+                INNER JOIN LolMatchParticipant enemy
+                    ON p1.MatchId = enemy.MatchId
+                    AND p1.TeamId != enemy.TeamId
+                INNER JOIN LolMatch m ON p1.MatchId = m.MatchId
+                WHERE p1.Puuid = @puuid1
+                  AND p2.Puuid = @puuid2
+                  AND m.InfoFetched = TRUE
+                  AND enemy.TeamPosition IS NOT NULL
+                  AND enemy.TeamPosition != ''";
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                sql += " AND m.GameMode = @gameMode";
+            }
+
+            sql += @"
+                GROUP BY p1.ChampionId, p1.ChampionName, p2.ChampionId, p2.ChampionName,
+                         enemy.TeamPosition, enemy.ChampionId, enemy.ChampionName
+                ORDER BY GamesPlayed DESC";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid1", puuId1);
+            cmd.Parameters.AddWithValue("@puuid2", puuId2);
+
+            if (!string.IsNullOrWhiteSpace(gameMode))
+            {
+                cmd.Parameters.AddWithValue("@gameMode", gameMode);
+            }
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                records.Add(new DuoVsEnemyRecord(
+                    DuoChampionId1: reader.GetInt32("DuoChampionId1"),
+                    DuoChampionName1: reader.GetString("DuoChampionName1"),
+                    DuoChampionId2: reader.GetInt32("DuoChampionId2"),
+                    DuoChampionName2: reader.GetString("DuoChampionName2"),
+                    EnemyLane: reader.GetString("EnemyLane"),
+                    EnemyChampionId: reader.GetInt32("EnemyChampionId"),
+                    EnemyChampionName: reader.GetString("EnemyChampionName"),
+                    GamesPlayed: reader.GetInt32("GamesPlayed"),
+                    Wins: reader.GetInt32("Wins")
+                ));
+            }
+
+            return records;
+        }
     }
 
     /// <summary>
@@ -678,6 +828,33 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
         int GamesPlayed,
         int Wins,
         string MostCommonQueueType
+    );
+
+    /// <summary>
+    /// Record representing champion synergy statistics for duo games.
+    /// </summary>
+    public record ChampionSynergyRecord(
+        int ChampionId1,
+        string ChampionName1,
+        int ChampionId2,
+        string ChampionName2,
+        int GamesPlayed,
+        int Wins
+    );
+
+    /// <summary>
+    /// Record representing duo champion combination vs enemy champion statistics.
+    /// </summary>
+    public record DuoVsEnemyRecord(
+        int DuoChampionId1,
+        string DuoChampionName1,
+        int DuoChampionId2,
+        string DuoChampionName2,
+        string EnemyLane,
+        int EnemyChampionId,
+        string EnemyChampionName,
+        int GamesPlayed,
+        int Wins
     );
 
     /// <summary>

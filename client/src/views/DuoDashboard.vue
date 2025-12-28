@@ -49,6 +49,12 @@
 
         <!-- Duo vs Solo Performance Charts -->
         <DuoVsSoloPerformance v-if="gamers.length === 2" :userId="userId" :gamers="gamers" />
+
+        <!-- Champion Synergy & Duo vs Enemy (Two-column layout) -->
+        <div v-if="gamers.length === 2" class="duo-features-grid">
+          <ChampionSynergyMatrix :userId="userId" :gamers="gamers" />
+          <DuoVsEnemyMatrix :userId="userId" :gamers="gamers" />
+        </div>
       </template>
     </div>
   </section>
@@ -63,6 +69,8 @@ import GamerCard from '@/views/GamerCard.vue';
 import AppLogo from '@/components/AppLogo.vue';
 import getDuoStats from '@/assets/getDuoStats.js';
 import DuoVsSoloPerformance from '@/components/DuoVsSoloPerformance.vue';
+import ChampionSynergyMatrix from '@/components/ChampionSynergyMatrix.vue';
+import DuoVsEnemyMatrix from '@/components/DuoVsEnemyMatrix.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({
@@ -275,5 +283,20 @@ defineExpose({ load, loadDuoStats });
 .wr-bad {
   color: var(--color-danger);
   font-weight: 600;
+}
+
+/* Duo Features Grid (Two-column layout) */
+.duo-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem auto;
+  max-width: 1400px;
+}
+
+@media (max-width: 1100px) {
+  .duo-features-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
