@@ -707,8 +707,10 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 SELECT
                     p1.ChampionId as DuoChampionId1,
                     p1.ChampionName as DuoChampionName1,
+                    COALESCE(NULLIF(p1.TeamPosition, ''), 'UNKNOWN') as DuoLane1,
                     p2.ChampionId as DuoChampionId2,
                     p2.ChampionName as DuoChampionName2,
+                    COALESCE(NULLIF(p2.TeamPosition, ''), 'UNKNOWN') as DuoLane2,
                     enemy.TeamPosition as EnemyLane,
                     enemy.ChampionId as EnemyChampionId,
                     enemy.ChampionName as EnemyChampionName,
@@ -735,7 +737,8 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             }
 
             sql += @"
-                GROUP BY p1.ChampionId, p1.ChampionName, p2.ChampionId, p2.ChampionName,
+                GROUP BY p1.ChampionId, p1.ChampionName, DuoLane1,
+                         p2.ChampionId, p2.ChampionName, DuoLane2,
                          enemy.TeamPosition, enemy.ChampionId, enemy.ChampionName
                 ORDER BY GamesPlayed DESC";
 
@@ -755,8 +758,10 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 records.Add(new DuoVsEnemyRecord(
                     DuoChampionId1: reader.GetInt32("DuoChampionId1"),
                     DuoChampionName1: reader.GetString("DuoChampionName1"),
+                    DuoLane1: reader.GetString("DuoLane1"),
                     DuoChampionId2: reader.GetInt32("DuoChampionId2"),
                     DuoChampionName2: reader.GetString("DuoChampionName2"),
+                    DuoLane2: reader.GetString("DuoLane2"),
                     EnemyLane: reader.GetString("EnemyLane"),
                     EnemyChampionId: reader.GetInt32("EnemyChampionId"),
                     EnemyChampionName: reader.GetString("EnemyChampionName"),
@@ -848,8 +853,10 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
     public record DuoVsEnemyRecord(
         int DuoChampionId1,
         string DuoChampionName1,
+        string DuoLane1,
         int DuoChampionId2,
         string DuoChampionName2,
+        string DuoLane2,
         string EnemyLane,
         int EnemyChampionId,
         string EnemyChampionName,

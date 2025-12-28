@@ -21,9 +21,10 @@
       </div>
 
       <!-- Enemy Lane Selector -->
-      <div class="lane-selector">
-        <button 
-          v-for="lane in availableLanes" 
+      <div v-if="relevantLanes.length > 0" class="lane-selector">
+        <div class="lane-selector-label">Enemy Lane:</div>
+        <button
+          v-for="lane in relevantLanes"
           :key="lane"
           :class="['lane-btn', { active: selectedLane === lane }]"
           @click="selectedLane = lane">
@@ -145,16 +146,91 @@ const duoCombos = computed(() => {
   return combos;
 });
 
-// Get available lanes for selected duo combo
+// Detect which lanes/roles the duo plays for the selected combo
+const duoLanes = computed(() => {
+  if (!hasData.value || !selectedDuoCombo.value) return new Set();
+
+  const lanes = new Set();
+  const matchups = matchupData.value.matchups
+    .filter(m => `${m.duoChampionId1}-${m.duoChampionId2}` === selectedDuoCombo.value);
+
+  if (matchups.length > 0) {
+    // Get the duo's own lanes from the first matchup (they should be consistent)
+    const firstMatch = matchups[0];
+    if (firstMatch.duoLane1 && firstMatch.duoLane1 !== 'UNKNOWN') {
+      lanes.add(firstMatch.duoLane1);
+    }
+    if (firstMatch.duoLane2 && firstMatch.duoLane2 !== 'UNKNOWN') {
+      lanes.add(firstMatch.duoLane2);
+    }
+  }
+
+  return lanes;
+});
+
+// Get all available enemy lanes for selected duo combo
 const availableLanes = computed(() => {
   if (!hasData.value || !selectedDuoCombo.value) return [];
-  
+
   const lanes = new Set();
   matchupData.value.matchups
     .filter(m => `${m.duoChampionId1}-${m.duoChampionId2}` === selectedDuoCombo.value)
     .forEach(m => lanes.add(m.enemyLane));
-  
+
   return Array.from(lanes).sort();
+});
+
+// Filter to only show enemy lanes that are relevant to the duo's roles
+// Logic:
+// - If duo plays BOTTOM + UTILITY (bot lane duo), show all enemy lanes (they face everyone)
+// - If duo plays TOP + JUNGLE, show TOP, MIDDLE, JUNGLE (lanes they interact with)
+// - If duo plays MIDDLE + JUNGLE, show TOP, MIDDLE, BOTTOM (lanes they interact with)
+const relevantLanes = computed(() => {
+  if (!hasData.value || !selectedDuoCombo.value) return [];
+
+  const allEnemyLanes = availableLanes.value;
+  const myLanes = duoLanes.value;
+
+  // If we don't know the duo's lanes, show all available enemy lanes
+  if (myLanes.size === 0) {
+    return allEnemyLanes;
+  }
+
+  // Bot lane duo (BOTTOM + UTILITY) - show all lanes (they face everyone)
+  if (myLanes.has('BOTTOM') && myLanes.has('UTILITY')) {
+    return allEnemyLanes;
+  }
+
+  // For other duos, show only lanes they directly interact with
+  // This means: their own lanes + adjacent lanes
+  const relevantEnemyLanes = new Set();
+
+  myLanes.forEach(lane => {
+    // Always include the same lane (direct matchup)
+    if (allEnemyLanes.includes(lane)) {
+      relevantEnemyLanes.add(lane);
+    }
+
+    // Add adjacent/interacting lanes based on role
+    if (lane === 'TOP') {
+      if (allEnemyLanes.includes('JUNGLE')) relevantEnemyLanes.add('JUNGLE');
+      if (allEnemyLanes.includes('MIDDLE')) relevantEnemyLanes.add('MIDDLE');
+    } else if (lane === 'JUNGLE') {
+      // Jungle interacts with all lanes
+      allEnemyLanes.forEach(l => relevantEnemyLanes.add(l));
+    } else if (lane === 'MIDDLE') {
+      if (allEnemyLanes.includes('JUNGLE')) relevantEnemyLanes.add('JUNGLE');
+      if (allEnemyLanes.includes('TOP')) relevantEnemyLanes.add('TOP');
+      if (allEnemyLanes.includes('BOTTOM')) relevantEnemyLanes.add('BOTTOM');
+    }
+  });
+
+  // If no relevant lanes found, show all (fallback)
+  if (relevantEnemyLanes.size === 0) {
+    return allEnemyLanes;
+  }
+
+  return Array.from(relevantEnemyLanes).sort();
 });
 
 // Get enemy champions for selected duo combo and lane
@@ -280,6 +356,14 @@ watch(() => props.userId, () => {
   gap: 0.5rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.lane-selector-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-right: 0.25rem;
 }
 
 .lane-btn {

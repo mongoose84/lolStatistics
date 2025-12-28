@@ -49,8 +49,10 @@ public sealed class DuoVsEnemyEndpoint : IEndpoint
                     .Select(m => new DuoVsEnemyStats(
                         DuoChampionId1: m.DuoChampionId1,
                         DuoChampionName1: m.DuoChampionName1,
+                        DuoLane1: m.DuoLane1,
                         DuoChampionId2: m.DuoChampionId2,
                         DuoChampionName2: m.DuoChampionName2,
+                        DuoLane2: m.DuoLane2,
                         EnemyLane: m.EnemyLane,
                         EnemyChampionId: m.EnemyChampionId,
                         EnemyChampionName: m.EnemyChampionName,

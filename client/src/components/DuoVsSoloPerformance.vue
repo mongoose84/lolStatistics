@@ -390,7 +390,6 @@ defineExpose({ load });
 
 <style scoped>
 .duo-vs-solo-performance {
-  margin-top: 2rem;
   padding: 1.5rem;
   background: var(--color-bg-elev);
   border-radius: 12px;

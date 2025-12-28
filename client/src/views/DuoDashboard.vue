@@ -47,13 +47,16 @@
         <!-- Fallback: Show regular gamer cards list if not exactly 2 gamers -->
         <GamerCardsList v-else :gamers="gamers" />
 
-        <!-- Duo vs Solo Performance Charts -->
-        <DuoVsSoloPerformance v-if="gamers.length === 2" :userId="userId" :gamers="gamers" />
+        <!-- Duo Features Container -->
+        <div v-if="gamers.length === 2" class="duo-features-container">
+          <!-- Duo vs Solo Performance Charts -->
+          <DuoVsSoloPerformance :userId="userId" :gamers="gamers" />
 
-        <!-- Champion Synergy & Duo vs Enemy (Two-column layout) -->
-        <div v-if="gamers.length === 2" class="duo-features-grid">
-          <ChampionSynergyMatrix :userId="userId" :gamers="gamers" />
-          <DuoVsEnemyMatrix :userId="userId" :gamers="gamers" />
+          <!-- Champion Synergy & Duo vs Enemy (Two-column layout) -->
+          <div class="duo-features-grid">
+            <ChampionSynergyMatrix :userId="userId" :gamers="gamers" />
+            <DuoVsEnemyMatrix :userId="userId" :gamers="gamers" />
+          </div>
         </div>
       </template>
     </div>
@@ -285,13 +288,18 @@ defineExpose({ load, loadDuoStats });
   font-weight: 600;
 }
 
+/* Duo Features Container - Consistent max-width for all duo features */
+.duo-features-container {
+  max-width: 1400px;
+  margin: 2rem auto 0;
+}
+
 /* Duo Features Grid (Two-column layout) */
 .duo-features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 1.5rem;
-  margin: 2rem auto;
-  max-width: 1400px;
+  margin-top: 1.5rem;
 }
 
 @media (max-width: 1100px) {
