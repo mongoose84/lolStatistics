@@ -34,8 +34,8 @@ namespace RiotProxy.Application.Endpoints
                     }
 
                     // Dictionary to aggregate champion stats across all puuids
-                    // Key: ChampionId, Value: Dictionary of ServerName -> (GamesPlayed, Wins)
-                    var championAggregates = new Dictionary<int, (string ChampionName, Dictionary<string, (int GamesPlayed, int Wins)> ServerStats)>();
+                    // Key: ChampionId, Value: Dictionary of ServerName -> (GamerName, GamesPlayed, Wins)
+                    var championAggregates = new Dictionary<int, (string ChampionName, Dictionary<string, (string GamerName, int GamesPlayed, int Wins)> ServerStats)>();
 
                     foreach (var puuId in distinctPuuIds)
                     {
@@ -48,7 +48,8 @@ namespace RiotProxy.Application.Endpoints
 
                         // Extract server name from tagline (e.g., "EUW", "EUNE")
                         var serverName = gamer.Tagline.ToUpperInvariant();
-                        
+                        var gamerName = $"{gamer.GamerName}#{serverName}";
+
                         // Get champion stats for this puuid
                         var championStats = await matchParticipantRepo.GetChampionStatsByPuuIdAsync(puuId);
 
@@ -56,18 +57,18 @@ namespace RiotProxy.Application.Endpoints
                         {
                             if (!championAggregates.ContainsKey(stat.ChampionId))
                             {
-                                championAggregates[stat.ChampionId] = (stat.ChampionName, new Dictionary<string, (int, int)>());
+                                championAggregates[stat.ChampionId] = (stat.ChampionName, new Dictionary<string, (string, int, int)>());
                             }
 
                             var (championName, serverStats) = championAggregates[stat.ChampionId];
-                            
+
                             if (!serverStats.ContainsKey(serverName))
                             {
-                                serverStats[serverName] = (0, 0);
+                                serverStats[serverName] = (gamerName, 0, 0);
                             }
 
-                            var (currentGames, currentWins) = serverStats[serverName];
-                            serverStats[serverName] = (currentGames + stat.GamesPlayed, currentWins + stat.Wins);
+                            var (existingGamerName, currentGames, currentWins) = serverStats[serverName];
+                            serverStats[serverName] = (existingGamerName, currentGames + stat.GamesPlayed, currentWins + stat.Wins);
                         }
                     }
 
@@ -81,9 +82,9 @@ namespace RiotProxy.Application.Endpoints
                             var servers = serverStats
                                 .Select(ss =>
                                 {
-                                    var (gamesPlayed, wins) = ss.Value;
+                                    var (gamerName, gamesPlayed, wins) = ss.Value;
                                     var winrate = gamesPlayed > 0 ? Math.Round((double)wins / gamesPlayed * 100, 1) : 0;
-                                    return new ServerStats(ss.Key, gamesPlayed, wins, winrate);
+                                    return new ServerStats(ss.Key, gamerName, gamesPlayed, wins, winrate);
                                 })
                                 .OrderBy(s => s.ServerName)
                                 .ToList();

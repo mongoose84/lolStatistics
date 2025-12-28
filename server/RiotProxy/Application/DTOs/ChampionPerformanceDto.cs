@@ -25,6 +25,7 @@ namespace RiotProxy.Application.DTOs
         /// </summary>
         public record ServerStats(
             [property: JsonPropertyName("serverName")] string ServerName,
+            [property: JsonPropertyName("gamerName")] string GamerName,
             [property: JsonPropertyName("gamesPlayed")] int GamesPlayed,
             [property: JsonPropertyName("wins")] int Wins,
             [property: JsonPropertyName("winrate")] double Winrate

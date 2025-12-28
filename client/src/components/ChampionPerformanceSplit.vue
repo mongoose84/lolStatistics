@@ -6,41 +6,13 @@
 
     <ChartCard v-else title="Champion Performance Split">
       <div class="champion-content">
-        <!-- Filter Buttons -->
-        <div class="filter-buttons">
-          <button
-            :class="['filter-btn', { active: filterMode === 'top5' }]"
-            @click="filterMode = 'top5'"
-          >
-            Top 5 Played
-          </button>
-          <button
-            :class="['filter-btn', { active: filterMode === 'delta' }]"
-            @click="filterMode = 'delta'"
-          >
-            Biggest Winrate Delta
-          </button>
-        </div>
-
-        <!-- Champion Button Splits -->
-        <div class="champion-buttons">
-          <button
-            v-for="champ in filteredChampions"
-            :key="champ.championId"
-            :class="['champion-btn', { active: selectedChampionId === champ.championId }]"
-            @click="selectedChampionId = champ.championId"
-          >
-            {{ champ.championName }}
-          </button>
-        </div>
-
-        <!-- Bar Chart -->
-        <div v-if="selectedChampion" class="bar-chart-container">
+        <!-- Grouped Bar Chart -->
+        <div class="bar-chart-container">
           <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="bar-chart" aria-label="Champion winrate comparison">
             <!-- Y-axis labels (winrate %) -->
             <g class="y-labels">
               <text v-for="(label, i) in yAxisLabels" :key="'y-' + i"
-                :x="padding.left - 8" :y="getYPosition(label)" 
+                :x="padding.left - 8" :y="getYPosition(label)"
                 text-anchor="end" dominant-baseline="middle" class="axis-label">
                 {{ label }}%
               </text>
@@ -54,45 +26,58 @@
                 stroke="var(--color-border)" stroke-width="1" opacity="0.3" />
             </g>
 
-            <!-- Bars for each server -->
+            <!-- Grouped bars for each champion -->
             <g class="bars">
-              <g v-for="(server, i) in selectedChampion.servers" :key="server.serverName">
-                <rect
-                  :x="getBarX(i)"
-                  :y="getBarY(server.winrate)"
-                  :width="barWidth"
-                  :height="getBarHeight(server.winrate)"
-                  :fill="getServerColor(server.serverName)"
-                  class="bar"
-                  @mouseenter="hoveredServer = server"
-                  @mouseleave="hoveredServer = null"
-                />
-                <!-- Server label -->
+              <g v-for="(champ, champIndex) in top5Champions" :key="champ.championId">
+                <!-- Bars for each server within this champion group -->
+                <g v-for="(server, serverIndex) in champ.servers" :key="server.serverName">
+                  <rect
+                    :x="getGroupedBarX(champIndex, serverIndex, champ.servers.length)"
+                    :y="getBarY(server.winrate)"
+                    :width="barWidth"
+                    :height="getBarHeight(server.winrate)"
+                    :fill="getServerColor(server.serverName)"
+                    class="bar"
+                    @mouseenter="setHoveredBar(champ.championName, server)"
+                    @mouseleave="hoveredBar = null"
+                  />
+                  <!-- Winrate label on top of bar -->
+                  <text
+                    :x="getGroupedBarX(champIndex, serverIndex, champ.servers.length) + barWidth / 2"
+                    :y="getBarY(server.winrate) - 6"
+                    text-anchor="middle"
+                    class="winrate-label">
+                    {{ server.winrate.toFixed(0) }}
+                  </text>
+                </g>
+                <!-- Champion name label below the group -->
                 <text
-                  :x="getBarX(i) + barWidth / 2"
+                  :x="getChampionLabelX(champIndex, champ.servers.length)"
                   :y="chartHeight - padding.bottom + 16"
                   text-anchor="middle"
-                  class="server-label">
-                  {{ server.serverName }}
+                  class="champion-label">
+                  {{ champ.championName }}
                 </text>
-                <!-- Winrate label on top of bar -->
-                <text
-                  :x="getBarX(i) + barWidth / 2"
-                  :y="getBarY(server.winrate) - 6"
-                  text-anchor="middle"
-                  class="winrate-label">
-                  {{ server.winrate.toFixed(1) }}%
-                </text>
+              </g>
+            </g>
+
+            <!-- Legend -->
+            <g class="legend" :transform="`translate(${chartWidth / 2 - 100}, ${chartHeight - 10})`">
+              <g v-for="(gamerName, i) in gamerNames" :key="gamerName"
+                :transform="`translate(${i * 120}, 0)`">
+                <rect :fill="getColorByGamerName(gamerName)" width="14" height="14" rx="2" />
+                <text x="20" y="11" class="legend-text">{{ gamerName }}</text>
               </g>
             </g>
           </svg>
 
           <!-- Hover tooltip -->
-          <div v-if="hoveredServer" class="tooltip">
-            <strong>{{ hoveredServer.serverName }}</strong><br>
-            Games: {{ hoveredServer.gamesPlayed }}<br>
-            Wins: {{ hoveredServer.wins }}<br>
-            Winrate: {{ hoveredServer.winrate.toFixed(1) }}%
+          <div v-if="hoveredBar" class="tooltip">
+            <strong>{{ hoveredBar.championName }}</strong><br>
+            Server: {{ hoveredBar.server.serverName }}<br>
+            Games: {{ hoveredBar.server.gamesPlayed }}<br>
+            Wins: {{ hoveredBar.server.wins }}<br>
+            Winrate: {{ hoveredBar.server.winrate.toFixed(1) }}%
           </div>
         </div>
       </div>
@@ -115,15 +100,15 @@ const props = defineProps({
 const loading = ref(false);
 const error = ref(null);
 const championData = ref(null);
-const selectedChampionId = ref(null);
-const filterMode = ref('top5'); // 'top5' or 'delta'
-const hoveredServer = ref(null);
+const hoveredBar = ref(null);
 
-// Chart dimensions
-const chartWidth = 400;
-const chartHeight = 280;
-const padding = { top: 20, right: 20, bottom: 50, left: 50 };
-const barWidth = 80;
+// Chart dimensions - match RadarChart aspect ratio (400x400)
+const chartWidth = 600;
+const chartHeight = 400;
+const padding = { top: 20, right: 20, bottom: 60, left: 50 };
+const barWidth = 35;
+const barGap = 5; // Gap between bars in a group
+const groupGap = 20; // Gap between champion groups
 const yAxisLabels = [0, 25, 50, 75, 100];
 
 const hasData = computed(() => championData.value?.champions?.length > 0);
@@ -133,50 +118,35 @@ function getTotalGames(champion) {
   return champion.servers.reduce((sum, s) => sum + s.gamesPlayed, 0);
 }
 
-// Get winrate delta (difference between servers) for a champion
-function getWinrateDelta(champion) {
-  if (champion.servers.length < 2) return 0;
-  const winrates = champion.servers.map(s => s.winrate);
-  return Math.abs(Math.max(...winrates) - Math.min(...winrates));
-}
-
-// Filtered champions based on selected filter mode
-const filteredChampions = computed(() => {
+// Top 5 champions by total games played
+const top5Champions = computed(() => {
   if (!championData.value?.champions) return [];
 
   const champions = [...championData.value.champions];
-
-  if (filterMode.value === 'top5') {
-    // Top 5 by total games played
-    return champions
-      .sort((a, b) => getTotalGames(b) - getTotalGames(a))
-      .slice(0, 5);
-  } else {
-    // Top 5 by biggest winrate delta
-    return champions
-      .filter(c => c.servers.length >= 2) // Only champions played on multiple servers
-      .sort((a, b) => getWinrateDelta(b) - getWinrateDelta(a))
-      .slice(0, 5);
-  }
+  return champions
+    .sort((a, b) => getTotalGames(b) - getTotalGames(a))
+    .slice(0, 5);
 });
 
-// Selected champion object
-const selectedChampion = computed(() => {
-  if (!selectedChampionId.value || !championData.value?.champions) return null;
-  return championData.value.champions.find(c => c.championId === selectedChampionId.value);
+// Get unique gamer names from the data (sorted to ensure consistent color mapping)
+const gamerNames = computed(() => {
+  if (!championData.value?.champions || championData.value.champions.length === 0) return [];
+  const names = new Set();
+  championData.value.champions.forEach(champ => {
+    champ.servers.forEach(server => {
+      if (server.gamerName) {
+        names.add(server.gamerName);
+      }
+    });
+  });
+  // Sort to ensure EUW comes before EUNE for consistent color mapping
+  return Array.from(names).sort();
 });
 
 // Chart helper functions
 function getYPosition(winrate) {
   const plotHeight = chartHeight - padding.top - padding.bottom;
   return padding.top + plotHeight * (1 - winrate / 100);
-}
-
-function getBarX(index) {
-  const plotWidth = chartWidth - padding.left - padding.right;
-  const totalBars = selectedChampion.value?.servers.length || 1;
-  const spacing = (plotWidth - totalBars * barWidth) / (totalBars + 1);
-  return padding.left + spacing + index * (barWidth + spacing);
 }
 
 function getBarY(winrate) {
@@ -188,12 +158,64 @@ function getBarHeight(winrate) {
   return plotHeight * (winrate / 100);
 }
 
+// Calculate X position for a bar in a grouped bar chart
+function getGroupedBarX(championIndex, serverIndex, serversCount) {
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const totalChampions = top5Champions.value.length;
+
+  // Width of one champion group (all its server bars + gaps between them)
+  const groupWidth = serversCount * barWidth + (serversCount - 1) * barGap;
+
+  // Total width needed for all groups and gaps
+  const totalGroupsWidth = totalChampions * groupWidth + (totalChampions - 1) * groupGap;
+
+  // Starting X position (centered)
+  const startX = padding.left + (plotWidth - totalGroupsWidth) / 2;
+
+  // X position of this champion group
+  const groupX = startX + championIndex * (groupWidth + groupGap);
+
+  // X position of this specific bar within the group
+  return groupX + serverIndex * (barWidth + barGap);
+}
+
+// Calculate X position for champion label (centered under the group)
+function getChampionLabelX(championIndex, serversCount) {
+  const groupWidth = serversCount * barWidth + (serversCount - 1) * barGap;
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const totalChampions = top5Champions.value.length;
+  const totalGroupsWidth = totalChampions * groupWidth + (totalChampions - 1) * groupGap;
+  const startX = padding.left + (plotWidth - totalGroupsWidth) / 2;
+  const groupX = startX + championIndex * (groupWidth + groupGap);
+  return groupX + groupWidth / 2;
+}
+
+// Get color based on gamer name (matching RadarChart color scheme)
+// First gamer (EUW) = green (var(--color-success))
+// Second gamer (EUNE) = purple (var(--color-primary))
+function getColorByGamerName(gamerName) {
+  const index = gamerNames.value.indexOf(gamerName);
+  const colors = [
+    'var(--color-success)',      // Green - First gamer (EUW)
+    'var(--color-primary)',      // Purple - Second gamer (EUNE)
+    '#f59e0b',                   // Amber
+    '#ec4899',                   // Pink
+  ];
+  return colors[index] || '#f59e0b';
+}
+
 function getServerColor(serverName) {
-  const colors = {
-    'EUW': 'var(--color-primary)',
-    'EUNE': 'var(--color-success)',
-  };
-  return colors[serverName] || '#f59e0b';
+  // Map by gamer name to ensure consistent colors
+  const gamerName = championData.value?.champions
+    ?.flatMap(c => c.servers)
+    ?.find(s => s.serverName === serverName)?.gamerName;
+
+  if (!gamerName) return '#f59e0b';
+  return getColorByGamerName(gamerName);
+}
+
+function setHoveredBar(championName, server) {
+  hoveredBar.value = { championName, server };
 }
 
 // Load data
@@ -203,11 +225,6 @@ async function load() {
   error.value = null;
   try {
     championData.value = await getChampionPerformance(props.userId);
-
-    // Auto-select first champion if available
-    if (filteredChampions.value.length > 0 && !selectedChampionId.value) {
-      selectedChampionId.value = filteredChampions.value[0].championId;
-    }
   } catch (e) {
     console.error('Error loading champion performance data:', e);
     error.value = e?.message || 'Failed to load champion performance data.';
@@ -216,13 +233,6 @@ async function load() {
     loading.value = false;
   }
 }
-
-// Watch for filter mode changes and update selection
-watch(filterMode, () => {
-  if (filteredChampions.value.length > 0) {
-    selectedChampionId.value = filteredChampions.value[0].championId;
-  }
-});
 
 watch(() => props.userId, load);
 onMounted(load);
@@ -257,67 +267,8 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1.5rem;
+  padding-top: 1rem;
   overflow: visible;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.filter-btn {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-text);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
-.filter-btn:hover {
-  background: var(--color-bg-elev);
-}
-
-.filter-btn.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.champion-buttons {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.champion-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-text);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.champion-btn:hover {
-  background: var(--color-bg-elev);
-  border-color: var(--color-primary);
-}
-
-.champion-btn.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-  font-weight: 600;
 }
 
 .bar-chart-container {
@@ -330,8 +281,8 @@ onMounted(load);
 
 .bar-chart {
   width: 100%;
-  max-width: 400px;
-  height: 280px;
+  max-width: 600px;
+  height: 400px;
   display: block;
 }
 
@@ -344,20 +295,27 @@ onMounted(load);
   opacity: 0.8;
 }
 
-.axis-label,
-.server-label,
-.winrate-label {
+.axis-label {
   fill: var(--color-text);
   font-size: 12px;
 }
 
-.server-label {
+.champion-label {
+  fill: var(--color-text);
+  font-size: 12px;
   font-weight: 600;
 }
 
 .winrate-label {
+  fill: var(--color-text);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
+}
+
+.legend-text {
+  fill: var(--color-text);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .tooltip {
