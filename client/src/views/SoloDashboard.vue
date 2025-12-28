@@ -46,11 +46,14 @@
             <DeathEfficiency :userId="userId" />
             <MatchDuration :userId="userId" />
           </div>
+
+          <!-- Summary Insights Panel -->
+          <SummaryInsights :userId="userId" />
         </template>
       </GamerCardsList>
     </div>
   </section>
-  
+
 </template>
 
 <script setup>
@@ -63,6 +66,7 @@ import ChampionPerformanceSplit from '@/components/ChampionPerformanceSplit.vue'
 import RoleDistribution from '@/components/RoleDistribution.vue';
 import DeathEfficiency from '@/components/DeathEfficiency.vue';
 import MatchDuration from '@/components/MatchDuration.vue';
+import SummaryInsights from '@/components/SummaryInsights.vue';
 import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
