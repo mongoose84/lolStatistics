@@ -116,17 +116,18 @@ const avgAssists = computed(() => {
   return (ta / total.value).toFixed(1)
 })
 
-// Per-minute metrics based on total playtime in seconds
+// Per-minute metrics based on total playtime in seconds (excluding ARAM)
+// ARAM games are excluded because they don't have traditional laning/CS mechanics
 const csPerMin = computed(() => {
-  const cs = Number(stats.value?.totalCreepScore ?? 0)
-  const secs = Number(stats.value?.totalDurationPlayedSeconds ?? 0)
+  const cs = Number(stats.value?.totalCreepScoreExcludingAram ?? 0)
+  const secs = Number(stats.value?.totalDurationPlayedExcludingAramSeconds ?? 0)
   if (!secs) return '0.0'
   return ((cs * 60) / secs).toFixed(1)
 })
 
 const goldPerMin = computed(() => {
-  const gold = Number(stats.value?.totalGoldEarned ?? 0)
-  const secs = Number(stats.value?.totalDurationPlayedSeconds ?? 0)
+  const gold = Number(stats.value?.totalGoldEarnedExcludingAram ?? 0)
+  const secs = Number(stats.value?.totalDurationPlayedExcludingAramSeconds ?? 0)
   if (!secs) return '0.0'
   return ((gold * 60) / secs).toFixed(1)
 })

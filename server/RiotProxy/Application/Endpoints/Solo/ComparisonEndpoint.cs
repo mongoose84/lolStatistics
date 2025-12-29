@@ -67,13 +67,16 @@ namespace RiotProxy.Application.Endpoints
                         var totalDurationMinutes = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuId) / 60.0;
                         var gamesPlayed = await matchParticipantRepo.GetMatchesCountByPuuIdAsync(puuId);
 
+                        // Use ARAM-excluding duration for CS/min and Gold/min calculations
+                        var totalDurationExcludingAramMinutes = await matchParticipantRepo.GetTotalDurationPlayedExcludingAramByPuuidAsync(puuId) / 60.0;
+
                         var winrate = await GetWinrateAsync(matchParticipantRepo, puuId);
                         winrateRecords.Add(new GamerRecord(winrate, gamerName));
                         var kda = await GetKdaAsync(matchParticipantRepo, puuId);
                         kdaRecords.Add(new GamerRecord(kda, gamerName));
-                        var csPrMin = await GetCsPrMinAsync(matchParticipantRepo, puuId, totalDurationMinutes);
+                        var csPrMin = await GetCsPrMinAsync(matchParticipantRepo, puuId, totalDurationExcludingAramMinutes);
                         csPrMinRecords.Add(new GamerRecord(csPrMin, gamerName));
-                        var goldPrMin = await GetGoldPrMinAsync(matchParticipantRepo, puuId, totalDurationMinutes);
+                        var goldPrMin = await GetGoldPrMinAsync(matchParticipantRepo, puuId, totalDurationExcludingAramMinutes);
                         goldPrMinRecords.Add(new GamerRecord(goldPrMin, gamerName));
                         gamesPlayedRecords.Add(new GamerRecord(gamesPlayed, gamerName));
 
@@ -140,16 +143,18 @@ namespace RiotProxy.Application.Endpoints
             
             return deaths == 0 ? 0 : (double)(kills + assists) / deaths;
         }
-        private async Task<double> GetCsPrMinAsync(LolMatchParticipantRepository repo, string puuId, double totalDurationMinutes)
+        private async Task<double> GetCsPrMinAsync(LolMatchParticipantRepository repo, string puuId, double totalDurationExcludingAramMinutes)
         {
-            var totalCreepScore = await repo.GetTotalCreepScoreByPuuIdAsync(puuId);
-            return totalDurationMinutes == 0 ? 0 : totalCreepScore / totalDurationMinutes;
+            // Use ARAM-excluding creep score for accurate CS/min calculation
+            var totalCreepScore = await repo.GetTotalCreepScoreExcludingAramByPuuIdAsync(puuId);
+            return totalDurationExcludingAramMinutes == 0 ? 0 : totalCreepScore / totalDurationExcludingAramMinutes;
         }
 
-        private async Task<double> GetGoldPrMinAsync(LolMatchParticipantRepository repo, string puuId, double totalDurationMinutes)
+        private async Task<double> GetGoldPrMinAsync(LolMatchParticipantRepository repo, string puuId, double totalDurationExcludingAramMinutes)
         {
-            var totalGoldEarned = await repo.GetTotalGoldEarnedByPuuIdAsync(puuId);
-            return totalDurationMinutes == 0 ? 0 : totalGoldEarned / totalDurationMinutes;
+            // Use ARAM-excluding gold earned for accurate Gold/min calculation
+            var totalGoldEarned = await repo.GetTotalGoldEarnedExcludingAramByPuuIdAsync(puuId);
+            return totalDurationExcludingAramMinutes == 0 ? 0 : totalGoldEarned / totalDurationExcludingAramMinutes;
         }
 
         private async Task<double> GetAvgKillsAsync(LolMatchParticipantRepository repo, string puuId, int gamesPlayed)

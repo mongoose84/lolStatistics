@@ -51,6 +51,11 @@ namespace RiotProxy.Application.Endpoints
                         var totalDurationPlayedSeconds = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuId);
                         var latestGame = await matchParticipantRepo.GetLatestGameDetailsByPuuIdAsync(puuId);
 
+                        // ARAM-excluding stats for accurate CS/min and Gold/min calculations
+                        var totalCreepScoreExcludingAram = await matchParticipantRepo.GetTotalCreepScoreExcludingAramByPuuIdAsync(puuId);
+                        var totalGoldEarnedExcludingAram = await matchParticipantRepo.GetTotalGoldEarnedExcludingAramByPuuIdAsync(puuId);
+                        var totalDurationExcludingAramSeconds = await matchParticipantRepo.GetTotalDurationPlayedExcludingAramByPuuidAsync(puuId);
+
                         gamer.Stats = new GamerStats
                         {
                             Wins = wins,
@@ -60,7 +65,10 @@ namespace RiotProxy.Application.Endpoints
                             TotalMatches = totalMatches,
                             TotalCreepScore = totalCreepScore,
                             TotalGoldEarned = totalGoldEarned,
-                            TotalDurationPlayedSeconds = totalDurationPlayedSeconds
+                            TotalDurationPlayedSeconds = totalDurationPlayedSeconds,
+                            TotalCreepScoreExcludingAram = totalCreepScoreExcludingAram,
+                            TotalGoldEarnedExcludingAram = totalGoldEarnedExcludingAram,
+                            TotalDurationPlayedExcludingAramSeconds = totalDurationExcludingAramSeconds
                         };
                         gamer.LatestGame = latestGame;
                         gamers.Add(gamer);
