@@ -17,7 +17,7 @@ export async function getTeamStats(userId) {
 
 export async function getTeamWinRateTrend(userId) {
   const base = getBaseApi();
-  const { data } = await axios.get(`${base}/team-winrate-trend/${userId}`);
+  const { data } = await axios.get(`${base}/team-win-rate-trend/${userId}`);
   return data;
 }
 

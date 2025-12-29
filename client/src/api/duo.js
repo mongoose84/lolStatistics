@@ -17,7 +17,7 @@ export async function getDuoStats(userId) {
 
 export async function getDuoWinRateTrend(userId) {
   const base = getBaseApi();
-  const { data } = await axios.get(`${base}/duo-winrate-trend/${userId}`);
+  const { data } = await axios.get(`${base}/duo-win-rate-trend/${userId}`);
   return data;
 }
 

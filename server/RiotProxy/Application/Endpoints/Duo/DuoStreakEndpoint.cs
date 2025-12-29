@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RiotProxy.Infrastructure.External.Database.Records;
 using RiotProxy.Infrastructure.External.Database.Repositories;
 using static RiotProxy.Application.DTOs.DuoTrendAnalysisDto;
 
