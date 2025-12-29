@@ -145,6 +145,10 @@ namespace RiotProxy.Application
             // Side stats endpoint (blue/red win rates)
             var sideStatsEndpoint = new SideStatsEndpoint(_basePath);
             _endpoints.Add(sideStatsEndpoint);
+
+            // Dev endpoint for refreshing games
+            var refreshGamesEndpoint = new RefreshGamesEndpoint(_basePath);
+            _endpoints.Add(refreshGamesEndpoint);
         }
 
         public void ConfigureEndpoints()

@@ -127,6 +127,32 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             return totalTimeBeingDeadSeconds;
         }
 
+        /// <summary>
+        /// Gets the timestamp of the most recent game played by a specific player.
+        /// </summary>
+        internal async Task<DateTime?> GetLatestGameTimestampByPuuIdAsync(string puuId)
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT MAX(m.GameEndTimestamp)
+                FROM LolMatchParticipant p
+                INNER JOIN LolMatch m ON p.MatchId = m.MatchId
+                WHERE p.Puuid = @puuid
+                  AND m.InfoFetched = TRUE
+                  AND m.GameEndTimestamp IS NOT NULL";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            var result = await cmd.ExecuteScalarAsync();
+
+            if (result == null || result == DBNull.Value)
+                return null;
+
+            return Convert.ToDateTime(result);
+        }
+
         private async Task<int> GetIntegerValueFromPuuIdAsync(string puuId, string sqlQuery)
         {
             await using var conn = _factory.CreateConnection();

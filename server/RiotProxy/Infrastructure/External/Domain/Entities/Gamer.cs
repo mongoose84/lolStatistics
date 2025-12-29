@@ -9,6 +9,11 @@ namespace RiotProxy.External.Domain.Entities
         public string IconUrl { get; set; } = string.Empty;
         public long Level { get; set; }
         public DateTime LastChecked { get; set; }
+        /// <summary>
+        /// The timestamp of the most recent game played by this gamer.
+        /// Populated at runtime from match data, not stored in the database.
+        /// </summary>
+        public DateTime? LatestGameTimestamp { get; set; }
         public GamerStats Stats { get; set; } = new GamerStats();
     }
 }
