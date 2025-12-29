@@ -47,9 +47,10 @@
 
         <!-- Team Features Container -->
         <div v-if="gamers.length >= 3" class="team-features-container">
-          <!-- Win Rate Trend & Duration Analysis (Two-column layout) -->
-          <div class="team-features-grid">
+          <!-- Win Rate Trend, Side Win Rate & Duration Analysis (Three-column layout) -->
+          <div class="team-features-grid-3">
             <TeamWinRateTrend :userId="userId" />
+            <SideWinRate :userId="userId" mode="team" />
             <TeamDurationAnalysis :userId="userId" />
           </div>
 
@@ -62,10 +63,10 @@
 
           <!-- Kill Analysis (Four-column layout) -->
           <div class="team-features-grid-4">
-            <TeamKillParticipation :userId="userId" />
-            <TeamKillsByPhase :userId="userId" />
-            <TeamKillsTrend :userId="userId" />
             <TeamMultiKillShowcase :userId="userId" />
+            <TeamKillsByPhase :userId="userId" />
+            <TeamKillParticipation :userId="userId" />
+            <TeamKillsTrend :userId="userId" />
           </div>
 
           <!-- Death Analysis (Four-column layout) -->
@@ -74,11 +75,6 @@
             <TeamDeathsByDuration :userId="userId" />
             <TeamDeathShare :userId="userId" />
             <TeamDeathsTrend :userId="userId" />
-          </div>
-
-          <!-- Side Win Rate -->
-          <div class="side-win-rate-section">
-            <SideWinRate :userId="userId" mode="team" />
           </div>
 
         </div>
@@ -372,13 +368,6 @@ defineExpose({ load });
 .team-performance-section :deep(.chart-card),
 .team-summary-section :deep(.chart-card) {
   max-width: 100%;
-}
-
-/* Side Win Rate section - one third width */
-.side-win-rate-section {
-  margin-top: 1.5rem;
-  display: flex;
-  width: 100%;
 }
 
 /* Mobile responsiveness */

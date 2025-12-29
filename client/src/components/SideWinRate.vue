@@ -127,11 +127,19 @@ onMounted(load);
 <style scoped>
 .side-win-rate-container {
   width: 100%;
-  max-width: 33.33%;
 }
 
 .side-win-rate-container :deep(.chart-card) {
   min-height: 200px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-win-rate-container :deep(.chart-card > div:last-child) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .loading, .error, .empty {
@@ -147,7 +155,8 @@ onMounted(load);
 .chart-content {
   display: flex;
   flex-direction: column;
-  padding-top: 2rem;
+  justify-content: center;
+  flex: 1;
 }
 
 .bar-chart {
