@@ -148,14 +148,18 @@ const { loading, error, gamers, hasUser, load } = useGamers(() => ({
   userId: props.userId,
 }));
 
-// Compute latest game date from gamers data (using actual match timestamps)
+// Compute latest game date from gamers data (for header display)
 const latestGameDate = computed(() => {
   if (!gamers.value || gamers.value.length === 0) return null;
 
   const dates = gamers.value
-    .map(g => g.latestGameTimestamp || g.LatestGameTimestamp)
-    .filter(d => d && d !== '0001-01-01T00:00:00')
-    .map(d => new Date(d));
+    .map(g => {
+      const game = g.latestGame || g.LatestGame;
+      if (!game) return null;
+      const timestamp = game.gameEndTimestamp || game.GameEndTimestamp;
+      return timestamp && timestamp !== '0001-01-01T00:00:00' ? new Date(timestamp) : null;
+    })
+    .filter(d => d !== null);
 
   if (dates.length === 0) return null;
   return new Date(Math.max(...dates));
@@ -180,7 +184,6 @@ const latestGameFormatted = computed(() => {
   if (days === 1) return 'yesterday';
   if (days < 7) return `${days} days ago`;
 
-  // For older dates, show the actual date
   return latestGameDate.value.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

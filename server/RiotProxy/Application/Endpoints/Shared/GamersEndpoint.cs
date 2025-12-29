@@ -49,7 +49,7 @@ namespace RiotProxy.Application.Endpoints
                         var totalCreepScore = await matchParticipantRepo.GetTotalCreepScoreByPuuIdAsync(puuId);
                         var totalGoldEarned = await matchParticipantRepo.GetTotalGoldEarnedByPuuIdAsync(puuId);
                         var totalDurationPlayedSeconds = await matchParticipantRepo.GetTotalDurationPlayedByPuuidAsync(puuId);
-                        var latestGameTimestamp = await matchParticipantRepo.GetLatestGameTimestampByPuuIdAsync(puuId);
+                        var latestGame = await matchParticipantRepo.GetLatestGameDetailsByPuuIdAsync(puuId);
 
                         gamer.Stats = new GamerStats
                         {
@@ -62,7 +62,7 @@ namespace RiotProxy.Application.Endpoints
                             TotalGoldEarned = totalGoldEarned,
                             TotalDurationPlayedSeconds = totalDurationPlayedSeconds
                         };
-                        gamer.LatestGameTimestamp = latestGameTimestamp;
+                        gamer.LatestGame = latestGame;
                         gamers.Add(gamer);
                     }
                 
