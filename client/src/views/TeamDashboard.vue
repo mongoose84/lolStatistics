@@ -76,10 +76,6 @@
             <TeamDeathsTrend :userId="userId" />
           </div>
 
-          <!-- Improvement Summary (Full width) -->
-          <div class="team-summary-section">
-            <TeamImprovementSummary :userId="userId" />
-          </div>
         </div>
       </template>
     </div>
@@ -95,7 +91,6 @@ import GamerCard from '@/views/GamerCard.vue';
 import AppLogo from '@/components/AppLogo.vue';
 import getTeamStats from '@/assets/getTeamStats.js';
 import TeamSynergyMatrix from '@/components/TeamSynergyMatrix.vue';
-import TeamImprovementSummary from '@/components/TeamImprovementSummary.vue';
 import TeamWinRateTrend from '@/components/TeamWinRateTrend.vue';
 import TeamDurationAnalysis from '@/components/TeamDurationAnalysis.vue';
 import TeamChampionCombos from '@/components/TeamChampionCombos.vue';

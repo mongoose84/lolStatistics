@@ -80,9 +80,6 @@ namespace RiotProxy.Application
             var teamSynergyEndpoint = new TeamSynergyEndpoint(_basePath);
             _endpoints.Add(teamSynergyEndpoint);
 
-            var teamImprovementSummaryEndpoint = new TeamImprovementSummaryEndpoint(_basePath);
-            _endpoints.Add(teamImprovementSummaryEndpoint);
-
             var teamWinRateTrendEndpoint = new TeamWinRateTrendEndpoint(_basePath);
             _endpoints.Add(teamWinRateTrendEndpoint);
 
