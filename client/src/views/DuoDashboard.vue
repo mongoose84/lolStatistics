@@ -71,22 +71,17 @@
 
           <!-- Kill Analysis Section -->
           <h3 class="section-title">⚔️ Kill Analysis</h3>
-          <div class="duo-features-grid">
+          <div class="duo-features-grid-4">
             <DuoMultiKillShowcase :userId="userId" />
             <DuoKillParticipation :userId="userId" />
-          </div>
-          <div class="duo-features-grid">
             <DuoKillsByPhase :userId="userId" />
             <DuoKillsTrend :userId="userId" />
           </div>
 
           <!-- Death Analysis Section -->
           <h3 class="section-title">💀 Death Analysis</h3>
-          <div class="duo-features-grid">
+          <div class="duo-features-grid-3-auto">
             <DuoDeathTimerImpact :userId="userId" />
-            <DuoDeathShare :userId="userId" />
-          </div>
-          <div class="duo-features-grid">
             <DuoDeathsByDuration :userId="userId" />
             <DuoDeathsTrend :userId="userId" />
           </div>
@@ -379,10 +374,35 @@ defineExpose({ load, loadDuoStats });
   height: 360px;
 }
 
+/* Duo Features Grid (Four-column layout for Kill Analysis) */
+.duo-features-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Duo Features Grid (Three-column layout for Death Analysis) */
+.duo-features-grid-3-auto {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
 /* Duo Summary Section (Full width) */
 .duo-summary-section {
   margin-top: 1.5rem;
   width: 100%;
+}
+
+@media (max-width: 1400px) {
+  .duo-features-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .duo-features-grid-3-auto {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 1400px) {
@@ -393,6 +413,12 @@ defineExpose({ load, loadDuoStats });
 
 @media (max-width: 1100px) {
   .duo-features-grid {
+    grid-template-columns: 1fr;
+  }
+  .duo-features-grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .duo-features-grid-3-auto {
     grid-template-columns: 1fr;
   }
 }
