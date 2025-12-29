@@ -10,5 +10,10 @@ namespace RiotProxy.External.Domain.Entities
         public int TotalCreepScore { get; set; }
         public int TotalGoldEarned { get; set; }
         public long TotalDurationPlayedSeconds { get; set; }
+
+        // ARAM-excluding stats for accurate CS/min and Gold/min calculations
+        public int TotalCreepScoreExcludingAram { get; set; }
+        public int TotalGoldEarnedExcludingAram { get; set; }
+        public long TotalDurationPlayedExcludingAramSeconds { get; set; }
     }
 }

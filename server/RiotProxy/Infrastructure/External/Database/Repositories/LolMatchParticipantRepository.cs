@@ -71,6 +71,63 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             return result != DBNull.Value ? Convert.ToInt64(result) : 0L;
         }
 
+        /// <summary>
+        /// Get total duration played excluding ARAM games (for CS/min and Gold/min calculations)
+        /// </summary>
+        internal async Task<long> GetTotalDurationPlayedExcludingAramByPuuidAsync(string puuId)
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT COALESCE(SUM(m.DurationSeconds), 0)
+                FROM LolMatch m
+                INNER JOIN LolMatchParticipant p ON m.MatchId = p.MatchId
+                WHERE p.Puuid = @puuid AND m.GameMode != 'ARAM'";
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            var result = await cmd.ExecuteScalarAsync();
+            return result != DBNull.Value ? Convert.ToInt64(result) : 0L;
+        }
+
+        /// <summary>
+        /// Get total creep score excluding ARAM games (for CS/min calculations)
+        /// </summary>
+        internal async Task<int> GetTotalCreepScoreExcludingAramByPuuIdAsync(string puuId)
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT COALESCE(SUM(p.CreepScore), 0)
+                FROM LolMatchParticipant p
+                INNER JOIN LolMatch m ON p.MatchId = m.MatchId
+                WHERE p.Puuid = @puuid AND m.GameMode != 'ARAM'";
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            var result = await cmd.ExecuteScalarAsync();
+            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+        }
+
+        /// <summary>
+        /// Get total gold earned excluding ARAM games (for Gold/min calculations)
+        /// </summary>
+        internal async Task<int> GetTotalGoldEarnedExcludingAramByPuuIdAsync(string puuId)
+        {
+            await using var conn = _factory.CreateConnection();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT COALESCE(SUM(p.GoldEarned), 0)
+                FROM LolMatchParticipant p
+                INNER JOIN LolMatch m ON p.MatchId = m.MatchId
+                WHERE p.Puuid = @puuid AND m.GameMode != 'ARAM'";
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuId);
+            var result = await cmd.ExecuteScalarAsync();
+            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+        }
+
         internal async Task<int> GetWinsByPuuIdAsync(string puuId)
         {
             const string sql = "SELECT COUNT(*) FROM LolMatchParticipant WHERE Puuid = @puuid AND Win = TRUE";
@@ -423,6 +480,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             {
                 // Get the latest N matches ordered chronologically (oldest to newest)
                 // Using a subquery to first get the most recent N matches, then order them chronologically
+                // Excludes ARAM games since CS/min and Gold/min are not meaningful for ARAM
                 sql = @"
                     SELECT * FROM (
                         SELECT
@@ -435,7 +493,8 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                         INNER JOIN LolMatch m ON p.MatchId = m.MatchId
                         WHERE p.Puuid = @puuid
                           AND m.InfoFetched = TRUE
-                          AND m.DurationSeconds > 0";
+                          AND m.DurationSeconds > 0
+                          AND m.GameMode != 'ARAM'";
 
                 if (fromDate.HasValue)
                 {
@@ -451,6 +510,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             else
             {
                 // No limit - get all matches
+                // Excludes ARAM games since CS/min and Gold/min are not meaningful for ARAM
                 sql = @"
                     SELECT
                         p.Win,
@@ -462,7 +522,8 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                     INNER JOIN LolMatch m ON p.MatchId = m.MatchId
                     WHERE p.Puuid = @puuid
                       AND m.InfoFetched = TRUE
-                      AND m.DurationSeconds > 0";
+                      AND m.DurationSeconds > 0
+                      AND m.GameMode != 'ARAM'";
 
                 if (fromDate.HasValue)
                 {
