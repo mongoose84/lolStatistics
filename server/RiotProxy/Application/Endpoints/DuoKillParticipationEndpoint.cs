@@ -59,11 +59,11 @@ namespace RiotProxy.Application.Endpoints
                             PlayerName: playerNames[r.PuuId],
                             Kills: r.TotalKills,
                             Assists: r.TotalAssists,
-                            KillParticipation: totalDuoKills > 0 
-                                ? Math.Round((double)(r.TotalKills + r.TotalAssists) / r.TotalTeamKills * 100, 1) 
+                            KillParticipation: totalDuoKills > 0
+                                ? Math.Round((double)r.TotalKills / totalDuoKills * 100, 1)
                                 : 0,
-                            AvgKillsPerGame: r.GamesPlayed > 0 
-                                ? Math.Round((double)r.TotalKills / r.GamesPlayed, 1) 
+                            AvgKillsPerGame: r.GamesPlayed > 0
+                                ? Math.Round((double)r.TotalKills / r.GamesPlayed, 1)
                                 : 0
                         ))
                         .OrderByDescending(p => p.Kills)

@@ -4,7 +4,7 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="!hasData" class="empty">No kill participation data available.</div>
 
-    <ChartCard v-else title="🗡️ Kill Participation">
+    <ChartCard v-else title="🗡️ Kill Share">
       <div class="share-content">
         <div class="total-header">
           <span class="total-label">Total Duo Kills:</span>
@@ -27,10 +27,10 @@
 
         <p v-if="lowestPlayer" class="insight">
           <span v-if="isLowestSignificant">
-            ⚠️ {{ getShortName(lowestPlayer.playerName) }} has low kill participation ({{ lowestPlayer.killParticipation.toFixed(0) }}%)
+            ⚠️ {{ getShortName(lowestPlayer.playerName) }} has low kill share ({{ lowestPlayer.killParticipation.toFixed(0) }}%)
           </span>
           <span v-else>
-            ✓ Good kill participation across the duo
+            ✓ Balanced kill distribution across the duo
           </span>
         </p>
       </div>
