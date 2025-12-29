@@ -111,7 +111,7 @@ onMounted(load);
 .badge.penta { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
 .badge.quadra { background: #8b5cf6; color: white; }
 .badge.triple { background: var(--color-primary); color: white; }
-.badge.double { background: var(--color-bg-elev); color: var(--color-text); }
+.badge.double { background: #a78bfa; color: white; }
 .no-multi { color: var(--color-text-muted); font-size: 0.8rem; }
 .total-multi { font-size: 0.85rem; font-weight: 600; min-width: 25px; text-align: right; }
 

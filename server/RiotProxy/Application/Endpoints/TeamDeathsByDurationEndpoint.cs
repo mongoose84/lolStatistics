@@ -39,12 +39,15 @@ namespace RiotProxy.Application.Endpoints
                     // Get deaths by duration
                     var durationRecords = await matchParticipantRepo.GetTeamDeathsByDurationAsync(distinctPuuIds, gameMode);
 
-                    // Define bucket metadata
+                    // Define bucket metadata (5-minute intervals)
                     var bucketMeta = new Dictionary<string, (string Label, int Min, int Max)>
                     {
-                        ["under25"] = ("< 25 min", 0, 25),
-                        ["25-35"] = ("25-35 min", 25, 35),
-                        ["35+"] = ("35+ min", 35, 999)
+                        ["under20"] = ("< 20 min", 0, 20),
+                        ["20-25"] = ("20-25 min", 20, 25),
+                        ["25-30"] = ("25-30 min", 25, 30),
+                        ["30-35"] = ("30-35 min", 30, 35),
+                        ["35-40"] = ("35-40 min", 35, 40),
+                        ["40+"] = ("40+ min", 40, 999)
                     };
 
                     // Convert to response format with all buckets (even empty ones)

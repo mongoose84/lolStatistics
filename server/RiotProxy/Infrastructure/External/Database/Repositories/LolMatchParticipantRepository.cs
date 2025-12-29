@@ -1839,7 +1839,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
         }
 
         /// <summary>
-        /// Get team deaths grouped by game duration buckets.
+        /// Get team deaths grouped by game duration buckets (5-minute intervals).
         /// </summary>
         internal async Task<IList<TeamDeathsByDurationRecord>> GetTeamDeathsByDurationAsync(string[] puuIds, string? gameMode = null)
         {
@@ -1865,12 +1865,16 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             // Sum deaths for all team members
             var deathsSum = string.Join(" + ", Enumerable.Range(0, puuIds.Length).Select(i => $"p{i}.Deaths"));
 
+            // Use 5-minute intervals: <20, 20-25, 25-30, 30-35, 35-40, 40+
             var sql = $@"
                 SELECT
                     CASE
-                        WHEN m.DurationSeconds < 1500 THEN 'under25'
-                        WHEN m.DurationSeconds < 2100 THEN '25-35'
-                        ELSE '35+'
+                        WHEN m.DurationSeconds < 1200 THEN 'under20'
+                        WHEN m.DurationSeconds < 1500 THEN '20-25'
+                        WHEN m.DurationSeconds < 1800 THEN '25-30'
+                        WHEN m.DurationSeconds < 2100 THEN '30-35'
+                        WHEN m.DurationSeconds < 2400 THEN '35-40'
+                        ELSE '40+'
                     END as DurationBucket,
                     COUNT(DISTINCT p0.MatchId) as GamesPlayed,
                     SUM(CASE WHEN p0.Win = 1 THEN 1 ELSE 0 END) as Wins,
@@ -1886,11 +1890,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 sql += " AND m.GameMode = @gameMode";
             }
 
-            sql += @" GROUP BY CASE
-                        WHEN m.DurationSeconds < 1500 THEN 'under25'
-                        WHEN m.DurationSeconds < 2100 THEN '25-35'
-                        ELSE '35+'
-                    END";
+            sql += " GROUP BY DurationBucket ORDER BY DurationBucket";
 
             await using var cmd = new MySqlCommand(sql, conn);
             for (int i = 0; i < puuIds.Length; i++)
