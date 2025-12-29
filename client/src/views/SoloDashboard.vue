@@ -68,18 +68,21 @@
 
 <script setup>
 import { useGamers } from '@/composables/useGamers.js';
-import GamerCardsList from '@/components/GamerCardsList.vue';
-import PerformanceCharts from '@/components/PerformanceCharts.vue';
+// Shared components
+import GamerCardsList from '@/components/shared/GamerCardsList.vue';
+import RadarChart from '@/components/shared/RadarChart.vue';
+import SideWinRate from '@/components/shared/SideWinRate.vue';
+import AppLogo from '@/components/shared/AppLogo.vue';
+// Solo components
+import PerformanceCharts from '@/components/solo/PerformanceCharts.vue';
+import ChampionPerformanceSplit from '@/components/solo/ChampionPerformanceSplit.vue';
+import RoleDistribution from '@/components/solo/RoleDistribution.vue';
+import DeathEfficiency from '@/components/solo/DeathEfficiency.vue';
+import MatchDuration from '@/components/solo/MatchDuration.vue';
+import SummaryInsights from '@/components/solo/SummaryInsights.vue';
+import ChampionMatchups from '@/components/solo/ChampionMatchups.vue';
+// Local views
 import ComparisonStrip from './ComparisonStrip.vue';
-import RadarChart from '@/components/RadarChart.vue';
-import ChampionPerformanceSplit from '@/components/ChampionPerformanceSplit.vue';
-import RoleDistribution from '@/components/RoleDistribution.vue';
-import DeathEfficiency from '@/components/DeathEfficiency.vue';
-import MatchDuration from '@/components/MatchDuration.vue';
-import SummaryInsights from '@/components/SummaryInsights.vue';
-import ChampionMatchups from '@/components/ChampionMatchups.vue';
-import SideWinRate from '@/components/SideWinRate.vue';
-import AppLogo from '@/components/AppLogo.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({

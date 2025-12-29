@@ -97,29 +97,29 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useGamers } from '@/composables/useGamers.js';
-import GamerCardsList from '@/components/GamerCardsList.vue';
+import { getDuoStats } from '@/api/duo.js';
+// Shared components
+import GamerCardsList from '@/components/shared/GamerCardsList.vue';
+import SideWinRate from '@/components/shared/SideWinRate.vue';
+import AppLogo from '@/components/shared/AppLogo.vue';
+// Duo components
+import ChampionSynergyMatrix from '@/components/duo/ChampionSynergyMatrix.vue';
+import DuoVsEnemyMatrix from '@/components/duo/DuoVsEnemyMatrix.vue';
+import DuoMatchDuration from '@/components/duo/DuoMatchDuration.vue';
+import DuoImprovementSummary from '@/components/duo/DuoImprovementSummary.vue';
+import DuoMultiKillShowcase from '@/components/duo/DuoMultiKillShowcase.vue';
+import DuoKillsByPhase from '@/components/duo/DuoKillsByPhase.vue';
+import DuoKillParticipation from '@/components/duo/DuoKillParticipation.vue';
+import DuoKillsTrend from '@/components/duo/DuoKillsTrend.vue';
+import DuoDeathTimerImpact from '@/components/duo/DuoDeathTimerImpact.vue';
+import DuoDeathsByDuration from '@/components/duo/DuoDeathsByDuration.vue';
+import DuoDeathShare from '@/components/duo/DuoDeathShare.vue';
+import DuoDeathsTrend from '@/components/duo/DuoDeathsTrend.vue';
+import DuoWinRateTrend from '@/components/duo/DuoWinRateTrend.vue';
+import DuoPerformanceRadar from '@/components/duo/DuoPerformanceRadar.vue';
+import DuoStreak from '@/components/duo/DuoStreak.vue';
+// Local views
 import GamerCard from '@/views/GamerCard.vue';
-import AppLogo from '@/components/AppLogo.vue';
-import getDuoStats from '@/assets/getDuoStats.js';
-import ChampionSynergyMatrix from '@/components/ChampionSynergyMatrix.vue';
-import DuoVsEnemyMatrix from '@/components/DuoVsEnemyMatrix.vue';
-import DuoMatchDuration from '@/components/DuoMatchDuration.vue';
-import DuoImprovementSummary from '@/components/DuoImprovementSummary.vue';
-import SideWinRate from '@/components/SideWinRate.vue';
-// Kill Analysis Components
-import DuoMultiKillShowcase from '@/components/DuoMultiKillShowcase.vue';
-import DuoKillsByPhase from '@/components/DuoKillsByPhase.vue';
-import DuoKillParticipation from '@/components/DuoKillParticipation.vue';
-import DuoKillsTrend from '@/components/DuoKillsTrend.vue';
-// Death Analysis Components
-import DuoDeathTimerImpact from '@/components/DuoDeathTimerImpact.vue';
-import DuoDeathsByDuration from '@/components/DuoDeathsByDuration.vue';
-import DuoDeathShare from '@/components/DuoDeathShare.vue';
-import DuoDeathsTrend from '@/components/DuoDeathsTrend.vue';
-// Trend Analysis Components
-import DuoWinRateTrend from '@/components/DuoWinRateTrend.vue';
-import DuoPerformanceRadar from '@/components/DuoPerformanceRadar.vue';
-import DuoStreak from '@/components/DuoStreak.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({

@@ -1,5 +1,5 @@
 import { ref, computed, onMounted, watch } from 'vue';
-import getGamers from '@/assets/getGamers.js';
+import { getGamers } from '@/api/shared.js';
 
 /**
  * Composable for loading and managing gamers data.
