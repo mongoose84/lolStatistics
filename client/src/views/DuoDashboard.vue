@@ -50,7 +50,6 @@
         <!-- Duo Features Container -->
         <div v-if="gamers.length === 2" class="duo-features-container">
           <!-- Trend Analysis Section (Top, Single Row) -->
-          <h3 class="section-title">📊 Trend Analysis</h3>
           <div class="duo-features-grid-3">
             <DuoWinRateTrend :userId="userId" />
             <DuoStreak :userId="userId" />
@@ -70,7 +69,6 @@
           </div>
 
           <!-- Kill Analysis Section -->
-          <h3 class="section-title">⚔️ Kill Analysis</h3>
           <div class="duo-features-grid-4">
             <DuoMultiKillShowcase :userId="userId" />
             <DuoKillParticipation :userId="userId" />
@@ -79,7 +77,6 @@
           </div>
 
           <!-- Death Analysis Section -->
-          <h3 class="section-title">💀 Death Analysis</h3>
           <div class="duo-features-grid-3-auto">
             <DuoDeathTimerImpact :userId="userId" />
             <DuoDeathsByDuration :userId="userId" />
