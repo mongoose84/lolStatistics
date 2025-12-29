@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import getComparison from '@/assets/getComparison.js'
+import { getComparison } from '@/api/solo.js'
 
 const props = defineProps({
   userId: { type: [String, Number], required: true }

@@ -87,24 +87,27 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useGamers } from '@/composables/useGamers.js';
-import GamerCardsList from '@/components/GamerCardsList.vue';
+import { getTeamStats } from '@/api/team.js';
+// Shared components
+import GamerCardsList from '@/components/shared/GamerCardsList.vue';
+import SideWinRate from '@/components/shared/SideWinRate.vue';
+import AppLogo from '@/components/shared/AppLogo.vue';
+// Team components
+import TeamSynergyMatrix from '@/components/team/TeamSynergyMatrix.vue';
+import TeamWinRateTrend from '@/components/team/TeamWinRateTrend.vue';
+import TeamDurationAnalysis from '@/components/team/TeamDurationAnalysis.vue';
+import TeamChampionCombos from '@/components/team/TeamChampionCombos.vue';
+import TeamRolePairEffectiveness from '@/components/team/TeamRolePairEffectiveness.vue';
+import TeamDeathTimerImpact from '@/components/team/TeamDeathTimerImpact.vue';
+import TeamDeathsByDuration from '@/components/team/TeamDeathsByDuration.vue';
+import TeamDeathShare from '@/components/team/TeamDeathShare.vue';
+import TeamDeathsTrend from '@/components/team/TeamDeathsTrend.vue';
+import TeamKillParticipation from '@/components/team/TeamKillParticipation.vue';
+import TeamKillsByPhase from '@/components/team/TeamKillsByPhase.vue';
+import TeamKillsTrend from '@/components/team/TeamKillsTrend.vue';
+import TeamMultiKillShowcase from '@/components/team/TeamMultiKillShowcase.vue';
+// Local views
 import GamerCard from '@/views/GamerCard.vue';
-import AppLogo from '@/components/AppLogo.vue';
-import getTeamStats from '@/assets/getTeamStats.js';
-import TeamSynergyMatrix from '@/components/TeamSynergyMatrix.vue';
-import TeamWinRateTrend from '@/components/TeamWinRateTrend.vue';
-import TeamDurationAnalysis from '@/components/TeamDurationAnalysis.vue';
-import TeamChampionCombos from '@/components/TeamChampionCombos.vue';
-import TeamRolePairEffectiveness from '@/components/TeamRolePairEffectiveness.vue';
-import TeamDeathTimerImpact from '@/components/TeamDeathTimerImpact.vue';
-import TeamDeathsByDuration from '@/components/TeamDeathsByDuration.vue';
-import TeamDeathShare from '@/components/TeamDeathShare.vue';
-import TeamDeathsTrend from '@/components/TeamDeathsTrend.vue';
-import TeamKillParticipation from '@/components/TeamKillParticipation.vue';
-import TeamKillsByPhase from '@/components/TeamKillsByPhase.vue';
-import TeamKillsTrend from '@/components/TeamKillsTrend.vue';
-import TeamMultiKillShowcase from '@/components/TeamMultiKillShowcase.vue';
-import SideWinRate from '@/components/SideWinRate.vue';
 
 // ----- Props coming from the parent (router, other component, etc.) -----
 const props = defineProps({

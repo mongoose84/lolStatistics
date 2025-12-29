@@ -54,10 +54,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import CreateDashboardPopup from './CreateDashboardPopup.vue'
-import createUser  from '@/assets/createUser.js'
-import getUsers from '@/assets/getUsers.js'
-import AppLogo from '@/components/AppLogo.vue'
-import { isDevelopment } from '@/assets/getHost.js'
+import { createUser, getUsers, isDevelopment } from '@/api/shared.js'
+import AppLogo from '@/components/shared/AppLogo.vue'
 // ----- Options for the dropdown ---------------------------------------
 const options = [
   { value: 'NA', label: 'NA' },
