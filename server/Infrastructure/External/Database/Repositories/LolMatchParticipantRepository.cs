@@ -59,80 +59,58 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             return matchIds;
         }
 
-        internal async Task<long> GetTotalDurationPlayedByPuuidAsync(string puuId)
-        {
-            await using var conn = _factory.CreateConnection();
-            await conn.OpenAsync();
-
-            const string sql = "SELECT SUM(DurationSeconds) FROM LolMatch WHERE MatchId IN (SELECT MatchId FROM LolMatchParticipant WHERE Puuid = @puuid)";
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuId);
-            var result = await cmd.ExecuteScalarAsync();
-            return result != DBNull.Value ? Convert.ToInt64(result) : 0L;
-        }
-
         /// <summary>
-        /// Get total duration played excluding ARAM games (for CS/min and Gold/min calculations)
+        /// Get all aggregate statistics for a player in a single query.
+        /// This consolidates multiple individual stat queries into one database round-trip.
         /// </summary>
-        internal async Task<long> GetTotalDurationPlayedExcludingAramByPuuidAsync(string puuId)
+        public async Task<PlayerAggregateStatsRecord> GetAggregateStatsByPuuIdAsync(string puuId)
         {
             await using var conn = _factory.CreateConnection();
             await conn.OpenAsync();
 
             const string sql = @"
-                SELECT COALESCE(SUM(m.DurationSeconds), 0)
-                FROM LolMatch m
-                INNER JOIN LolMatchParticipant p ON m.MatchId = p.MatchId
-                WHERE p.Puuid = @puuid AND m.GameMode != 'ARAM'";
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuId);
-            var result = await cmd.ExecuteScalarAsync();
-            return result != DBNull.Value ? Convert.ToInt64(result) : 0L;
-        }
-
-        /// <summary>
-        /// Get total creep score excluding ARAM games (for CS/min calculations)
-        /// </summary>
-        internal async Task<int> GetTotalCreepScoreExcludingAramByPuuIdAsync(string puuId)
-        {
-            await using var conn = _factory.CreateConnection();
-            await conn.OpenAsync();
-
-            const string sql = @"
-                SELECT COALESCE(SUM(p.CreepScore), 0)
+                SELECT
+                    -- Basic stats (all games)
+                    COUNT(*) as TotalMatches,
+                    SUM(CASE WHEN p.Win = 1 THEN 1 ELSE 0 END) as Wins,
+                    COALESCE(SUM(p.Kills), 0) as TotalKills,
+                    COALESCE(SUM(p.Deaths), 0) as TotalDeaths,
+                    COALESCE(SUM(p.Assists), 0) as TotalAssists,
+                    COALESCE(SUM(p.CreepScore), 0) as TotalCreepScore,
+                    COALESCE(SUM(p.GoldEarned), 0) as TotalGoldEarned,
+                    COALESCE(SUM(m.DurationSeconds), 0) as TotalDurationPlayedSeconds,
+                    COALESCE(SUM(p.TimeBeingDeadSeconds), 0) as TotalTimeBeingDeadSeconds,
+                    -- ARAM-excluded stats (for CS/min and Gold/min calculations)
+                    COALESCE(SUM(CASE WHEN m.GameMode != 'ARAM' THEN p.CreepScore ELSE 0 END), 0) as TotalCreepScoreExcludingAram,
+                    COALESCE(SUM(CASE WHEN m.GameMode != 'ARAM' THEN p.GoldEarned ELSE 0 END), 0) as TotalGoldEarnedExcludingAram,
+                    COALESCE(SUM(CASE WHEN m.GameMode != 'ARAM' THEN m.DurationSeconds ELSE 0 END), 0) as TotalDurationExcludingAramSeconds
                 FROM LolMatchParticipant p
                 INNER JOIN LolMatch m ON p.MatchId = m.MatchId
-                WHERE p.Puuid = @puuid AND m.GameMode != 'ARAM'";
+                WHERE p.Puuid = @puuid";
+
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@puuid", puuId);
-            var result = await cmd.ExecuteScalarAsync();
-            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
-        }
+            await using var reader = await cmd.ExecuteReaderAsync();
 
-        /// <summary>
-        /// Get total gold earned excluding ARAM games (for Gold/min calculations)
-        /// </summary>
-        internal async Task<int> GetTotalGoldEarnedExcludingAramByPuuIdAsync(string puuId)
-        {
-            await using var conn = _factory.CreateConnection();
-            await conn.OpenAsync();
+            if (await reader.ReadAsync())
+            {
+                return new PlayerAggregateStatsRecord(
+                    TotalMatches: reader.GetInt32("TotalMatches"),
+                    Wins: reader.GetInt32("Wins"),
+                    TotalKills: reader.GetInt32("TotalKills"),
+                    TotalDeaths: reader.GetInt32("TotalDeaths"),
+                    TotalAssists: reader.GetInt32("TotalAssists"),
+                    TotalCreepScore: reader.GetInt32("TotalCreepScore"),
+                    TotalGoldEarned: reader.GetInt32("TotalGoldEarned"),
+                    TotalDurationPlayedSeconds: reader.GetInt64("TotalDurationPlayedSeconds"),
+                    TotalTimeBeingDeadSeconds: reader.GetInt32("TotalTimeBeingDeadSeconds"),
+                    TotalCreepScoreExcludingAram: reader.GetInt32("TotalCreepScoreExcludingAram"),
+                    TotalGoldEarnedExcludingAram: reader.GetInt32("TotalGoldEarnedExcludingAram"),
+                    TotalDurationExcludingAramSeconds: reader.GetInt64("TotalDurationExcludingAramSeconds")
+                );
+            }
 
-            const string sql = @"
-                SELECT COALESCE(SUM(p.GoldEarned), 0)
-                FROM LolMatchParticipant p
-                INNER JOIN LolMatch m ON p.MatchId = m.MatchId
-                WHERE p.Puuid = @puuid AND m.GameMode != 'ARAM'";
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuId);
-            var result = await cmd.ExecuteScalarAsync();
-            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
-        }
-
-        internal async Task<int> GetWinsByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT COUNT(*) FROM LolMatchParticipant WHERE Puuid = @puuid AND Win = TRUE";
-            var wins = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return wins;
+            return new PlayerAggregateStatsRecord(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         internal async Task<int> GetMatchesCountByPuuIdAsync(string puuId)
@@ -140,48 +118,6 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             const string sql = "SELECT COUNT(*) FROM LolMatchParticipant WHERE Puuid = @puuid";
             var totalMatches = await GetIntegerValueFromPuuIdAsync(puuId, sql);
             return totalMatches;
-        }
-
-        internal async Task<int> GetTotalAssistsByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT SUM(Assists) FROM LolMatchParticipant WHERE Puuid = @puuid";
-            var totalAssists = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return totalAssists;
-        }
-
-        internal async Task<int> GetTotalDeathsByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT SUM(Deaths) FROM LolMatchParticipant WHERE Puuid = @puuid";
-            var totalDeaths = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return totalDeaths;
-        }
-
-        internal async Task<int> GetTotalKillsByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT SUM(Kills) FROM LolMatchParticipant WHERE Puuid = @puuid";
-            var totalKills = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return totalKills;
-        }
-
-        internal async Task<int> GetTotalCreepScoreByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT SUM(CreepScore) FROM LolMatchParticipant WHERE Puuid = @puuid";
-            var totalCreepScore = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return totalCreepScore;
-        }
-
-        internal async Task<int> GetTotalGoldEarnedByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT SUM(GoldEarned) FROM LolMatchParticipant WHERE Puuid = @puuid";
-            var totalGoldEarned = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return totalGoldEarned;
-        }
-
-        internal async Task<int> GetTotalTimeBeingDeadSecondsByPuuIdAsync(string puuId)
-        {
-            const string sql = "SELECT SUM(TimeBeingDeadSeconds) FROM LolMatchParticipant WHERE Puuid = @puuid";
-            var totalTimeBeingDeadSeconds = await GetIntegerValueFromPuuIdAsync(puuId, sql);
-            return totalTimeBeingDeadSeconds;
         }
 
         /// <summary>
