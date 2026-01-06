@@ -27,11 +27,11 @@ client/*.local
 client/coverage
 
 # server
-server/RiotProxy/bin
-server/RiotProxy/obj
-server/RiotProxy/publish
-server/RiotProxy/RiotSecret.txt
-server/RiotProxy/DatabaseSecret.txt
+server/bin
+server/obj
+server/publish
+server/RiotSecret.txt
+server/DatabaseSecret.txt
 
 # published files
 publish/**/*
