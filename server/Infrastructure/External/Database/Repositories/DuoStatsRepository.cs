@@ -36,11 +36,13 @@ public class DuoStatsRepository : RepositoryBase
               AND m.InfoFetched = TRUE
               AND m.GameMode != 'ARAM'";
 
-        return await ExecuteSingleAsync(sql, r => new DuoStatsRecord(
-            r.GetInt32("GamesPlayed"),
-            r.GetInt32("Wins"),
-            "Excluding ARAM"
+        var result = await ExecuteSingleAsync(sql, r => new DuoStatsRecord(
+            r.IsDBNull(r.GetOrdinal("GamesPlayed")) ? 0 : r.GetInt32("GamesPlayed"),
+            r.IsDBNull(r.GetOrdinal("Wins")) ? 0 : r.GetInt32("Wins"),
+            null // Pass null to use default ARAM exclusion in downstream methods
         ), ("@puuid1", puuId1), ("@puuid2", puuId2));
+
+        return result?.GamesPlayed > 0 ? result : null;
     }
 
     /// <summary>
@@ -682,11 +684,11 @@ public class DuoStatsRepository : RepositoryBase
             if (await reader.ReadAsync())
             {
                 var puuId = reader.GetString("PuuId");
-                var totalKills = reader.GetInt32("TotalKills");
-                var totalAssists = reader.GetInt32("TotalAssists");
-                var teamKills = reader.GetInt32("TeamKills");
-                var deathsInLosses = reader.GetInt32("DeathsInLosses");
-                var teamDeathsInLosses = reader.GetInt32("TeamDeathsInLosses");
+                var totalKills = reader.IsDBNull(reader.GetOrdinal("TotalKills")) ? 0 : reader.GetInt32("TotalKills");
+                var totalAssists = reader.IsDBNull(reader.GetOrdinal("TotalAssists")) ? 0 : reader.GetInt32("TotalAssists");
+                var teamKills = reader.IsDBNull(reader.GetOrdinal("TeamKills")) ? 0 : reader.GetInt32("TeamKills");
+                var deathsInLosses = reader.IsDBNull(reader.GetOrdinal("DeathsInLosses")) ? 0 : reader.GetInt32("DeathsInLosses");
+                var teamDeathsInLosses = reader.IsDBNull(reader.GetOrdinal("TeamDeathsInLosses")) ? 0 : reader.GetInt32("TeamDeathsInLosses");
 
                 return new DuoKillEfficiencyRecord(puuId, totalKills, totalAssists, teamKills, deathsInLosses, teamDeathsInLosses);
             }
@@ -1272,7 +1274,7 @@ public class DuoStatsRepository : RepositoryBase
             await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                var gamesPlayed = reader.GetInt32("GamesPlayed");
+                var gamesPlayed = reader.IsDBNull(reader.GetOrdinal("GamesPlayed")) ? 0 : reader.GetInt32("GamesPlayed");
                 if (gamesPlayed == 0)
                 {
                     return null;
@@ -1285,7 +1287,7 @@ public class DuoStatsRepository : RepositoryBase
                     AvgCs: reader.IsDBNull(reader.GetOrdinal("AvgCs")) ? 0 : reader.GetDouble("AvgCs"),
                     AvgGoldEarned: reader.IsDBNull(reader.GetOrdinal("AvgGoldEarned")) ? 0 : reader.GetDouble("AvgGoldEarned"),
                     GamesPlayed: gamesPlayed,
-                    Wins: reader.GetInt32("Wins")
+                    Wins: reader.IsDBNull(reader.GetOrdinal("Wins")) ? 0 : reader.GetInt32("Wins")
                 );
             }
 

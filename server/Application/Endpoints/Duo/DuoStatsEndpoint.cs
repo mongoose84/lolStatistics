@@ -78,7 +78,7 @@ namespace RiotProxy.Application.Endpoints
             });
         }
 
-        private static string MapGameModeToQueueType(string gameMode)
+        private static string MapGameModeToQueueType(string? gameMode)
         {
             return gameMode switch
             {
@@ -88,6 +88,7 @@ namespace RiotProxy.Application.Endpoints
                 "NEXUSBLITZ" => "Nexus Blitz",
                 "ONEFORALL" => "One For All",
                 "TUTORIAL" => "Tutorial",
+                null => "Excluding ARAM",
                 _ => gameMode
             };
         }
