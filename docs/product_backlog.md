@@ -1400,11 +1400,11 @@ Framework for A/B testing features and pricing.
 
 | Area | Location |
 |------|----------|
-| Entities | `server/RiotProxy/Infrastructure/External/Domain/Entities/` |
-| Repositories | `server/RiotProxy/Infrastructure/External/Database/Repositories/` |
-| Endpoints | `server/RiotProxy/Application/Endpoints/` |
-| Services | `server/RiotProxy/Application/Services/` (create) |
-| DTOs | `server/RiotProxy/Application/DTOs/` |
+| Entities | `server/Infrastructure/External/Domain/Entities/` |
+| Repositories | `server/Infrastructure/External/Database/Repositories/` |
+| Endpoints | `server/Application/Endpoints/` |
+| Services | `server/Application/Services/` (create) |
+| DTOs | `server/Application/DTOs/` |
 | Vue Components | `client/src/components/` |
 | Vue Views | `client/src/views/` |
 | Composables | `client/src/composables/` |
