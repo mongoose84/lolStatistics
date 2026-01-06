@@ -45,7 +45,7 @@ jobs:
         run: |
           curl -v --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
             "ftp://${{ secrets.FTP_URL }}" `
-            -Q "RNFR $/CI-Support/app_offline.htm" `
+            -Q "RNFR ${{ secrets.FTP_SERVER_PATH }}/CI-Support/app_offline.htm" `
             -Q "RNTO ${{ secrets.FTP_SERVER_PATH }}/app_offline.htm"
           
 
@@ -145,5 +145,5 @@ jobs:
           curl -v --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
             "ftp://${{ secrets.FTP_URL }}" `
             -Q "RNFR ${{ secrets.FTP_SERVER_PATH }}/app_offline.htm" `
-            -Q "RNTO $/CI-Support/app_offline.htm"
+            -Q "RNTO ${{ secrets.FTP_SERVER_PATH }}/CI-Support/app_offline.htm"
 
