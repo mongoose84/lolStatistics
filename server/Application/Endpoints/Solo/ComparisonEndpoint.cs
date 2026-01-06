@@ -68,7 +68,6 @@ namespace RiotProxy.Application.Endpoints
                         // Fetch all aggregate stats in a single query
                         var stats = await matchParticipantRepo.GetAggregateStatsByPuuIdAsync(puuId);
                         
-                        var totalDurationMinutes = stats.TotalDurationPlayedSeconds / 60.0;
                         var totalDurationExcludingAramMinutes = stats.TotalDurationExcludingAramSeconds / 60.0;
                         var gamesPlayed = stats.TotalMatches;
 
