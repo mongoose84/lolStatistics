@@ -18,23 +18,20 @@ namespace RiotProxy.Application.Endpoints
         {
             app.MapPost(Route, async (
                 [FromServices] LolMatchRepository matchRepository,
+                [FromServices] LolMatchParticipantRepository participantRepository,
                 [FromServices] IRiotApiClient riotApiClient,
                 CancellationToken ct
                 ) =>
             {
                 try
                 {
-                    // Create the backfill job
-                    var backfillJob = new QueueIdBackfillJob(matchRepository, riotApiClient);
+                    var backfillJob = new QueueIdBackfillJob(matchRepository, participantRepository, riotApiClient);
 
-                    // Create runner with conservative settings to respect rate limits
-                    // Batch size of 10 with 500ms delay between batches
                     var runner = new BackfillJobRunner(
                         batchSize: 10,
                         delayBetweenBatches: TimeSpan.FromMilliseconds(500)
                     );
 
-                    // Run the backfill
                     var result = await runner.RunAsync(backfillJob, ct);
 
                     return Results.Ok(new
@@ -49,7 +46,6 @@ namespace RiotProxy.Application.Endpoints
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error running QueueId backfill: {ex.Message}");
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: 500,
