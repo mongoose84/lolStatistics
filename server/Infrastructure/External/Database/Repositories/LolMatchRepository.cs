@@ -14,34 +14,37 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             if (string.IsNullOrWhiteSpace(match.MatchId))
                 throw new ArgumentException("MatchId cannot be null or empty", nameof(match));
 
-            const string sql = "INSERT INTO LolMatch (MatchId, InfoFetched, GameMode, GameEndTimestamp) VALUES (@matchId, @infoFetched, @gameMode, @endTs)";
+            const string sql = "INSERT INTO LolMatch (MatchId, InfoFetched, GameMode, QueueId, GameEndTimestamp) VALUES (@matchId, @infoFetched, @gameMode, @queueId, @endTs)";
             await ExecuteNonQueryAsync(sql,
                 ("@matchId", match.MatchId),
                 ("@infoFetched", match.InfoFetched),
                 ("@gameMode", match.GameMode ?? (object)DBNull.Value),
+                ("@queueId", match.QueueId),
                 ("@endTs", match.GameEndTimestamp == DateTime.MinValue ? DBNull.Value : match.GameEndTimestamp));
         }
 
         public async Task UpdateMatchAsync(LolMatch match)
         {
-            const string sql = "UPDATE LolMatch SET InfoFetched = @infoFetched, DurationSeconds = @durationSeconds, GameMode = @gameMode, GameEndTimestamp = @gameEndTimestamp WHERE MatchId = @matchId";
+            const string sql = "UPDATE LolMatch SET InfoFetched = @infoFetched, GameMode = @gameMode, QueueId = @queueId, DurationSeconds = @durationSeconds, GameEndTimestamp = @gameEndTimestamp WHERE MatchId = @matchId";
             await ExecuteNonQueryAsync(sql,
                 ("@matchId", match.MatchId),
                 ("@infoFetched", match.InfoFetched),
-                ("@durationSeconds", match.DurationSeconds),
                 ("@gameMode", match.GameMode),
+                ("@queueId", match.QueueId),
+                ("@durationSeconds", match.DurationSeconds),
                 ("@gameEndTimestamp", match.GameEndTimestamp == DateTime.MinValue ? DBNull.Value : match.GameEndTimestamp));
         }
 
         internal async Task<IList<LolMatch>> GetUnprocessedMatchesAsync()
         {
-            const string sql = "SELECT MatchId, InfoFetched, GameMode, GameEndTimestamp FROM LolMatch WHERE InfoFetched = FALSE";
+            const string sql = "SELECT MatchId, InfoFetched, GameMode, QueueId, GameEndTimestamp FROM LolMatch WHERE InfoFetched = FALSE";
             return await ExecuteListAsync(sql, r => new LolMatch
             {
                 MatchId = r.GetString(0),
                 InfoFetched = r.GetBoolean(1),
                 GameMode = r.IsDBNull(2) ? string.Empty : r.GetString(2),
-                GameEndTimestamp = r.IsDBNull(3) ? DateTime.MinValue : r.GetDateTime(3)
+                QueueId = r.IsDBNull(3) ? 0 : r.GetInt32(3),
+                GameEndTimestamp = r.IsDBNull(4) ? DateTime.MinValue : r.GetDateTime(4)
             });
         }
 
@@ -59,7 +62,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             return await ExecuteWithConnectionAsync(async (conn, cmd) =>
             {
                 var parameterNames = matchIds.Select((_, index) => $"@id{index}").ToList();
-                cmd.CommandText = $"SELECT MatchId, InfoFetched, GameMode FROM `LolMatch` WHERE MatchId IN ({string.Join(",", parameterNames)})";
+                cmd.CommandText = $"SELECT MatchId, InfoFetched, GameMode, QueueId FROM `LolMatch` WHERE MatchId IN ({string.Join(",", parameterNames)})";
 
                 for (int i = 0; i < matchIds.Count; i++)
                 {
@@ -74,7 +77,8 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                     {
                         MatchId = reader.GetString(0),
                         InfoFetched = reader.GetBoolean(1),
-                        GameMode = reader.IsDBNull(2) ? string.Empty : reader.GetString(2)
+                        GameMode = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                        QueueId = reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
                     });
                 }
                 return matches;
@@ -86,12 +90,13 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             if (string.IsNullOrWhiteSpace(match.MatchId))
                 throw new ArgumentException("MatchId cannot be null or empty", nameof(match));
 
-            const string sql = "INSERT IGNORE INTO LolMatch (MatchId, InfoFetched, GameMode, DurationSeconds, GameEndTimestamp) " +
-                               "VALUES (@matchId, @infoFetched, @gameMode, @durationSeconds, @gameEndTimestamp)";
+            const string sql = "INSERT IGNORE INTO LolMatch (MatchId, InfoFetched, GameMode, QueueId, DurationSeconds, GameEndTimestamp) " +
+                               "VALUES (@matchId, @infoFetched, @gameMode, @queueId, @durationSeconds, @gameEndTimestamp)";
             await ExecuteNonQueryAsync(sql,
                 ("@matchId", match.MatchId),
                 ("@infoFetched", match.InfoFetched),
                 ("@gameMode", match.GameMode ?? (object)DBNull.Value),
+                ("@queueId", match.QueueId),
                 ("@durationSeconds", match.DurationSeconds),
                 ("@gameEndTimestamp", match.GameEndTimestamp == DateTime.MinValue ? DBNull.Value : match.GameEndTimestamp));
         }
