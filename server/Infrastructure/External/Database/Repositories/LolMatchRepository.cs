@@ -19,7 +19,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 ("@matchId", match.MatchId),
                 ("@infoFetched", match.InfoFetched),
                 ("@gameMode", match.GameMode ?? (object)DBNull.Value),
-                ("@queueId", match.QueueId),
+                ("@queueId", match.QueueId ?? (object)DBNull.Value),
                 ("@endTs", match.GameEndTimestamp == DateTime.MinValue ? DBNull.Value : match.GameEndTimestamp));
         }
 
@@ -30,7 +30,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 ("@matchId", match.MatchId),
                 ("@infoFetched", match.InfoFetched),
                 ("@gameMode", match.GameMode),
-                ("@queueId", match.QueueId),
+                ("@queueId", match.QueueId ?? (object)DBNull.Value),
                 ("@durationSeconds", match.DurationSeconds),
                 ("@gameEndTimestamp", match.GameEndTimestamp == DateTime.MinValue ? DBNull.Value : match.GameEndTimestamp));
         }
@@ -43,7 +43,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 MatchId = r.GetString(0),
                 InfoFetched = r.GetBoolean(1),
                 GameMode = r.IsDBNull(2) ? string.Empty : r.GetString(2),
-                QueueId = r.IsDBNull(3) ? 0 : r.GetInt32(3),
+                QueueId = r.IsDBNull(3) ? null : r.GetInt32(3),
                 GameEndTimestamp = r.IsDBNull(4) ? DateTime.MinValue : r.GetDateTime(4)
             });
         }
@@ -78,7 +78,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                         MatchId = reader.GetString(0),
                         InfoFetched = reader.GetBoolean(1),
                         GameMode = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                        QueueId = reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
+                        QueueId = reader.IsDBNull(3) ? null : reader.GetInt32(3)
                     });
                 }
                 return matches;
@@ -96,7 +96,7 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
                 ("@matchId", match.MatchId),
                 ("@infoFetched", match.InfoFetched),
                 ("@gameMode", match.GameMode ?? (object)DBNull.Value),
-                ("@queueId", match.QueueId),
+                ("@queueId", match.QueueId ?? (object)DBNull.Value),
                 ("@durationSeconds", match.DurationSeconds),
                 ("@gameEndTimestamp", match.GameEndTimestamp == DateTime.MinValue ? DBNull.Value : match.GameEndTimestamp));
         }
