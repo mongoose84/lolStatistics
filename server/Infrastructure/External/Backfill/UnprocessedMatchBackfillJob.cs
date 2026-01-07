@@ -6,17 +6,16 @@ using System.Text.Json;
 namespace RiotProxy.Infrastructure.External.Backfill
 {
     /// <summary>
-    /// Backfill job to populate QueueId for existing matches that don't have it.
-    /// Also processes unprocessed matches (InfoFetched = FALSE) to fetch and store participant data.
+    /// Backfill for matches with InfoFetched=false: hydrate match metadata and insert participants.
     /// </summary>
-    public class QueueIdBackfillJob : IBackfillJob
+    public class UnprocessedMatchBackfillJob : IBackfillJob
     {
         private readonly LolMatchRepository _matchRepository;
         private readonly LolMatchParticipantRepository _participantRepository;
         private readonly IRiotApiClient _riotApiClient;
         private IList<LolMatch> _matches = new List<LolMatch>();
 
-        public QueueIdBackfillJob(
+        public UnprocessedMatchBackfillJob(
             LolMatchRepository matchRepository,
             LolMatchParticipantRepository participantRepository,
             IRiotApiClient riotApiClient)
@@ -26,57 +25,35 @@ namespace RiotProxy.Infrastructure.External.Backfill
             _riotApiClient = riotApiClient ?? throw new ArgumentNullException(nameof(riotApiClient));
         }
 
-        public string Name => "QueueId Backfill";
+        public string Name => "Unprocessed Match Backfill";
 
         public async Task<int> GetTotalItemsAsync(CancellationToken ct = default)
         {
-            _matches = await _matchRepository.GetMatchesMissingQueueIdAsync();
+            _matches = await _matchRepository.GetUnprocessedMatchesAsync();
             return _matches.Count;
         }
 
         public async Task<int> ProcessBatchAsync(int startIndex, int batchSize, CancellationToken ct = default)
         {
-            var batchMatches = _matches
-                .Skip(startIndex)
-                .Take(batchSize)
-                .ToList();
+            var batch = _matches.Skip(startIndex).Take(batchSize).ToList();
+            var processed = 0;
 
-            int processed = 0;
-
-            foreach (var match in batchMatches)
+            foreach (var match in batch)
             {
                 if (ct.IsCancellationRequested)
                     break;
 
                 try
                 {
-                    // Fetch match info from Riot API
                     var matchInfoJson = await _riotApiClient.GetMatchInfoAsync(match.MatchId, ct);
 
-                    if (!match.InfoFetched)
-                    {
-                        // Process unprocessed match: fetch info and add participants
-                        ExtractAndMapMatchData(matchInfoJson, match);
-                        await _matchRepository.UpdateMatchAsync(match);
+                    ExtractAndMapMatchData(matchInfoJson, match);
+                    await _matchRepository.UpdateMatchAsync(match);
 
-                        // Add participants
-                        var participants = MapToParticipantEntity(matchInfoJson, match.MatchId);
-                        foreach (var participant in participants)
-                        {
-                            await _participantRepository.AddParticipantIfNotExistsAsync(participant);
-                        }
-                    }
-                    else
+                    var participants = MapToParticipantEntity(matchInfoJson, match.MatchId);
+                    foreach (var participant in participants)
                     {
-                        // Match already processed: just update missing QueueId/timestamp data
-                        var queueId = ExtractQueueId(matchInfoJson);
-                        var gameEndTimestamp = ExtractGameEndTimestamp(matchInfoJson);
-                        var durationSeconds = ExtractDurationSeconds(matchInfoJson);
-
-                        if (queueId.HasValue || gameEndTimestamp != DateTime.MinValue)
-                        {
-                            await _matchRepository.UpdateMatchQueueIdTimestampAndDurationAsync(match.MatchId, queueId, gameEndTimestamp, durationSeconds);
-                        }
+                        await _participantRepository.AddParticipantIfNotExistsAsync(participant);
                     }
 
                     processed++;
@@ -106,7 +83,6 @@ namespace RiotProxy.Infrastructure.External.Backfill
         {
             if (matchInfo.RootElement.TryGetProperty("info", out var infoElement))
             {
-                // gameEndTimestamp is epoch ms; fall back to gameCreation if needed
                 var endMs = GetEpochMilliseconds(infoElement, "gameEndTimestamp")
                             ?? GetEpochMilliseconds(infoElement, "gameCreation")
                             ?? 0L;
@@ -119,7 +95,7 @@ namespace RiotProxy.Infrastructure.External.Backfill
                 match.GameMode = GetGameMode(matchInfo);
                 match.QueueId = ExtractQueueId(matchInfo);
                 match.InfoFetched = true;
-                
+
                 if (infoElement.TryGetProperty("gameDuration", out var gameDurationElement) &&
                     gameDurationElement.ValueKind == JsonValueKind.Number)
                 {
@@ -155,46 +131,6 @@ namespace RiotProxy.Infrastructure.External.Backfill
             }
 
             return null;
-        }
-
-        private DateTime ExtractGameEndTimestamp(JsonDocument matchInfo)
-        {
-            if (matchInfo.RootElement.TryGetProperty("info", out var infoElement))
-            {
-                var endMs = GetEpochMilliseconds(infoElement, "gameEndTimestamp")
-                            ?? GetEpochMilliseconds(infoElement, "gameCreation")
-                            ?? 0L;
-
-                if (endMs > 0)
-                    return DateTimeOffset.FromUnixTimeMilliseconds(endMs).UtcDateTime;
-            }
-
-            return DateTime.MinValue;
-        }
-
-        private long ExtractDurationSeconds(JsonDocument matchInfo)
-        {
-            if (matchInfo.RootElement.TryGetProperty("info", out var infoElement) &&
-                infoElement.TryGetProperty("gameDuration", out var durationElement))
-            {
-                if (durationElement.ValueKind == JsonValueKind.Number)
-                    return durationElement.GetInt64();
-            }
-
-            return 0;
-        }
-
-        private static long? GetEpochMilliseconds(JsonElement obj, string propertyName)
-        {
-            if (!obj.TryGetProperty(propertyName, out var el))
-                return null;
-
-            return el.ValueKind switch
-            {
-                JsonValueKind.Number => el.GetInt64(),
-                JsonValueKind.String => long.TryParse(el.GetString(), out var v) ? v : null,
-                _ => null
-            };
         }
 
         private IList<LolMatchParticipant> MapToParticipantEntity(JsonDocument matchInfo, string matchId)
@@ -236,6 +172,18 @@ namespace RiotProxy.Infrastructure.External.Backfill
 
             return list;
         }
+
+        private static long? GetEpochMilliseconds(JsonElement obj, string propertyName)
+        {
+            if (!obj.TryGetProperty(propertyName, out var el))
+                return null;
+
+            return el.ValueKind switch
+            {
+                JsonValueKind.Number => el.GetInt64(),
+                JsonValueKind.String => long.TryParse(el.GetString(), out var v) ? v : null,
+                _ => null
+            };
+        }
     }
 }
-

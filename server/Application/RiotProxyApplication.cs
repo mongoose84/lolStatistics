@@ -156,9 +156,9 @@ namespace RiotProxy.Application
             var refreshGamesEndpoint = new RefreshGamesEndpoint(_basePath);
             _endpoints.Add(refreshGamesEndpoint);
 
-            // Admin endpoint for backfilling QueueId
-            var backfillQueueIdEndpoint = new BackfillQueueIdEndpoint(_basePath);
-            _endpoints.Add(backfillQueueIdEndpoint);
+            // Admin endpoint for backfilling data
+            var backfillDataEndpoint = new BackfillDataEndpoint(_basePath);
+            _endpoints.Add(backfillDataEndpoint);
         }
 
         public void ConfigureEndpoints()

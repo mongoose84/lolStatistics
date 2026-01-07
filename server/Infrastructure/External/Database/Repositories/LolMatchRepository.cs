@@ -89,6 +89,20 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories
             });
         }
 
+        internal async Task<IList<LolMatch>> GetProcessedMatchesMissingMetadataAsync()
+        {
+            const string sql = "SELECT MatchId, InfoFetched, GameMode, QueueId, DurationSeconds, GameEndTimestamp FROM LolMatch WHERE InfoFetched = TRUE AND (QueueId IS NULL OR GameEndTimestamp IS NULL)";
+            return await ExecuteListAsync(sql, r => new LolMatch
+            {
+                MatchId = r.GetString(0),
+                InfoFetched = r.GetBoolean(1),
+                GameMode = r.IsDBNull(2) ? string.Empty : r.GetString(2),
+                QueueId = r.IsDBNull(3) ? null : r.GetInt32(3),
+                DurationSeconds = r.GetInt64(4),
+                GameEndTimestamp = r.IsDBNull(5) ? DateTime.MinValue : r.GetDateTime(5)
+            });
+        }
+
         public async Task<IList<LolMatch>> GetExistingMatchesAsync(IList<string> matchIds)
         {
             if (matchIds == null || matchIds.Count == 0)
