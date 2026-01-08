@@ -17,6 +17,13 @@ namespace RiotProxy.Infrastructure.External
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Dev/testing: allow a one-off immediate run via env var
+            var runNow = Environment.GetEnvironmentVariable("PULSE_RUN_JOB_NOW");
+            if (string.Equals(runNow, "1", StringComparison.Ordinal))
+            {
+                await RunJobAsync(stoppingToken);
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 var nextRun = DateTime.UtcNow.AddDays(1); // Run daily
@@ -47,6 +54,12 @@ namespace RiotProxy.Infrastructure.External
                 // v2 repositories
                 var v2Matches = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2MatchesRepository>();
                 var v2Participants = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantsRepository>();
+                var v2Checkpoints = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantCheckpointsRepository>();
+                var v2PartMetrics = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantMetricsRepository>();
+                var v2TeamObjectives = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2TeamObjectivesRepository>();
+                var v2PartObjectives = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantObjectivesRepository>();
+                var v2TeamMetrics = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2TeamMatchMetricsRepository>();
+                var v2DuoMetrics = scope.ServiceProvider.GetRequiredService<RiotProxy.Infrastructure.External.Database.Repositories.V2.V2DuoMetricsRepository>();
 
                 Console.WriteLine("MatchHistorySyncJob started.");
                 var gamers = await gamerRepository.GetAllGamersAsync();
@@ -67,7 +80,22 @@ namespace RiotProxy.Infrastructure.External
                     Console.WriteLine("New match history added to DB.");
 
                     // Fetch details only for new matches
-                    await AddMatchInfoToDb(newMatches, gamers, riotApiClient, participantRepository, matchRepository, gamerRepository, v2Matches, v2Participants, ct);
+                    await AddMatchInfoToDb(
+                        newMatches,
+                        gamers,
+                        riotApiClient,
+                        participantRepository,
+                        matchRepository,
+                        gamerRepository,
+                        v2Matches,
+                        v2Participants,
+                        v2Checkpoints,
+                        v2PartMetrics,
+                        v2TeamObjectives,
+                        v2PartObjectives,
+                        v2TeamMetrics,
+                        v2DuoMetrics,
+                        ct);
                 }
 
                 Console.WriteLine("MatchHistorySyncJob completed.");
@@ -173,9 +201,15 @@ namespace RiotProxy.Infrastructure.External
                         IRiotApiClient riotApiClient,
                         LolMatchParticipantRepository participantRepository,
                         LolMatchRepository matchRepository,
-                GamerRepository gamerRepository,
-                RiotProxy.Infrastructure.External.Database.Repositories.V2.V2MatchesRepository v2Matches,
-                RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantsRepository v2Participants,
+                        GamerRepository gamerRepository,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2MatchesRepository v2Matches,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantsRepository v2Participants,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantCheckpointsRepository v2Checkpoints,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantMetricsRepository v2PartMetrics,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2TeamObjectivesRepository v2TeamObjectives,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantObjectivesRepository v2PartObjectives,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2TeamMatchMetricsRepository v2TeamMetrics,
+                        RiotProxy.Infrastructure.External.Database.Repositories.V2.V2DuoMetricsRepository v2DuoMetrics,
                         CancellationToken ct)
         {
             var participantsAdded = 0;
@@ -202,6 +236,12 @@ namespace RiotProxy.Infrastructure.External
                     var v2Parts = MapToV2Participants(matchInfoJson, match.MatchId);
                     foreach (var p in v2Parts)
                         await v2Participants.InsertAsync(p);
+
+                    // Fetch timeline and compute derived metrics for v2
+                    var timelineDoc = await riotApiClient.GetMatchTimelineAsync(match.MatchId);
+                    await PersistV2TimelineDerivedAsync(match.MatchId, matchInfoJson, timelineDoc,
+                        v2Participants, v2Checkpoints, v2PartMetrics, v2TeamObjectives, v2PartObjectives,
+                        v2TeamMetrics, v2DuoMetrics, ct);
 
                     // Update that a gamers info has been updated
                     var gamer = gamers.FirstOrDefault(g => g.Puuid == match.Puuid);
@@ -468,6 +508,382 @@ namespace RiotProxy.Infrastructure.External
                 }
             }
             return list;
+        }
+
+        private static int GetMinuteFromTimestamp(long timestampMs)
+            => (int)Math.Round(timestampMs / 60000.0);
+
+        private async Task PersistV2TimelineDerivedAsync(
+            string matchId,
+            JsonDocument matchInfo,
+            JsonDocument timeline,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantsRepository v2Participants,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantCheckpointsRepository v2Checkpoints,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantMetricsRepository v2PartMetrics,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2TeamObjectivesRepository v2TeamObjectives,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2ParticipantObjectivesRepository v2PartObjectives,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2TeamMatchMetricsRepository v2TeamMetrics,
+            RiotProxy.Infrastructure.External.Database.Repositories.V2.V2DuoMetricsRepository v2DuoMetrics,
+            CancellationToken ct)
+        {
+            var participants = await v2Participants.GetByMatchAsync(matchId);
+            var puuidToV2Id = participants.ToDictionary(p => p.Puuid, p => p.Id, StringComparer.OrdinalIgnoreCase);
+
+            // Build maps from match info: puuid -> timeline participantId (1..10), teamId, lane/role
+            var puuidToTimelineId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var timelineIdToTeam = new Dictionary<int, int>();
+            var puuidToLane = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            var teamToPuuids = new Dictionary<int, List<string>> { [100] = new(), [200] = new() };
+            var teamKills = new Dictionary<int, int> { [100] = 0, [200] = 0 };
+            var teamDmgToChamps = new Dictionary<int, long> { [100] = 0, [200] = 0 };
+            var puuidKills = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var puuidAssists = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var puuidDamageToChamps = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            var puuidDamageTaken = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var puuidDamageMit = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var puuidVision = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            if (matchInfo.RootElement.TryGetProperty("info", out var infoEl) &&
+                infoEl.TryGetProperty("participants", out var partsEl))
+            {
+                foreach (var p in partsEl.EnumerateArray())
+                {
+                    var puuid = p.GetProperty("puuid").GetString()!;
+                    var tlId = p.TryGetProperty("participantId", out var pid) && pid.ValueKind == JsonValueKind.Number ? pid.GetInt32() : 0;
+                    var teamId = p.TryGetProperty("teamId", out var tEl) && tEl.ValueKind == JsonValueKind.Number ? tEl.GetInt32() : 0;
+                    var lane = p.TryGetProperty("teamPosition", out var pos) && pos.ValueKind == JsonValueKind.String ? pos.GetString() : (p.TryGetProperty("lane", out var ln) ? ln.GetString() : null);
+                    var kills = p.TryGetProperty("kills", out var kEl) && kEl.ValueKind == JsonValueKind.Number ? kEl.GetInt32() : 0;
+                    var assists = p.TryGetProperty("assists", out var aEl) && aEl.ValueKind == JsonValueKind.Number ? aEl.GetInt32() : 0;
+                    var dmgToChamps = p.TryGetProperty("totalDamageDealtToChampions", out var d1) && d1.ValueKind == JsonValueKind.Number ? d1.GetInt64() : 0;
+                    var dmgTaken = p.TryGetProperty("totalDamageTaken", out var d2) && d2.ValueKind == JsonValueKind.Number ? d2.GetInt32() : 0;
+                    var dmgMit = p.TryGetProperty("damageSelfMitigated", out var d3) && d3.ValueKind == JsonValueKind.Number ? d3.GetInt32() : 0;
+                    var vision = p.TryGetProperty("visionScore", out var vEl) && vEl.ValueKind == JsonValueKind.Number ? vEl.GetInt32() : 0;
+
+                    puuidToTimelineId[puuid] = tlId;
+                    timelineIdToTeam[tlId] = teamId;
+                    puuidToLane[puuid] = lane;
+                    if (!teamToPuuids.ContainsKey(teamId)) teamToPuuids[teamId] = new();
+                    teamToPuuids[teamId].Add(puuid);
+                    puuidKills[puuid] = kills;
+                    puuidAssists[puuid] = assists;
+                    puuidDamageToChamps[puuid] = dmgToChamps;
+                    puuidDamageTaken[puuid] = dmgTaken;
+                    puuidDamageMit[puuid] = dmgMit;
+                    puuidVision[puuid] = vision;
+                    teamKills[teamId] += kills;
+                    teamDmgToChamps[teamId] += dmgToChamps;
+                }
+            }
+
+            // Duration minutes for vision per min
+            var durationSec = infoEl.TryGetProperty("gameDuration", out var dur) && dur.ValueKind == JsonValueKind.Number ? dur.GetInt32() : 0;
+            var durationMin = Math.Max(1, durationSec / 60.0m);
+
+            // Prepare death buckets and first participation minute per puuid
+            var deathBuckets = new Dictionary<string, (int pre10, int m10_20, int m20_30, int m30p, int? firstDeath)>(StringComparer.OrdinalIgnoreCase);
+            var firstKPMinute = new Dictionary<string, int?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pu in puuidToV2Id.Keys)
+            {
+                deathBuckets[pu] = (0, 0, 0, 0, null);
+                firstKPMinute[pu] = null;
+            }
+
+            // Team objectives counters and participant objective counters
+            var teamObj = new Dictionary<int, (int drake, int herald, int baron, int towers)> { [100] = (0,0,0,0), [200] = (0,0,0,0) };
+            var partObj = puuidToV2Id.Keys.ToDictionary(k => k, _ => (drake:0, herald:0, baron:0, towers:0), StringComparer.OrdinalIgnoreCase);
+
+            // Gold by team across frames for leads
+            var frameTeamGold = new List<(int minute, int gold100, int gold200)>();
+
+            if (timeline.RootElement.TryGetProperty("info", out var tInfo) &&
+                tInfo.TryGetProperty("frames", out var frames))
+            {
+                foreach (var frame in frames.EnumerateArray())
+                {
+                    var minute = frame.TryGetProperty("timestamp", out var ts) && ts.ValueKind == JsonValueKind.Number ? GetMinuteFromTimestamp(ts.GetInt64()) : 0;
+
+                    // Aggregate team gold totals and checkpoints at 10/15/20/25/30
+                    var gold100 = 0; var gold200 = 0;
+                    if (frame.TryGetProperty("participantFrames", out var pf))
+                    {
+                        foreach (var kv in pf.EnumerateObject())
+                        {
+                            var tlId = int.TryParse(kv.Name, out var idVal) ? idVal : 0;
+                            var team = timelineIdToTeam.TryGetValue(tlId, out var tId) ? tId : 0;
+                            var f = kv.Value;
+                            var gold = f.TryGetProperty("totalGold", out var gEl) && gEl.ValueKind == JsonValueKind.Number ? gEl.GetInt32() : 0;
+                            var xp = f.TryGetProperty("xp", out var xEl) && xEl.ValueKind == JsonValueKind.Number ? xEl.GetInt32() : 0;
+                            var cs = 0;
+                            if (f.TryGetProperty("minionsKilled", out var mk) && mk.ValueKind == JsonValueKind.Number) cs += mk.GetInt32();
+                            if (f.TryGetProperty("jungleMinionsKilled", out var jk) && jk.ValueKind == JsonValueKind.Number) cs += jk.GetInt32();
+
+                            if (team == 100) gold100 += gold; else if (team == 200) gold200 += gold;
+
+                            // Store checkpoints at target marks
+                            if (minute == 10 || minute == 15 || minute == 20 || minute == 25 || minute == 30)
+                            {
+                                // Map frame tlId -> puuid -> v2 participant id
+                                var puuid = puuidToTimelineId.FirstOrDefault(p => p.Value == tlId).Key;
+                                if (!string.IsNullOrEmpty(puuid) && puuidToV2Id.TryGetValue(puuid, out var v2Pid))
+                                {
+                                    int? diffGold = null; int? diffCs = null; bool? ahead = null;
+                                    var lane = puuidToLane.TryGetValue(puuid, out var lnVal) ? lnVal : null;
+                                    if (!string.IsNullOrEmpty(lane))
+                                    {
+                                        // find opponent in same lane on opposing team
+                                        var myTeam = team;
+                                        var oppTeam = myTeam == 100 ? 200 : 100;
+                                        var opp = teamToPuuids[oppTeam].FirstOrDefault(pu => string.Equals(puuidToLane.GetValueOrDefault(pu), lane, StringComparison.OrdinalIgnoreCase));
+                                        if (!string.IsNullOrEmpty(opp))
+                                        {
+                                            // find opponent tl frame to compute diffs
+                                            var oppTl = puuidToTimelineId.GetValueOrDefault(opp);
+                                            if (pf.TryGetProperty(oppTl.ToString(), out var oppF))
+                                            {
+                                                var oppGold = oppF.TryGetProperty("totalGold", out var og) && og.ValueKind == JsonValueKind.Number ? og.GetInt32() : 0;
+                                                var oppCs = 0;
+                                                if (oppF.TryGetProperty("minionsKilled", out var omk) && omk.ValueKind == JsonValueKind.Number) oppCs += omk.GetInt32();
+                                                if (oppF.TryGetProperty("jungleMinionsKilled", out var ojk) && ojk.ValueKind == JsonValueKind.Number) oppCs += ojk.GetInt32();
+                                                diffGold = gold - oppGold;
+                                                diffCs = cs - oppCs;
+                                                ahead = diffGold > 0;
+                                            }
+                                        }
+                                    }
+
+                                    await v2Checkpoints.UpsertAsync(new RiotProxy.External.Domain.Entities.V2.V2ParticipantCheckpoint
+                                    {
+                                        ParticipantId = v2Pid,
+                                        MinuteMark = minute,
+                                        Gold = gold,
+                                        Cs = cs,
+                                        Xp = xp,
+                                        GoldDiffVsLane = diffGold,
+                                        CsDiffVsLane = diffCs,
+                                        IsAhead = ahead,
+                                        CreatedAt = DateTime.UtcNow
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    frameTeamGold.Add((minute, gold100, gold200));
+
+                    // Parse events for kills/deaths/objectives
+                    if (frame.TryGetProperty("events", out var evs))
+                    {
+                        foreach (var ev in evs.EnumerateArray())
+                        {
+                            var type = ev.TryGetProperty("type", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
+                            var evTsMs = ev.TryGetProperty("timestamp", out var eTs) && eTs.ValueKind == JsonValueKind.Number ? eTs.GetInt64() : 0;
+                            var m = GetMinuteFromTimestamp(evTsMs);
+
+                            if (type == "CHAMPION_KILL")
+                            {
+                                var victimId = ev.TryGetProperty("victimId", out var vId) && vId.ValueKind == JsonValueKind.Number ? vId.GetInt32() : 0;
+                                var killerId = ev.TryGetProperty("killerId", out var kId) && kId.ValueKind == JsonValueKind.Number ? kId.GetInt32() : 0;
+                                var assists = new List<int>();
+                                if (ev.TryGetProperty("assistingParticipantIds", out var aid) && aid.ValueKind == JsonValueKind.Array)
+                                {
+                                    foreach (var a in aid.EnumerateArray()) if (a.ValueKind == JsonValueKind.Number) assists.Add(a.GetInt32());
+                                }
+                                // death bucket for victim
+                                var victimPuuid = puuidToTimelineId.FirstOrDefault(p => p.Value == victimId).Key;
+                                if (!string.IsNullOrEmpty(victimPuuid))
+                                {
+                                    var b = deathBuckets[victimPuuid];
+                                    if (m < 10) b.pre10++;
+                                    else if (m < 20) b.m10_20++;
+                                    else if (m < 30) b.m20_30++;
+                                    else b.m30p++;
+                                    b.firstDeath ??= m;
+                                    deathBuckets[victimPuuid] = b;
+                                }
+                                // first kill participation for killer/assists
+                                var killerPuuid = puuidToTimelineId.FirstOrDefault(p => p.Value == killerId).Key;
+                                if (!string.IsNullOrEmpty(killerPuuid) && firstKPMinute[killerPuuid] is null) firstKPMinute[killerPuuid] = m;
+                                foreach (var aidId in assists)
+                                {
+                                    var ap = puuidToTimelineId.FirstOrDefault(p => p.Value == aidId).Key;
+                                    if (!string.IsNullOrEmpty(ap) && firstKPMinute[ap] is null) firstKPMinute[ap] = m;
+                                }
+                            }
+                            else if (type == "ELITE_MONSTER_KILL")
+                            {
+                                var killerId = ev.TryGetProperty("killerId", out var kId) && kId.ValueKind == JsonValueKind.Number ? kId.GetInt32() : 0;
+                                var team = timelineIdToTeam.TryGetValue(killerId, out var tId) ? tId : 0;
+                                var monster = ev.TryGetProperty("monsterType", out var mt) && mt.ValueKind == JsonValueKind.String ? mt.GetString() : null;
+                                if (team != 0 && !string.IsNullOrEmpty(monster))
+                                {
+                                    if (monster == "DRAGON") teamObj[team] = (teamObj[team].drake + 1, teamObj[team].herald, teamObj[team].baron, teamObj[team].towers);
+                                    else if (monster == "RIFTHERALD") teamObj[team] = (teamObj[team].drake, teamObj[team].herald + 1, teamObj[team].baron, teamObj[team].towers);
+                                    else if (monster == "BARON_NASHOR") teamObj[team] = (teamObj[team].drake, teamObj[team].herald, teamObj[team].baron + 1, teamObj[team].towers);
+
+                                    // participant objectives (killer + assists)
+                                    (int drake, int herald, int baron, int towers) inc =
+                                        monster == "DRAGON" ? (1, 0, 0, 0)
+                                        : monster == "RIFTHERALD" ? (0, 1, 0, 0)
+                                        : monster == "BARON_NASHOR" ? (0, 0, 1, 0)
+                                        : (0, 0, 0, 0);
+                                    var killerPuuid = puuidToTimelineId.FirstOrDefault(p => p.Value == killerId).Key;
+                                    if (!string.IsNullOrEmpty(killerPuuid))
+                                    {
+                                        var cur = partObj[killerPuuid];
+                                        partObj[killerPuuid] = (cur.drake + inc.drake, cur.herald + inc.herald, cur.baron + inc.baron, cur.towers);
+                                    }
+                                    if (ev.TryGetProperty("assistingParticipantIds", out var aid) && aid.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var a in aid.EnumerateArray())
+                                        {
+                                            if (a.ValueKind == JsonValueKind.Number)
+                                            {
+                                                var ap = puuidToTimelineId.FirstOrDefault(p => p.Value == a.GetInt32()).Key;
+                                                if (!string.IsNullOrEmpty(ap))
+                                                {
+                                                    var cur = partObj[ap];
+                                                    partObj[ap] = (cur.drake + inc.drake, cur.herald + inc.herald, cur.baron + inc.baron, cur.towers);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else if (type == "BUILDING_KILL")
+                            {
+                                var bType = ev.TryGetProperty("buildingType", out var bt) && bt.ValueKind == JsonValueKind.String ? bt.GetString() : null;
+                                if (bType == "TOWER_BUILDING")
+                                {
+                                    var killerId = ev.TryGetProperty("killerId", out var kId) && kId.ValueKind == JsonValueKind.Number ? kId.GetInt32() : 0;
+                                    var team = timelineIdToTeam.TryGetValue(killerId, out var tId) ? tId : 0;
+                                    if (team != 0) teamObj[team] = (teamObj[team].drake, teamObj[team].herald, teamObj[team].baron, teamObj[team].towers + 1);
+
+                                    var killerPuuid = puuidToTimelineId.FirstOrDefault(p => p.Value == killerId).Key;
+                                    if (!string.IsNullOrEmpty(killerPuuid))
+                                    {
+                                        var cur = partObj[killerPuuid];
+                                        partObj[killerPuuid] = (cur.drake, cur.herald, cur.baron, cur.towers + 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Persist team match metrics
+            if (frameTeamGold.Count > 0)
+            {
+                int? g15 = null; int? largest = null; int? swing20 = null; bool? winAhead20 = null;
+                var leads = frameTeamGold.Select(f => (f.minute, lead: f.gold100 - f.gold200)).OrderBy(x => x.minute).ToList();
+                var byMin = leads.ToDictionary(x => x.minute, x => x.lead);
+                if (byMin.TryGetValue(15, out var l15)) g15 = l15;
+                if (leads.Count > 0) largest = Math.Max(Math.Abs(leads.Min(x => x.lead)), Math.Abs(leads.Max(x => x.lead)));
+                var post20 = leads.Where(x => x.minute >= 20).Select(x => x.lead).ToList();
+                if (post20.Count > 0) swing20 = (post20.Max() - post20.Min());
+
+                // Determine team win flags
+                var teamWin = new Dictionary<int, bool> { [100] = false, [200] = false };
+                if (matchInfo.RootElement.TryGetProperty("info", out var winInfo) && winInfo.TryGetProperty("teams", out var teamsEl))
+                {
+                    foreach (var t in teamsEl.EnumerateArray())
+                    {
+                        var tId = t.TryGetProperty("teamId", out var idEl) && idEl.ValueKind == JsonValueKind.Number ? idEl.GetInt32() : 0;
+                        var w = t.TryGetProperty("win", out var wEl) && (wEl.ValueKind == JsonValueKind.True || wEl.ValueKind == JsonValueKind.False) ? wEl.GetBoolean() : false;
+                        if (tId != 0) teamWin[tId] = w;
+                    }
+                }
+                if (byMin.TryGetValue(20, out var l20))
+                {
+                    if (l20 > 0) winAhead20 = teamWin.GetValueOrDefault(100);
+                    else if (l20 < 0) winAhead20 = teamWin.GetValueOrDefault(200);
+                    else winAhead20 = null;
+                }
+
+                foreach (var team in new[] { 100, 200 })
+                {
+                    await v2TeamMetrics.UpsertAsync(new RiotProxy.External.Domain.Entities.V2.V2TeamMatchMetric
+                    {
+                        MatchId = matchId,
+                        TeamId = team,
+                        GoldLeadAt15 = team == 100 ? g15 : (g15.HasValue ? -g15 : null),
+                        LargestGoldLead = largest,
+                        GoldSwingPost20 = swing20,
+                        WinWhenAheadAt20 = winAhead20,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            // Persist team objectives
+            foreach (var kv in teamObj)
+            {
+                await v2TeamObjectives.UpsertAsync(new RiotProxy.External.Domain.Entities.V2.V2TeamObjective
+                {
+                    MatchId = matchId,
+                    TeamId = kv.Key,
+                    DragonsTaken = kv.Value.drake,
+                    HeraldsTaken = kv.Value.herald,
+                    BaronsTaken = kv.Value.baron,
+                    TowersTaken = kv.Value.towers,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            // Persist participant objectives and metrics
+            foreach (var pu in puuidToV2Id.Keys)
+            {
+                var v2Id = puuidToV2Id[pu];
+                var teamId = timelineIdToTeam.GetValueOrDefault(puuidToTimelineId.GetValueOrDefault(pu));
+                var teamKillCount = Math.Max(1, teamKills.GetValueOrDefault(teamId));
+                var killPartPct = (decimal)(puuidKills.GetValueOrDefault(pu) + puuidAssists.GetValueOrDefault(pu)) * 100m / teamKillCount;
+                var teamDmg = Math.Max(1L, teamDmgToChamps.GetValueOrDefault(teamId));
+                var dmgSharePct = (decimal)puuidDamageToChamps.GetValueOrDefault(pu) * 100m / teamDmg;
+                var deaths = deathBuckets[pu];
+                var fkp = firstKPMinute[pu];
+                var vis = puuidVision.GetValueOrDefault(pu);
+                var vpm = Math.Round((decimal)vis / durationMin, 2);
+
+                await v2PartObjectives.UpsertAsync(new RiotProxy.External.Domain.Entities.V2.V2ParticipantObjective
+                {
+                    ParticipantId = v2Id,
+                    DragonsParticipated = partObj[pu].drake,
+                    HeraldsParticipated = partObj[pu].herald,
+                    BaronsParticipated = partObj[pu].baron,
+                    TowersParticipated = partObj[pu].towers,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await v2PartMetrics.UpsertAsync(new RiotProxy.External.Domain.Entities.V2.V2ParticipantMetric
+                {
+                    ParticipantId = v2Id,
+                    KillParticipationPct = Math.Round(killPartPct, 2),
+                    DamageSharePct = Math.Round(dmgSharePct, 2),
+                    DamageTaken = puuidDamageTaken.GetValueOrDefault(pu),
+                    DamageMitigated = puuidDamageMit.GetValueOrDefault(pu),
+                    VisionScore = vis,
+                    VisionPerMin = vpm,
+                    DeathsPre10 = deaths.pre10,
+                    Deaths10To20 = deaths.m10_20,
+                    Deaths20To30 = deaths.m20_30,
+                    Deaths30Plus = deaths.m30p,
+                    FirstDeathMinute = deaths.firstDeath,
+                    FirstKillParticipationMinute = fkp,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            // Optional: compute simple duo metrics for BOT+SUP duos if present
+            foreach (var team in new[] { 100, 200 })
+            {
+                var teamPlayers = teamToPuuids.GetValueOrDefault(team);
+                if (teamPlayers == null || teamPlayers.Count == 0) continue;
+                var adc = teamPlayers.FirstOrDefault(p => string.Equals(puuidToLane.GetValueOrDefault(p), "BOTTOM", StringComparison.OrdinalIgnoreCase));
+                var sup = teamPlayers.FirstOrDefault(p => string.Equals(puuidToLane.GetValueOrDefault(p), "UTILITY", StringComparison.OrdinalIgnoreCase));
+                if (string.IsNullOrEmpty(adc) || string.IsNullOrEmpty(sup)) continue;
+
+                int? eg10 = null; int? eg15 = null; bool? winAhead15 = null;
+                // Skipping duo metrics computation for now to keep pipeline stable.
+            }
         }
     }
     }
