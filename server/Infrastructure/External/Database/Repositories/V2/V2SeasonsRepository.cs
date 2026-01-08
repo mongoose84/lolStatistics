@@ -10,11 +10,11 @@ public class V2SeasonsRepository : RepositoryBase
     public Task UpsertAsync(V2Season season)
     {
         const string sql = @"INSERT INTO seasons (season_code, patch_version, start_date, end_date, created_at)
-            VALUES (@season_code, @patch_version, @start_date, @end_date, @created_at)
+            VALUES (@season_code, @patch_version, @start_date, @end_date, @created_at) AS new
             ON DUPLICATE KEY UPDATE
-                patch_version = VALUES(patch_version),
-                start_date = VALUES(start_date),
-                end_date = VALUES(end_date);";
+                patch_version = new.patch_version,
+                start_date = new.start_date,
+                end_date = new.end_date;";
 
         return ExecuteNonQueryAsync(sql,
             ("@season_code", season.SeasonCode),
