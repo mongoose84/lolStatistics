@@ -1,8 +1,8 @@
-# Product Backlog - LoL Improvement Tracker
+# Product Backlog - Pulse (pulse.gg)
 
 ## Vision
 
-> **"The only LoL improvement tracker also built for duos and teams, powered by AI coaching that turns your stats into actionable goals you can actually achieve."**
+> **"Pulse is the only LoL improvement tracker built for duos and teams, powered by AI coaching that turns your stats into actionable goals you can actually achieve."**
 
 ## Pricing Model
 
@@ -1055,7 +1055,7 @@ Give users a GitHub-style contribution view of how often they log in over time.
 
 # Epic E: Database v2 & Analytics Schema
 
-Modernize the database to match `docs/database_schema.md` and support advanced solo/duo/team analytics.
+Modernize the Pulse database to match `docs/database_schema_v2.md` and support advanced solo/duo/team analytics.
 
 ## Issues
 
@@ -1068,11 +1068,11 @@ Modernize the database to match `docs/database_schema.md` and support advanced s
 
 #### Description
 
-Finalize the Database v2 schema (tables, columns, indexes) based on `docs/database_schema.md` for matches, participants, checkpoints, metrics, duo/team analytics and AI snapshots.
+Finalize the Pulse Database v2 schema (tables, columns, indexes) based on `docs/database_schema_v2.md` for matches, participants, checkpoints, metrics, duo/team analytics and AI snapshots.
 
 #### Acceptance Criteria
 
-- [ ] Consolidated ERD / schema documented in `docs/database_schema.md`  
+- [ ] Consolidated ERD / schema documented in `docs/database_schema_v2.md`  
 - [ ] Tables defined for: `matches`, `participants`, `participant_checkpoints`, `participant_metrics`, `team_objectives`, `participant_objectives`, `duo_metrics`, `team_match_metrics`, `team_role_responsibility`, `ai_snapshots`  
 - [ ] `matches.queue_id` present (numeric Riot queue id) and used for queue filtering across v2 dashboards
 - [ ] Index strategy defined for common filters (puuid, queue_id, season/patch, team_id, minute_mark)
