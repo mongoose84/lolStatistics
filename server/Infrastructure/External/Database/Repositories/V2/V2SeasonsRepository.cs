@@ -34,8 +34,8 @@ public class V2SeasonsRepository : RepositoryBase
     {
         SeasonCode = r.GetString("season_code"),
         PatchVersion = r.GetString("patch_version"),
-        StartDate = r.GetDateTime("start_date"),
-        EndDate = r.IsDBNull("end_date") ? null : r.GetDateTime("end_date"),
+        StartDate = DateOnly.FromDateTime(r.GetDateTime("start_date")),
+        EndDate = r.IsDBNull("end_date") ? null : DateOnly.FromDateTime(r.GetDateTime("end_date")),
         CreatedAt = r.GetDateTime("created_at")
     };
 }
