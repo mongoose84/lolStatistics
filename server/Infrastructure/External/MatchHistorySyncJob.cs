@@ -450,7 +450,13 @@ namespace RiotProxy.Infrastructure.External
                     var ver = verEl.GetString() ?? string.Empty;
                     var parts = ver.Split('.', StringSplitOptions.RemoveEmptyEntries);
                     v2.PatchVersion = parts.Length >= 2 ? $"{parts[0]}.{parts[1]}" : ver;
+
+                    // season code derived from major patch version (e.g., "14.3.1" -> "S14")
+                    if (parts.Length > 0 && int.TryParse(parts[0], out var majorVersion))
+                    {
+                        v2.SeasonCode = $"S{majorVersion}";
                     }
+                }
             }
             return v2;
         }
