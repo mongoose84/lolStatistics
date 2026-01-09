@@ -23,11 +23,13 @@ namespace RiotProxy.Infrastructure.External.Riot
 
         public static string GetAccountUrl(string path)
         {
+            EnsureApiKey();
             return $"https://europe.api.riotgames.com/riot{path}?api_key={Secrets.ApiKey}";
         }
 
         public static string GetMatchUrl(string path)
         {
+            EnsureApiKey();
             return $"https://europe.api.riotgames.com/lol{path}?api_key={Secrets.ApiKey}";
         }
 
@@ -37,7 +39,14 @@ namespace RiotProxy.Infrastructure.External.Riot
             {
                 throw new ArgumentException($"Invalid region tagline: {tagline}. Supported regions: {string.Join(", ", _regionMapping.Keys)}");
             }
+            EnsureApiKey();
             return $"https://{regionCode}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={Secrets.ApiKey}";
+        }
+
+        private static void EnsureApiKey()
+        {
+            if (string.IsNullOrWhiteSpace(Secrets.ApiKey))
+                throw new InvalidOperationException("Riot API key is not configured. Set RIOT_API_KEY or configuration key Riot:ApiKey.");
         }
     }
 }

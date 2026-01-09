@@ -24,20 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="DatabaseSecret.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="RiotProxy.Tests/**" />
     <EmbeddedResource Remove="RiotProxy.Tests/**" />
     <None Remove="RiotProxy.Tests/**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="RiotSecret.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

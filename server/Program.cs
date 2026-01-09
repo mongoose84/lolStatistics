@@ -11,8 +11,8 @@ using RiotProxy.Infrastructure.External;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Read secrets needed for the program
-Secrets.Initialize();
+// Read secrets from configuration/environment (no local secret files required)
+Secrets.Initialize(builder.Configuration);
 
 builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();

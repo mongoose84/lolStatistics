@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -30,8 +29,6 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        EnsureTestSecrets();
-
         builder.UseEnvironment("Testing");
 
         builder.ConfigureAppConfiguration((_, config) =>
@@ -42,7 +39,10 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["Auth:DevPassword"] = "dev-secret",
                 ["Auth:CookieName"] = "pulse-auth",
                 ["Auth:SessionTimeout"] = "30",
-                ["Jobs:EnableMatchHistorySync"] = "false"
+                ["Jobs:EnableMatchHistorySync"] = "false",
+                ["RIOT_API_KEY"] = "test-key",
+                ["LOL_DB_CONNECTIONSTRING"] = "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;",
+                ["LOL_DB_CONNECTIONSTRING_V2"] = "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;"
             };
 
             config.AddInMemoryCollection(defaults);
@@ -60,15 +60,6 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         });
 
         return base.CreateHost(builder);
-    }
-
-    private static void EnsureTestSecrets()
-    {
-        // Program.cs requires these files; provide benign placeholders for tests.
-        var baseDir = AppContext.BaseDirectory;
-        File.WriteAllText(Path.Combine(baseDir, "DatabaseSecret.txt"), "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;");
-        File.WriteAllText(Path.Combine(baseDir, "DatabaseSecretV2.txt"), "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;");
-        File.WriteAllText(Path.Combine(baseDir, "RiotSecret.txt"), "test-key");
     }
 
     private sealed class FakeUserRepository : IUserRepository
