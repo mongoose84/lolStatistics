@@ -75,17 +75,22 @@ jobs:
       - name: Publish (self-contained)
         run: |
           dotnet publish -c Release -r win-x86 --self-contained=true  -o ./${{ env.PUBLISH_DIR }}
-              
+      
       # -------------------------------------------------
-      # Verify the publish folder (helps debugging)
+      # Verify publish output exists and show its contents
       # -------------------------------------------------
-      - name: List publish output
+      - name: Verify publish output
+        shell: pwsh
         run: |
-          echo "=== Files that will be uploaded ==="
-          ls -R ./${{ env.PUBLISH_DIR }}
+          if (-not (Test-Path "./${{ env.PUBLISH_DIR }}")) {
+            Write-Error "Publish output folder './${{ env.PUBLISH_DIR }}' not found"
+            exit 1
+          }
+          Write-Host "=== Files that will be uploaded ==="
+          Get-ChildItem -Recurse "./${{ env.PUBLISH_DIR }}"
 
       # -------------------------------------------------
-      # Deploy new files via FTPS
+      # Deploy new files via FTPS (publish folder only)
       # -------------------------------------------------
       - name: Deploy new files to FTP server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -97,6 +102,9 @@ jobs:
           port: 21
           # Point to the SAME folder we just verified
           local-dir: ./server/${{ env.PUBLISH_DIR }}/
+          exclude: |
+            RiotProxy.Tests/**
+            **/RiotProxy.Tests/**
           server-dir: ${{ secrets.FTP_SERVER_PATH }}
           # optional safety flags
           # dry-run: false
