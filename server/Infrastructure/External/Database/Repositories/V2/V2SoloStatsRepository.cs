@@ -10,7 +10,11 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories.V2;
 /// </summary>
 public class V2SoloStatsRepository : RepositoryBase
 {
-    public V2SoloStatsRepository(IV2DbConnectionFactory factory) : base(factory) { }
+    private readonly ILogger<V2SoloStatsRepository> _logger;
+    public V2SoloStatsRepository(IV2DbConnectionFactory factory, ILogger<V2SoloStatsRepository> logger) : base(factory)
+    {
+        _logger = logger;
+    }
 
     /// <summary>
     /// Get comprehensive solo dashboard data for a player.
@@ -21,12 +25,15 @@ public class V2SoloStatsRepository : RepositoryBase
     {
         // Validate queueType
         queueType = ValidateQueueType(queueType);
+        _logger.LogInformation("GetSoloDashboardAsync start: puuid={Puuid}, queueType={Queue}", puuid, queueType);
         
         // Build base query with optional queue filter
         var queueFilter = BuildQueueFilter(queueType);
         
         // Fetch all necessary data
-        var overallStats = await GetOverallStatsAsync(puuid, queueFilter);
+        try
+        {
+            var overallStats = await GetOverallStatsAsync(puuid, queueFilter);
         if (overallStats == null)
             return null;
 
@@ -56,7 +63,7 @@ public class V2SoloStatsRepository : RepositoryBase
         var performancePhases = CalculatePerformancePhases(overallStats.Value, matchDurations);
 
         // Prepare response
-        return new SoloDashboardResponse(
+            var response = new SoloDashboardResponse(
             GamesPlayed: totalGames,
             Wins: overallStats.Value.Wins,
             WinRate: overallStats.Value.WinRate,
@@ -72,6 +79,14 @@ public class V2SoloStatsRepository : RepositoryBase
             DeathEfficiency: deathStats,
             QueueType: queueType
         );
+            _logger.LogInformation("GetSoloDashboardAsync success: puuid={Puuid}, games={Games}", puuid, totalGames);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetSoloDashboardAsync error: puuid={Puuid}, queueType={Queue}", puuid, queueType);
+            throw;
+        }
     }
 
     private async Task<(int Games, int Wins, double WinRate, double AvgKda, double AvgGameDurationMinutes)?> GetOverallStatsAsync(

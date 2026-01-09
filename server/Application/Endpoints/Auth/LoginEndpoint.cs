@@ -25,7 +25,8 @@ public sealed class LoginEndpoint : IEndpoint
         app.MapPost(Route, async (
             [FromBody] LoginRequest request,
             HttpContext httpContext,
-            [FromServices] UserRepository userRepo
+            [FromServices] UserRepository userRepo,
+            [FromServices] ILogger<LoginEndpoint> logger
         ) =>
         {
             try
@@ -37,13 +38,19 @@ public sealed class LoginEndpoint : IEndpoint
                 // Fetch user by username
                 var user = await userRepo.GetByUserNameAsync(request.Username);
                 if (user == null)
+                {
+                    logger.LogWarning("Login attempt with non-existent username: {Username}", request.Username);
                     return Results.Unauthorized();
+                }
 
                 // For now: simple password validation (in production, use bcrypt/argon2 hash comparison)
                 // TODO: Update User table schema to include password_hash column
                 // For MVP, we allow any user with a valid username to login
                 if (!ValidatePassword(request.Password))
+                {
+                    logger.LogWarning("Login attempt with invalid password for username: {Username}", request.Username);
                     return Results.Unauthorized();
+                }
 
                 // Create claims identity for cookie auth
                 var claims = new List<Claim>
@@ -66,6 +73,8 @@ public sealed class LoginEndpoint : IEndpoint
                     authProperties
                 );
 
+                logger.LogInformation("User {Username} (ID: {UserId}) logged in successfully", user.UserName, user.UserId);
+
                 return Results.Ok(new LoginResponse(
                     user.UserId,
                     user.UserName,
@@ -74,7 +83,7 @@ public sealed class LoginEndpoint : IEndpoint
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in LoginEndpoint: {ex.Message}");
+                logger.LogError(ex, "Error in LoginEndpoint");
                 return Results.Json(new { error = "Internal server error" }, statusCode: 500);
             }
         });
