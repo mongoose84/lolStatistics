@@ -18,7 +18,7 @@ namespace RiotProxy.Application.Endpoints
 
         public void Configure(WebApplication app)
         {
-            app.MapGet(Route, async ([FromServices] IUserRepository userRepo) =>
+            app.MapGet(Route, async ([FromServices] IUserRepository userRepo, [FromServices] ILogger<UsersV2Endpoint> logger) =>
             {
                 try
                 {
@@ -27,15 +27,13 @@ namespace RiotProxy.Application.Endpoints
                 }
                 catch (InvalidOperationException ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.StackTrace);
-                    return Results.BadRequest("Invalid operation when getting users");
+                    logger.LogError(ex, "Invalid operation when getting users");
+                    return Results.BadRequest("Unable to retrieve users");
                 }
                 catch (ArgumentException ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.StackTrace);
-                    return Results.BadRequest("Invalid argument when getting users");
+                    logger.LogError(ex, "Invalid argument when getting users");
+                    return Results.BadRequest("Unable to retrieve users");
                 }
                 catch (Exception ex) when (
                     !(ex is OutOfMemoryException) &&
@@ -43,9 +41,8 @@ namespace RiotProxy.Application.Endpoints
                     !(ex is ThreadAbortException)
                 )
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.StackTrace);
-                    return Results.BadRequest("Error when getting users");
+                    logger.LogError(ex, "Error when getting users");
+                    return Results.BadRequest("Unable to retrieve users");
                 }
             }).RequireAuthorization();
         }

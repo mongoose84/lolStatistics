@@ -1447,10 +1447,15 @@ Provide API endpoints for user login, user profile data, and managing friends/du
 Create a new, professional user experience with a landing page, pricing, and app shell consuming API v2.
 
 ### Decision (Jan 2026): Build a standalone `client_v2` Vue app
-- Rationale: new styling was hard to merge into the legacy client; we will build v2 in a fresh Vue 3 + Vite app (`client_v2`) that can ship independently while the current client keeps running.
-- Style direction: start with the Vercel developer aesthetic (dark, sharp, neon-tinged) but keep theme tokens configurable so we can swap looks later.
-- Delivery plan: develop locally until the solo dashboard is ready, then go live with v2; existing client stays untouched during this phase.
-- Scope: marketing + app shell + solo experience first; duo/team can follow once solo v2 is stable.
+- **Architecture**: Create a completely independent Vue 3 + Vite application in `/client_v2/` directory with its own `package.json`, `node_modules`, and build configuration. This is **not** nested within the legacy `/client` folder.
+- **Rationale**: New styling was difficult to merge into the legacy client without disrupting v1. A fresh, standalone app allows v2 to ship independently while the current client remains untouched and operational.
+- **Style direction**: Start with the Vercel developer aesthetic (dark, sharp, neon-tinged) but keep theme tokens configurable via CSS variables so we can swap looks later without restructuring code.
+- **Development workflow**: 
+  - Scaffold `/client_v2/` as a new Vue 3 + Vite project
+  - Implement app shell (G2), landing page (G3), and solo dashboard (G5) in parallel with backend (F2)
+  - Once solo dashboard is feature-complete and tested locally, deploy v2 app to production
+  - Existing `/client` (v1) continues running unchanged; users can access either app during transition
+- **Scope**: Marketing landing page + app shell + solo experience first; duo/team dashboards follow once solo v2 is stable in production.
 
 ## Issues
 

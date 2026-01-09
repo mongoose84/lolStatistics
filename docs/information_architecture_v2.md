@@ -1,8 +1,9 @@
 # Pulse v2 - Information Architecture & Routes
 
-**Last Updated:** January 9, 2026  
+**Last Updated:** January 10, 2026  
 **Epic:** G1 - UX  
-**Status:** Draft for Review
+**Status:** Design for Standalone App (client_v2)  
+**App Location:** `client_v2/` — independent from legacy `client/` (v1)
 
 ---
 
@@ -374,8 +375,8 @@ Show current location for nested routes:
   - Query keys: `['solo', userId]`, `['duo', duoId]`, `['team', teamId]`
 
 ### API Client
-- **Axios** (existing pattern, keep it)
-- Abstracted in `client/src/api/` (e.g., `auth.js`, `solo.js`, `duo.js`)
+- **Axios** (consistent with legacy client)
+- Abstracted in `client_v2/src/api/` (e.g., `auth.js`, `solo.js`, `duo.js`)
 - Wrapped with Vue Query hooks (e.g., `useSoloStats()`, `useDuoStats()`)
 
 ### Forms & Validation
@@ -442,6 +443,15 @@ Show current location for nested routes:
 
 ## Next Steps
 
+### Important: Standalone Application
+**`client_v2/` is a completely separate, independent Vue 3 + Vite application.** It has its own:
+- Directory structure (`client_v2/src/`, `client_v2/package.json`, etc.)
+- Build process and dev server
+- Dependencies and node_modules
+- Router and state management (Pinia, Vue Query)
+
+The legacy `client/` app (v1) continues to run independently. Both apps coexist on the same infrastructure but are developed separately.
+
 ### For Product Owner (You)
 1. **Review this document**: Approve route map, user flows, settings structure
 2. **Decide on open questions**: Especially unified vs separate auth pages
@@ -449,11 +459,12 @@ Show current location for nested routes:
 4. **Visual design**: Create wireframes or mockups for key pages (Homepage, Dashboard Hub, Solo Dashboard)
 
 ### For Development Team
-1. **Set up v2 structure**: Create `client/v2/` or `client/src-v2/` folder (mirroring `src/`)
-2. **Scaffold routes**: Define Vue Router routes for all v2 pages
-3. **Build app shell**: Top nav, sidebar, layout components
-4. **Implement auth flow**: Signup, login, email verification (frontend + backend)
-5. **Connect to existing endpoints**: Use existing `LoginEndpoint.cs` (or create v2 auth endpoints)
+1. **Create standalone v2 app**: Scaffold a new Vue 3 + Vite app in `client_v2/` directory (completely independent from legacy `client/`)
+2. **Initialize project structure**: Copy boilerplate (src, public, vite.config.js, package.json)
+3. **Scaffold routes**: Define Vue Router routes for all v2 pages in `client_v2/src/router/`
+4. **Build app shell**: Top nav, sidebar, layout components in `client_v2/src/components/`
+5. **Implement auth flow**: Signup, login, email verification (frontend + backend) using v2 API endpoints
+6. **Connect to v2 API**: Use v2 backend endpoints (see `docs/api_v2_design.md`)
 
 ---
 

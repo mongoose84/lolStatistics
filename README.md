@@ -87,11 +87,26 @@ npm run test:unit:watch // Run all test suites but watch for changes and rerun t
 npm run test:unit:coverage // Run all tests once and show test coverage
 ```
 
-### Client v2 (new app)
-- Decision: build a fresh Vue 3 + Vite app in `client_v2` to avoid disrupting the legacy client while we develop the v2 experience.
-- Style: start with the Vercel developer aesthetic (dark, sharp, neon-tinged) but keep theme tokens configurable so we can swap looks later.
-- Rollout: develop locally until the solo dashboard is ready, then ship v2; legacy client keeps running in the meantime.
-- Once scaffolded, setup will mirror the current client (`npm install`, `npm run dev`).
+#### Client v2 (standalone app)
+**Client v2 is a completely separate Vue 3 + Vite application, independent of the legacy client.**
+
+- Location: `client_v2/` (separate directory)
+- Decision: Build a fresh Vue 3 + Vite app to avoid disrupting the legacy client while we develop the v2 experience.
+- Style: Start with the Vercel developer aesthetic (dark, sharp, neon-tinged) but keep theme tokens configurable for future restyles.
+- Rollout: Develop locally until the solo dashboard is ready, then ship v2; legacy client continues running independently.
+- The v2 app will have its own `package.json`, `node_modules`, and complete build setup.
+
+##### Install and run Client v2
+from root
+```
+cd client_v2
+```
+```
+npm install
+```
+```
+npm run dev
+```
 
 #### Server part
 from root
