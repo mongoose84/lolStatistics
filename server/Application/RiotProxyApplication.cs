@@ -1,4 +1,5 @@
 using RiotProxy.Application.Endpoints;
+using RiotProxy.Application.Endpoints.Solo;
 
 namespace RiotProxy.Application
 {
@@ -28,6 +29,14 @@ namespace RiotProxy.Application
             var gamersEndpoint = new GamersEndpoint(_basePath);
             _endpoints.Add(gamersEndpoint);
 
+            // ========== V2 API Endpoints ==========
+            var basePath_v2 = "/api/v2";
+            
+            // Solo Dashboard V2
+            var soloDashboardV2Endpoint = new SoloDashboardV2Endpoint(basePath_v2);
+            _endpoints.Add(soloDashboardV2Endpoint);
+
+            // ========== V1 API Endpoints ==========
             var overallStatsEndpoint = new ComparisonEndpoint(_basePath);
             _endpoints.Add(overallStatsEndpoint);
 

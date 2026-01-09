@@ -33,6 +33,7 @@ builder.Services.AddScoped<V2TeamObjectivesRepository>();
 builder.Services.AddScoped<V2ParticipantObjectivesRepository>();
 builder.Services.AddScoped<V2TeamMatchMetricsRepository>();
 builder.Services.AddScoped<V2DuoMetricsRepository>();
+builder.Services.AddScoped<V2SoloStatsRepository>();
 
 // Named HttpClient for Riot API
 builder.Services.AddHttpClient("RiotApi", client =>
