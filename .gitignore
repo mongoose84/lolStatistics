@@ -48,3 +48,6 @@ publish/**/*
 server/DatabaseSecretV2.txt
 server/RiotProxy.Tests/bin
 server/RiotProxy.Tests/obj
+
+playground/node_modules
+playground/dist

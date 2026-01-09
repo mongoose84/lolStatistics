@@ -10,11 +10,20 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@v2': path.resolve(__dirname, './src-v2'),
       // Force VTU ESM build to ensure BaseWrapper.find exists in tests
       '@vue/test-utils': path.resolve(
         __dirname,
         './node_modules/@vue/test-utils/dist/vue-test-utils.esm-bundler.mjs'
       )
+    }
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        v2: path.resolve(__dirname, 'index-v2.html')
+      }
     }
   },
   test: {
