@@ -4,6 +4,9 @@
 
 > **"Pulse is the only LoL improvement tracker built for duos and teams, powered by AI coaching that turns your stats into actionable goals you can actually achieve."**
 
+Crafted with love by the Agile Astronaut. 
+First 500 users get free Pro tier. Keep a counter on the landing page of how many free users are left.
+
 ## Pricing Model
 
 | Tier | Monthly | Annual | Features |
@@ -1072,10 +1075,10 @@ Finalize the Pulse Database v2 schema (tables, columns, indexes) based on `docs/
 
 #### Acceptance Criteria
 
-- [ ] Consolidated ERD / schema documented in `docs/database_schema_v2.md`  
-- [ ] Tables defined for: `matches`, `participants`, `participant_checkpoints`, `participant_metrics`, `team_objectives`, `participant_objectives`, `duo_metrics`, `team_match_metrics`, `team_role_responsibility`, `ai_snapshots`  
-- [ ] `matches.queue_id` present (numeric Riot queue id) and used for queue filtering across v2 dashboards
-- [ ] Index strategy defined for common filters (puuid, queue_id, season/patch, team_id, minute_mark)
+- [x] Consolidated ERD / schema documented in `docs/database_schema_v2.md`  
+- [x] Tables defined for: `matches`, `participants`, `participant_checkpoints`, `participant_metrics`, `team_objectives`, `participant_objectives`, `duo_metrics`, `team_match_metrics`, `team_role_responsibility`, `ai_snapshots`  
+- [x] `matches.queue_id` present (numeric Riot queue id) and used for queue filtering across v2 dashboards
+- [x] Index strategy defined for common filters (puuid, queue_id, season/patch, team_id, minute_mark)
 
 ---
 
@@ -1093,9 +1096,9 @@ Create SQL scripts (or migrations) to create all Database v2 tables and indexes 
 
 #### Acceptance Criteria
 
-- [ ] `schema-v2.sql` (or equivalent migration) creates all v2 tables and indexes  
-- [ ] Script can be applied to a clean database without errors  
-- [ ] Script is safe to re-run on an empty DB (idempotent for local dev)
+- [x] `schema-v2.sql` (or equivalent migration) creates all v2 tables and indexes  
+- [x] Script can be applied to a clean database without errors  
+- [x] Script is safe to re-run on an empty DB (idempotent for local dev)
 
 ---
 
@@ -1113,9 +1116,9 @@ Add entity classes and repository types for Database v2 tables under `server/Inf
 
 #### Acceptance Criteria
 
-- [ ] Entity classes created for all v2 tables  
-- [ ] Repositories expose queries aligned with product needs (solo/duo/team summaries, timelines, derived metrics)  
-- [ ] New repositories use `RepositoryBase` helpers and follow existing patterns
+- [x] Entity classes created for all v2 tables  
+- [x] Repositories expose queries aligned with product needs (solo/duo/team summaries, timelines, derived metrics)  
+- [x] New repositories use `RepositoryBase` helpers and follow existing patterns
 
 ---
 
@@ -1133,9 +1136,9 @@ Update `MatchHistorySyncJob` (and related logic) to write match- and participant
 
 #### Acceptance Criteria
 
-- [ ] New writes to `matches` and `participants` occur for all synced matches  
-- [ ] At least one test account can be fully synced into v2 tables  
-- [ ] Basic solo stats queries using v2 repositories return expected values (win rate, KDA, CS, etc.)
+- [x] New writes to `matches` and `participants` occur for all synced matches  
+- [x] At least one test account can be fully synced into v2 tables  
+- [x] Basic solo stats queries using v2 repositories return expected values (win rate, KDA, CS, etc.)
 
 ---
 
@@ -1153,10 +1156,10 @@ Extend the sync pipeline to call Riot timeline endpoints and populate `participa
 
 #### Acceptance Criteria
 
-- [ ] Timeline data fetched for synced matches (respecting rate limits)  
-- [ ] Checkpoints stored at key minute marks (10/15/20/25 etc.)  
-- [ ] Derived metrics (kill participation, damage share, death timings, gold leads, duo/team metrics) are persisted  
-- [ ] Core solo/duo/team analytics can be served from v2 tables without additional Riot calls
+- [x] Timeline data fetched for synced matches (respecting rate limits)  
+- [x] Checkpoints stored at key minute marks (10/15/20/25 etc.)  
+- [x] Derived metrics (kill participation, damage share, death timings, gold leads, duo/team metrics) are persisted  
+- [x] Core solo/duo/team analytics can be served from v2 tables without additional Riot calls
 
 ---
 
@@ -1220,10 +1223,10 @@ Design the v2 API surface (routes, DTOs, versioning strategy) for solo, duo, tea
 
 #### Acceptance Criteria
 
-- [ ] API v2 route scheme decided (e.g. `/api/v2/...`)  
-- [ ] Request/response models defined for solo/duo/team summary endpoints  
-- [ ] Response shapes optimized for frontend dashboards (minimal client-side aggregation)
-- [ ] Standardize optional queue filtering for v2 endpoints (e.g. `queueType=ranked_solo|ranked_flex|normal|aram|all`)
+- [x] API v2 route scheme decided (e.g. `/api/v2/...`)  
+- [x] Request/response models defined for solo/duo/team summary endpoints  
+- [x] Response shapes optimized for frontend dashboards (minimal client-side aggregation)
+- [x] Standardize optional queue filtering for v2 endpoints (e.g. `queueType=ranked_solo|ranked_flex|normal|aram|all`)
 
 ---
 
@@ -1241,10 +1244,10 @@ Create a v2 endpoint that returns all data required for the Solo dashboard (over
 
 #### Acceptance Criteria
 
-- [ ] Endpoint implemented (e.g. `GET /api/v2/solo/dashboard/{userId}`)  
-- [ ] Uses only v2 repositories  
-- [ ] Returns a single well-structured payload consumed by the new Solo dashboard view
-- [ ] Supports optional queue filtering via the standardized v2 queue filter
+- [x] Endpoint implemented (e.g. `GET /api/v2/solo/dashboard/{userId}`)  
+- [x] Uses only v2 repositories  
+- [x] Returns a single well-structured payload consumed by the new Solo dashboard view
+- [x] Supports optional queue filtering via the standardized v2 queue filter
 
 ---
 
@@ -1442,6 +1445,17 @@ Provide API endpoints for user login, user profile data, and managing friends/du
 # Epic G: Frontend v2 App & Marketing
 
 Create a new, professional user experience with a landing page, pricing, and app shell consuming API v2.
+
+### Decision (Jan 2026): Build a standalone `client_v2` Vue app
+- **Architecture**: Create a completely independent Vue 3 + Vite application in `/client_v2/` directory with its own `package.json`, `node_modules`, and build configuration. This is **not** nested within the legacy `/client` folder.
+- **Rationale**: New styling was difficult to merge into the legacy client without disrupting v1. A fresh, standalone app allows v2 to ship independently while the current client remains untouched and operational.
+- **Style direction**: Start with the Vercel developer aesthetic (dark, sharp, neon-tinged) but keep theme tokens configurable via CSS variables so we can swap looks later without restructuring code.
+- **Development workflow**: 
+  - Scaffold `/client_v2/` as a new Vue 3 + Vite project
+  - Implement app shell (G2), landing page (G3), and solo dashboard (G5) in parallel with backend (F2)
+  - Once solo dashboard is feature-complete and tested locally, deploy v2 app to production
+  - Existing `/client` (v1) continues running unchanged; users can access either app during transition
+- **Scope**: Marketing landing page + app shell + solo experience first; duo/team dashboards follow once solo v2 is stable in production.
 
 ## Issues
 

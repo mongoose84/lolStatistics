@@ -39,6 +39,10 @@ namespace RiotProxy.Application
             
             var logoutEndpoint = new LogoutEndpoint(basePath_v2);
             _endpoints.Add(logoutEndpoint);
+
+            // Users (v2) - auth required
+            var usersV2Endpoint = new UsersV2Endpoint(basePath_v2);
+            _endpoints.Add(usersV2Endpoint);
             
             // Solo Dashboard V2 (auth required)
             var soloDashboardV2Endpoint = new SoloDashboardV2Endpoint(basePath_v2);

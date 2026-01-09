@@ -12,10 +12,12 @@
     "test:unit:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@tanstack/vue-query": "^5.92.5",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "pinia": "^3.0.4",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"
   },
