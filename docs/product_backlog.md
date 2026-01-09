@@ -4,6 +4,9 @@
 
 > **"Pulse is the only LoL improvement tracker built for duos and teams, powered by AI coaching that turns your stats into actionable goals you can actually achieve."**
 
+Crafted with love by the Agile Astronaut. 
+First 500 users get free Pro tier. Keep a counter on the landing page of how many free users are left.
+
 ## Pricing Model
 
 | Tier | Monthly | Annual | Features |
