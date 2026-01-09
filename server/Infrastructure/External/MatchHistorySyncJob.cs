@@ -887,8 +887,70 @@ namespace RiotProxy.Infrastructure.External
                 var sup = teamPlayers.FirstOrDefault(p => string.Equals(puuidToLane.GetValueOrDefault(p), "UTILITY", StringComparison.OrdinalIgnoreCase));
                 if (string.IsNullOrEmpty(adc) || string.IsNullOrEmpty(sup)) continue;
 
+                // Get v2 participant IDs for this duo
+                if (!puuidToV2Id.TryGetValue(adc, out var adcV2Id) || !puuidToV2Id.TryGetValue(sup, out var supV2Id))
+                    continue;
+
+                // Find enemy team and their bot lane duo
+                var enemyTeam = team == 100 ? 200 : 100;
+                var enemyPlayers = teamToPuuids.GetValueOrDefault(enemyTeam);
+                if (enemyPlayers == null || enemyPlayers.Count == 0) continue;
+                var enemyAdc = enemyPlayers.FirstOrDefault(p => string.Equals(puuidToLane.GetValueOrDefault(p), "BOTTOM", StringComparison.OrdinalIgnoreCase));
+                var enemySup = enemyPlayers.FirstOrDefault(p => string.Equals(puuidToLane.GetValueOrDefault(p), "UTILITY", StringComparison.OrdinalIgnoreCase));
+                if (string.IsNullOrEmpty(enemyAdc) || string.IsNullOrEmpty(enemySup)) continue;
+
+                if (!puuidToV2Id.TryGetValue(enemyAdc, out var enemyAdcV2Id) || !puuidToV2Id.TryGetValue(enemySup, out var enemySupV2Id))
+                    continue;
+
+                // Fetch checkpoints for all four players
+                var adcCheckpoints = await v2Checkpoints.GetByParticipantAsync(adcV2Id);
+                var supCheckpoints = await v2Checkpoints.GetByParticipantAsync(supV2Id);
+                var enemyAdcCheckpoints = await v2Checkpoints.GetByParticipantAsync(enemyAdcV2Id);
+                var enemySupCheckpoints = await v2Checkpoints.GetByParticipantAsync(enemySupV2Id);
+
                 int? eg10 = null; int? eg15 = null; bool? winAhead15 = null;
-                // Skipping duo metrics computation for now to keep pipeline stable.
+
+                // Calculate duo gold difference at 10 minutes
+                var adc10 = adcCheckpoints.FirstOrDefault(c => c.MinuteMark == 10);
+                var sup10 = supCheckpoints.FirstOrDefault(c => c.MinuteMark == 10);
+                var enemyAdc10 = enemyAdcCheckpoints.FirstOrDefault(c => c.MinuteMark == 10);
+                var enemySup10 = enemySupCheckpoints.FirstOrDefault(c => c.MinuteMark == 10);
+                if (adc10 != null && sup10 != null && enemyAdc10 != null && enemySup10 != null)
+                {
+                    var duoGold10 = adc10.Gold + sup10.Gold;
+                    var enemyDuoGold10 = enemyAdc10.Gold + enemySup10.Gold;
+                    eg10 = duoGold10 - enemyDuoGold10;
+                }
+
+                // Calculate duo gold difference at 15 minutes
+                var adc15 = adcCheckpoints.FirstOrDefault(c => c.MinuteMark == 15);
+                var sup15 = supCheckpoints.FirstOrDefault(c => c.MinuteMark == 15);
+                var enemyAdc15 = enemyAdcCheckpoints.FirstOrDefault(c => c.MinuteMark == 15);
+                var enemySup15 = enemySupCheckpoints.FirstOrDefault(c => c.MinuteMark == 15);
+                if (adc15 != null && sup15 != null && enemyAdc15 != null && enemySup15 != null)
+                {
+                    var duoGold15 = adc15.Gold + sup15.Gold;
+                    var enemyDuoGold15 = enemyAdc15.Gold + enemySup15.Gold;
+                    eg15 = duoGold15 - enemyDuoGold15;
+                    
+                    // Determine if duo won when ahead at 15
+                    if (eg15 > 0)
+                    {
+                        winAhead15 = teamWin.GetValueOrDefault(team);
+                    }
+                }
+
+                // Persist duo metrics
+                await v2DuoMetrics.UpsertAsync(new RiotProxy.External.Domain.Entities.V2.V2DuoMetric
+                {
+                    MatchId = matchId,
+                    ParticipantId1 = adcV2Id,
+                    ParticipantId2 = supV2Id,
+                    EarlyGoldDelta10 = eg10,
+                    EarlyGoldDelta15 = eg15,
+                    WinWhenAheadAt15 = winAhead15,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
         }
     }
