@@ -378,9 +378,9 @@ body {
   --bg-image: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&q=80');
   --bg-overlay: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9));
   
-  --color-primary: #0070f3;
-  --color-primary-hover: #0761d1;
-  --color-primary-soft: rgba(0, 112, 243, 0.1);
+  --color-primary: #6d28d9;
+  --color-primary-hover: #7c3aed;
+  --color-primary-soft: rgba(109, 40, 217, 0.1);
   --color-secondary: #7928ca;
   
   --color-bg: #000000;
@@ -389,7 +389,7 @@ body {
   
   --color-text: #ffffff;
   --color-text-secondary: #888888;
-  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border: rgba(109, 40, 217, 0.15);
   
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -415,8 +415,8 @@ body {
   --radius-lg: 9px;
   
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 30px rgba(0, 112, 243, 0.15);
-  --shadow-lg: 0 20px 60px rgba(0, 112, 243, 0.25);
+  --shadow-md: 0 8px 30px rgba(109, 40, 217, 0.15);
+  --shadow-lg: 0 20px 60px rgba(109, 40, 217, 0.25);
 }
 
 .playground-wrapper[data-theme="vercel"] .pg-container {
