@@ -1,8 +1,10 @@
-# Pulse (pulse.gg) - League of Legends improvement tracker
+# League of Legends improvement tracker
 
-> "Pulse is the only LoL improvement tracker built for duos and teams, powered by AI coaching that turns your stats into actionable goals you can actually achieve."
+> "The only LoL improvement tracker built for duos and teams, powered by AI coaching that turns your stats into actionable goals you can actually achieve."
 
-Pulse helps players (solo, duo, and full teams) understand their performance with rich match analytics, timeline-derived metrics, and AI goal recommendations.
+This project helps players (solo, duo, and full teams) understand their performance with rich match analytics, timeline-derived metrics, and AI goal recommendations.
+
+![League of Legends solo dashboard screenshot](image.png)
 
 ## 1st time install
 

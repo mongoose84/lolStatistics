@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Logging;
 using RiotProxy.Infrastructure;
 using RiotProxy.Application;
@@ -33,6 +34,7 @@ builder.Services.AddScoped<V2TeamObjectivesRepository>();
 builder.Services.AddScoped<V2ParticipantObjectivesRepository>();
 builder.Services.AddScoped<V2TeamMatchMetricsRepository>();
 builder.Services.AddScoped<V2DuoMetricsRepository>();
+builder.Services.AddScoped<V2SoloStatsRepository>();
 
 // Named HttpClient for Riot API
 builder.Services.AddHttpClient("RiotApi", client =>
@@ -47,6 +49,40 @@ builder.Services.AddHttpClient("RiotApi", client =>
 builder.Services.AddSingleton<MatchHistorySyncJob>();
 builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<MatchHistorySyncJob>());
+
+// Add distributed cache for session storage (in-memory for dev, Redis for prod)
+builder.Services.AddDistributedMemoryCache();
+
+// Add session support
+var sessionTimeoutMinutes = builder.Configuration.GetValue<int>("Auth:SessionTimeout", 30);
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(sessionTimeoutMinutes);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // set to SameAsRequest for local dev
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
+// Add authentication (cookie-based)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/access-denied";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // set to SameAsRequest for local dev
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionTimeoutMinutes);
+        options.SlidingExpiration = true;
+        var cookieName = builder.Configuration.GetValue<string>("Auth:CookieName");
+        if (!string.IsNullOrWhiteSpace(cookieName))
+        {
+            options.Cookie.Name = cookieName;
+        }
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -74,10 +110,25 @@ builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 builder.Logging.AddFilter("System.Net.Http.HttpClient.RiotApi.LogicalHandler", LogLevel.Warning);
 builder.Logging.AddFilter("System.Net.Http.HttpClient.RiotApi.ClientHandler", LogLevel.Warning);
 
+// In development, print ILogger messages to console (and debug)
+if (builder.Environment.IsDevelopment())
+{
+    builder.Logging.SetMinimumLevel(LogLevel.Information);
+    builder.Logging.AddConsole();
+    builder.Logging.AddDebug();
+}
+
 var app = builder.Build();
 
 // Apply the CORS policy globally
 app.UseCors("VueClientPolicy");
+
+// Session middleware (must come before routing)
+app.UseSession();
+
+// AuthN/Z middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Enable routing and map endpoints
 var riotProxyApplication = new RiotProxyApplication(app);
