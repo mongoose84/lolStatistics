@@ -94,17 +94,25 @@ cd server
 cd RiotProxy
 ```
 
-##### Riot API Key
-Add the Riot API key to a file in the RiotProxy folder and name it RiotSecret.txt
-
-##### Database connection string
-add a database connection string to the RiotProxy folder and name it DatabaseSecret.txt
-
-it should have this format
-
+##### Riot API Key (local)
+Set it via .NET user-secrets (preferred). Example:
 ```
-Server=your.mysql.server;Port=yourPort;Database=Database_name;User Id=User_Id;Password=yourPassword;SslMode=Preferred;
+
+# or user-secrets (from server/)
+dotnet user-secrets set "Riot:ApiKey" "your-key"
 ```
+
+##### Database connection string (local)
+Set via user-secrets:
+```
+
+
+# user-secrets (from server/)
+dotnet user-secrets set "ConnectionStrings:Default" "Server=...;Password=...;"
+dotnet user-secrets set "ConnectionStrings:DatabaseV2" "Server=...;Password=...;"
+```
+
+Note: You no longer need to create RiotSecret.txt or DatabaseSecret.txt; secrets are read from configuration/env.
 ##### Build and run
 
 build and run the application on Windows

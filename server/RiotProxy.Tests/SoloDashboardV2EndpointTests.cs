@@ -1,0 +1,20 @@
+using System.Net;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+
+namespace RiotProxy.Tests;
+
+public class SoloDashboardV2EndpointTests
+{
+    [Fact]
+    public async Task Solo_dashboard_requires_authentication()
+    {
+        using var factory = new TestWebApplicationFactory();
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await client.GetAsync("/api/v2/solo/dashboard/1");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+}

@@ -4,7 +4,7 @@ using RiotProxy.External.Domain.Entities;
 
 namespace RiotProxy.Infrastructure.External.Database.Repositories
 {
-    public class UserRepository : RepositoryBase
+    public class UserRepository : RepositoryBase, IUserRepository
     {
         public UserRepository(IDbConnectionFactory factory) : base(factory)
         {

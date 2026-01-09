@@ -15,7 +15,7 @@ namespace RiotProxy.Application.Endpoints
         public void Configure(WebApplication app)
         {
             app.MapGet(Route, async (
-                [FromServices] UserRepository userRepo
+                [FromServices] IUserRepository userRepo
                 ) =>
             {
                 try
