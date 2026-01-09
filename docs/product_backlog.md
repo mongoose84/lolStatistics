@@ -1446,6 +1446,12 @@ Provide API endpoints for user login, user profile data, and managing friends/du
 
 Create a new, professional user experience with a landing page, pricing, and app shell consuming API v2.
 
+### Decision (Jan 2026): Build a standalone `client_v2` Vue app
+- Rationale: new styling was hard to merge into the legacy client; we will build v2 in a fresh Vue 3 + Vite app (`client_v2`) that can ship independently while the current client keeps running.
+- Style direction: start with the Vercel developer aesthetic (dark, sharp, neon-tinged) but keep theme tokens configurable so we can swap looks later.
+- Delivery plan: develop locally until the solo dashboard is ready, then go live with v2; existing client stays untouched during this phase.
+- Scope: marketing + app shell + solo experience first; duo/team can follow once solo v2 is stable.
+
 ## Issues
 
 ### G1. [UX] Define app v2 information architecture & routes
