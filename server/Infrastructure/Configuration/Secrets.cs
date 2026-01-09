@@ -13,7 +13,8 @@ namespace RiotProxy.Infrastructure
         {
             if (_initialized)
             {
-                throw new InvalidOperationException("The DatabaseConnectionString and ApiKey have already been set. It is not possible to overwrite them.");
+                // Idempotent in case the host is created multiple times (e.g., integration tests)
+                return;
             }
 
             DatabaseConnectionString = Read("DatabaseSecret.txt");

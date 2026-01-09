@@ -64,6 +64,12 @@ jobs:
         run: dotnet restore
 
       # -------------------------------------------------
+      # Run server unit tests (including auth hardening)
+      # -------------------------------------------------
+      - name: Run tests
+        run: dotnet test ../lol.sln --configuration Release --logger "trx;LogFileName=test-results.trx"
+
+      # -------------------------------------------------
       # Publish a **self‑contained** Windows‑x86 binary
       # -------------------------------------------------
       - name: Publish (self-contained)

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using RiotProxy.Infrastructure;
 using RiotProxy.Application;
@@ -17,7 +18,7 @@ builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 builder.Services.AddSingleton<IV2DbConnectionFactory, V2DbConnectionFactory>();
 
-builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<GamerRepository>();
 builder.Services.AddScoped<UserGamerRepository>();
 builder.Services.AddScoped<LolMatchRepository>();
@@ -46,9 +47,12 @@ builder.Services.AddHttpClient("RiotApi", client =>
         client.DefaultRequestHeaders.Add("X-Riot-Token", Secrets.ApiKey);
 });
 
-builder.Services.AddSingleton<MatchHistorySyncJob>();
-builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
-builder.Services.AddHostedService(provider => provider.GetRequiredService<MatchHistorySyncJob>());
+var enableMatchHistorySync = builder.Configuration.GetValue<bool>("Jobs:EnableMatchHistorySync", true);
+if (enableMatchHistorySync)
+{
+    builder.Services.AddSingleton<MatchHistorySyncJob>();
+    builder.Services.AddHostedService(provider => provider.GetRequiredService<MatchHistorySyncJob>());
+}
 
 // Add distributed cache for session storage (in-memory for dev, Redis for prod)
 builder.Services.AddDistributedMemoryCache();
@@ -80,6 +84,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         {
             options.Cookie.Name = cookieName;
         }
+
+        // APIs should respond with HTTP status codes instead of HTML redirects
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -135,3 +152,6 @@ var riotProxyApplication = new RiotProxyApplication(app);
 riotProxyApplication.ConfigureEndpoints();
 
 app.Run();
+
+// Expose Program for integration testing
+public partial class Program { }

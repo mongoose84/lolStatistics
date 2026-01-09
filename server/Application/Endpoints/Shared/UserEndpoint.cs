@@ -25,7 +25,7 @@ namespace RiotProxy.Application.Endpoints
         {
             app.MapGet(Route + "/{userName}", async (
                 string userName,
-                [FromServices] UserRepository userRepo
+                [FromServices] IUserRepository userRepo
                 ) =>
             {
                 try
@@ -67,7 +67,7 @@ namespace RiotProxy.Application.Endpoints
         {
             app.MapPost(Route, async (
                 [FromBody] CreateUserRequest body,
-                [FromServices] UserRepository userRepo,
+                [FromServices] IUserRepository userRepo,
                 [FromServices] GamerRepository gamerRepo,
                 [FromServices] UserGamerRepository userGamerRepo,
                 [FromServices] MatchHistorySyncJob matchHistorySyncJob,
