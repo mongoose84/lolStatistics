@@ -125,8 +125,7 @@ jobs:
           } | ConvertTo-Json -Depth 10
           
           Set-Content -Path "appsettings.Production.json" -Value $json
-          Write-Host "=== Generated appsettings.Production.json ==="
-          Get-Content "appsettings.Production.json"
+          Write-Host "✅ appsettings.Production.json generated successfully (contents hidden for security)"
 
       # -------------------------------------------------
       # Run server unit tests (including auth hardening)

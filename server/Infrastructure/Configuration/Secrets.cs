@@ -15,6 +15,7 @@ namespace RiotProxy.Infrastructure
         /// <summary>
         /// Load secrets from configuration/env. Falls back to optional local files if present.
         /// Priority: appsettings → env vars → local files
+        /// Debug logging is conditional (Development or Secrets:EnableDebugLogging=true).
         /// </summary>
         public static void Initialize(IConfiguration config)
         {
@@ -43,8 +44,14 @@ namespace RiotProxy.Infrastructure
                 Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"),
                 ReadIfExists("DatabaseSecretV2.txt"));
 
-            // Debug logging (remove in production if verbose)
-            LogConfigurationStatus(config);
+            // Optional debug logging: only in Development or when explicitly enabled
+            var enableSecretsDebug = config.GetValue<bool>("Secrets:EnableDebugLogging", false);
+            var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            var isDevelopment = string.Equals(aspnetEnv, "Development", StringComparison.OrdinalIgnoreCase);
+            if (enableSecretsDebug || isDevelopment)
+            {
+                LogConfigurationStatus(config);
+            }
 
             _initialized = true;
         }
