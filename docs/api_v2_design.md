@@ -64,6 +64,8 @@ GET  /api/v2/goals/{userId}/progress
 
 #### E. User
 ```
+POST /api/v2/login                     # Authenticate and obtain session cookie
+POST /api/v2/logout                    # Clear session
 POST /api/v2/users                     # Create/register a user for dashboards
 GET  /api/v2/users/{userId}            # Fetch user details for solo/duo/team views
 GET  /api/v2/users/by-puuid/{puuid}    # Optional helper when PUUID is already known
@@ -597,7 +599,36 @@ public record InsightCategory(
 
 ### E. User Endpoints
 
-#### 4.E.1 `POST /api/v2/users`
+#### 4.E.1 `POST /api/v2/login`
+**Purpose:** Authenticate with username and password, obtain an httpOnly session cookie for subsequent requests.
+
+```csharp
+public record LoginRequest(
+    string Username,                    // User account username
+    string Password                     // User password (validated server-side, hashed in DB)
+);
+
+public record LoginResponse(
+    int UserId,
+    string Username,
+    string Message                      // "Login successful"
+);
+```
+
+**Notes:**
+- No auth required for this endpoint
+- Response sets an httpOnly, secure, SameSite=Lax cookie automatically
+- Requests without valid credentials return `401 Unauthorized`
+
+#### 4.E.2 `POST /api/v2/logout`
+**Purpose:** Clear the session cookie and sign out the user.
+
+```csharp
+// No request body
+// Returns: { message: "Logged out successfully" }
+```
+
+#### 4.E.3 `POST /api/v2/users`
 **Purpose:** Create/register a user and attach Riot identity so solo/duo/team dashboards can resolve PUUID.
 
 ```csharp
@@ -623,14 +654,14 @@ public record UserResponse(
 );
 ```
 
-#### 4.E.2 `GET /api/v2/users/{userId}`
+#### 4.E.4 `GET /api/v2/users/{userId}`
 **Purpose:** Fetch a user for the solo view (or any dashboard) including PUUID and display info.
 
 ```csharp
 // Returns UserResponse
 ```
 
-#### 4.E.3 `GET /api/v2/users/by-puuid/{puuid}`
+#### 4.E.5 `GET /api/v2/users/by-puuid/{puuid}`
 **Purpose:** Helper when the client already has the PUUID (e.g., deep link) and needs Pulse user metadata.
 
 ```csharp

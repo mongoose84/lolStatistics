@@ -1,4 +1,5 @@
 using RiotProxy.Application.Endpoints;
+using RiotProxy.Application.Endpoints.Auth;
 using RiotProxy.Application.Endpoints.Solo;
 
 namespace RiotProxy.Application
@@ -32,7 +33,14 @@ namespace RiotProxy.Application
             // ========== V2 API Endpoints ==========
             var basePath_v2 = "/api/v2";
             
-            // Solo Dashboard V2
+            // Auth endpoints (no auth required)
+            var loginEndpoint = new LoginEndpoint(basePath_v2);
+            _endpoints.Add(loginEndpoint);
+            
+            var logoutEndpoint = new LogoutEndpoint(basePath_v2);
+            _endpoints.Add(logoutEndpoint);
+            
+            // Solo Dashboard V2 (auth required)
             var soloDashboardV2Endpoint = new SoloDashboardV2Endpoint(basePath_v2);
             _endpoints.Add(soloDashboardV2Endpoint);
 
