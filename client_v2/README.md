@@ -23,13 +23,15 @@ This is the **standalone Vue 3 + Vite application** for Pulse.gg v2, completely 
 ```
 client_v2/
 ├── public/
-│   └── pulse-icon.svg          # App logo/icon
+│   ├── pulse-icon.svg          # App logo/icon
+│   ├── gaming-bg.jpg           # Global background image
+│   └── hero-bg.svg             # Hero section background
 ├── src/
-│   ├── assets/                 # Static assets
 │   ├── components/             # Reusable components
-│   │   └── NavBar.vue         # Navigation bar
+│   │   ├── NavBar.vue         # Navigation bar
+│   │   └── VersionBadge.vue   # Version display badge
 │   ├── views/                  # Page components
-│   │   ├── LandingPage.vue    # Homepage
+│   │   ├── LandingPage.vue    # Homepage with hero & pricing
 │   │   ├── AuthPage.vue       # Login/Signup
 │   │   ├── PrivacyPage.vue    # Privacy policy
 │   │   └── TermsPage.vue      # Terms of service
@@ -37,10 +39,19 @@ client_v2/
 │   │   └── index.js           # Route definitions
 │   ├── App.vue                # Root component
 │   ├── main.js                # App entry point
-│   └── style.css              # Global styles + theme tokens
+│   └── style.css              # Global styles + Vercel theme
+├── test/
+│   └── unit/
+│       ├── setup.spec.js      # Vitest configuration test
+│       ├── NavBar.spec.js     # NavBar component tests
+│       ├── VersionBadge.spec.js  # VersionBadge tests
+│       ├── LandingPage.spec.js   # LandingPage view tests
+│       ├── AuthPage.spec.js      # AuthPage view tests
+│       └── App.spec.js        # App integration tests
 ├── index.html
 ├── package.json
 ├── vite.config.js
+├── vitest.config.js
 ├── tailwind.config.js
 └── postcss.config.js
 ```
@@ -75,19 +86,53 @@ Output will be in `dist/` directory.
 npm run preview
 ```
 
+### Run Unit Tests
+
+```bash
+npm run test:unit        # Run all tests once
+npm run test:unit:watch  # Watch mode for development
+npm run test:unit:coverage  # Generate coverage report
+```
+
 ## Theme System
 
-The app uses **CSS custom properties** for theming, currently set to the **Vercel Developer** aesthetic:
+The app uses **CSS custom properties** for theming, currently set to the **Vercel Developer** aesthetic (adapted for gaming):
 
-- **Primary Color**: `#0070f3` (Vercel blue)
-- **Background**: Pure black (`#000000`) with subtle overlays
-- **Typography**: System fonts with tight letter spacing
-- **Shadows**: Blue-tinted shadows for depth
-- **Style**: Technical, cutting-edge, minimal
+- **Primary Color**: `#6d28d9` (Purple)
+- **Background**: Pure black with gaming-themed image overlay (`gaming-bg.jpg`) 
+- **Overlay**: Dark translucent gradient (0.90/0.85 opacity) for readability
+- **Typography**: Inter font with tight letter spacing
+- **Shadows**: Purple-tinted shadows for depth
+- **Style**: Technical, cutting-edge, minimal with gaming aesthetic
 
 ### Changing Themes
 
 All theme tokens are defined in [src/style.css](src/style.css). To switch themes, update the CSS variables in `:root`. The design system supports easy theme swapping for future iterations.
+
+## Testing
+
+The project uses **Vitest** + **Vue Test Utils** for unit testing.
+
+### Test Coverage
+
+- **Components**: NavBar, VersionBadge
+- **Views**: LandingPage, AuthPage
+- **Integration**: App routing and layering
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test:unit
+
+# Watch mode for development
+npm run test:unit:watch
+
+# Generate coverage report
+npm run test:unit:coverage
+```
+
+Test files are located in [test/unit/](test/unit/) directory.
 
 ## Features Implemented
 
@@ -115,21 +160,26 @@ All theme tokens are defined in [src/style.css](src/style.css). To switch themes
 
 ## Next Steps (Backlog)
 
-1. **Authentication System** (Epic G2)
+1. **Testing Expansion**
+   - Add tests for all views and components
+   - Increase coverage to >80%
+   - Add E2E tests for critical flows
+
+2. **Authentication System** (Epic G2)
    - Implement real auth endpoints
    - Email verification flow
    - Password reset functionality
 
-2. **Solo Dashboard** (Epic F2)
+3. **Solo Dashboard** (Epic F2)
    - Connect to `/api/v2/solo/dashboard` endpoint
    - Performance charts and metrics
    - Queue filtering
 
-3. **AI Goal Recommendations** (Epic B)
+4. **AI Goal Recommendations** (Epic B)
    - Goal recommendation UI
    - Progress tracking components
 
-4. **Duo/Team Dashboards** (Epic F3, F4)
+5. **Duo/Team Dashboards** (Epic F3, F4)
    - Duo synergy analytics
    - Team coordination views
 
@@ -155,7 +205,11 @@ For production, configure:
 - **Routing**: Add routes in `src/router/index.js`
 - **API Calls**: Create services in `src/api/` (coming soon)
 - **State**: Use Pinia stores for global state
-- **Testing**: Vitest + Vue Test Utils (to be configured)
+- **Testing**: Write tests in `test/unit/` using Vitest + Vue Test Utils
+  - Follow the pattern: `ComponentName.spec.js`
+  - Test component rendering, user interactions, and routing
+  - Use `mount()` from Vue Test Utils for component mounting
+  - Use `createRouter()` for router-dependent tests
 
 ## Branding
 
