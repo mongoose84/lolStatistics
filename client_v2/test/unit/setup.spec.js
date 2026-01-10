@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('Pulse.gg Client v2 - Setup Test', () => {
   it('should have Vitest configured correctly', () => {

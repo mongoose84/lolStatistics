@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import AuthPage from '@/views/AuthPage.vue';
 import { createRouter, createMemoryHistory } from 'vue-router';

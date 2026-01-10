@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createRouter, createMemoryHistory } from 'vue-router';
 import router from '@/router';
 
