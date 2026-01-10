@@ -72,7 +72,7 @@ const currentDate = computed(() => {
 <style scoped>
 .legal-page {
   min-height: 100vh;
-  background: var(--color-bg);
+  background: transparent;
   padding-top: 64px;
 }
 
