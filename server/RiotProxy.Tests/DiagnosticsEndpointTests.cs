@@ -10,6 +10,7 @@ using Xunit;
 
 namespace RiotProxy.Tests;
 
+[Collection("EnvIsolation")]
 public class DiagnosticsEndpointTests
 {
     private static async Task<string> LoginAndGetAuthCookieAsync(TestWebApplicationFactory factory)
@@ -37,6 +38,11 @@ public class DiagnosticsEndpointTests
     [Fact]
     public async Task Diagnostics_returns_configuration_status_when_authenticated()
     {
+        using var env = EnvironmentVariableScope.Set(
+            ("RIOT_API_KEY", "test-key"),
+            ("LOL_DB_CONNECTIONSTRING", "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;"),
+            ("LOL_DB_CONNECTIONSTRING_V2", "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;")
+        );
         using var factory = new TestWebApplicationFactory();
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
