@@ -161,7 +161,7 @@ onUnmounted(() => {
 
 .user-button:hover {
   background: var(--color-surface-hover);
-  border-color: var(--color-border-hover);
+  border-color: var(--color-primary);
 }
 
 .user-avatar {
