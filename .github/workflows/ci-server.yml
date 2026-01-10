@@ -242,6 +242,17 @@ jobs:
             Write-Host "CI-Support folder may already exist; continuing."
           }
 
+          # Best-effort delete of any existing target to avoid RNTO collisions
+          try {
+            curl -s --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
+              "$remoteBase" `
+              -Q "DELE $remoteSupportDir/app_offline.htm" `
+              -o $null
+          }
+          catch {
+            Write-Host "Target cleanup skipped (file likely absent)."
+          }
+
           for ($i = 1; $i -le $maxAttempts; $i++) {
             try {
               Write-Host "Attempt ${i}: Moving app_offline.htm from root back to CI-Support"
@@ -249,8 +260,18 @@ jobs:
                 "$remoteBase" `
                 -Q "RNFR ${{ secrets.FTP_SERVER_PATH }}/app_offline.htm" `
                 -Q "RNTO $remoteSupportDir/app_offline.htm"
-              Write-Host "✅ Maintenance mode disabled (file moved to CI-Support)"
-              break
+
+              if ($LASTEXITCODE -eq 0) {
+                Write-Host "✅ Maintenance mode disabled (file moved to CI-Support)"
+                break
+              }
+              elseif ($LASTEXITCODE -eq 21) {
+                Write-Warning "app_offline.htm not found or already moved; treating as already online"
+                break
+              }
+              else {
+                throw "Move failed with exit code $LASTEXITCODE"
+              }
             }
             catch {
               if ($i -eq $maxAttempts) { Write-Warning "⚠️ Failed to move app_offline.htm after $maxAttempts attempts; site may remain offline"; break }
