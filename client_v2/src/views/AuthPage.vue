@@ -68,7 +68,7 @@
               type="checkbox"
               class="form-checkbox"
             />
-            <label for="rememberMe" class="form-checkbox-label">Keep me logged in for 7 days</label>
+            <label for="rememberMe" class="form-checkbox-label">Keep me logged in for 30 days</label>
           </div>
 
           <button type="submit" class="auth-btn-submit" :disabled="isSubmitting">

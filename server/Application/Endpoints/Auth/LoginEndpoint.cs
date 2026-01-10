@@ -79,9 +79,9 @@ public sealed class LoginEndpoint : IEndpoint
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                // Use 7 days for rememberMe, otherwise use configured session timeout
+                // Use 30 days for rememberMe, otherwise use configured session timeout
                 var sessionTimeoutMinutes = request.RememberMe
-                    ? 60 * 24 * 7 // 7 days in minutes
+                    ? 60 * 24 * 30 // 30 days in minutes
                     : config.GetValue<int>("Auth:SessionTimeout", 30);
 
                 var authProperties = new AuthenticationProperties

@@ -25,10 +25,10 @@ First 500 users get free Pro tier. Keep a counter on the landing page of how man
 | **C. Subscription & Paywall** | Stripe integration, tiers, feature flags | 34 pts |
 | **D. Analytics & Tracking** | User behavior tracking for product decisions | 19 pts |
 | **E. Database v2 & Analytics Schema** | New match/participant/timeline schema + ingestion | 20 pts |
-| **F. API v2** | New API surface aligned with v2 schema and dashboards | 33 pts |
-| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 30 pts |
+| **F. API v2** | New API surface aligned with v2 schema and dashboards | 51 pts |
+| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 40 pts |
 
-**Grand Total:** 180 points
+**Grand Total:** 208 points
 
 > Note: Platform v2 epics (E–G) are prerequisites for most feature work (B–D) and should generally be completed first.
 
@@ -1655,32 +1655,32 @@ Provide working user authentication flows and a minimal in-app shell under `/app
 
 #### Acceptance Criteria
 
-- [ ] `/auth` supports **login** and **signup** modes using `POST /api/auth/register` and `POST /api/auth/login` from F11  
-- [ ] Signup requires `username`, `email`, and `password` and creates a user record with `emailVerified = false` (or equivalent)  
-- [ ] Username is validated for uniqueness and length/format on the backend; the UI shows specific messages when:
-  - Username is already taken  
-  - Username is too long / invalid  
-- [ ] Auth endpoints treat all user input as parameters (no string-concatenated SQL); tests (either here or in F11) exercise common SQL injection payloads and assert no SQL errors or data leakage  
-- [ ] After successful signup, the user is immediately redirected to a verification screen (e.g. `/auth/verify`) with a 6-digit input  
-- [ ] For this first version, submitting any 6-digit code marks the user as verified in the database (Option A), then routes them into `/app/user`  
-- [ ] Unverified users cannot access any `/app/*` routes; attempts redirect back to the verification screen with an explanatory message  
-- [ ] Login form includes a "Keep me logged in for 7 days" checkbox:
-  - When checked, the backend issues an HttpOnly, SameSite=Lax session cookie with a 7-day expiry  
-  - Each successful login resets the 7-day expiry (new cookie is issued)  
-  - When unchecked, session lifetime follows the shorter default from F7  
-- [ ] On app load, the frontend calls `GET /api/users/me` (or equivalent) to restore auth state from the cookie-backed session and redirect appropriately  
-- [ ] `/app` routing is wired through the G2 app shell and a route for `/app/user` is added  
-- [ ] `/app/user` renders an initial, minimal user page (welcome text and placeholders for future content such as the login heatmap from D9 and friends list)  
-- [ ] The `/app/*` header shows, in the upper-right corner:
-  - User icon/avatar  
-  - Username  
-  - Subscription tier label (e.g. "Free"), with the free/solo tier displayed in grey when not paid  
-- [ ] The header with user info and dropdown is only visible on `/app/*` routes (not on marketing routes)  
-- [ ] Clicking the main app logo/icon:
-  - Navigates to `/app/user` when the user is logged in  
-  - Navigates to `/` when the user is not logged in  
-- [ ] Clicking the user icon/username opens a dropdown that includes:
-  - A working **Logout** item that calls `POST /api/auth/logout`, clears the session cookie, and navigates back to `/` or `/auth`  
+- [x] `/auth` supports **login** and **signup** modes using `POST /api/auth/register` and `POST /api/auth/login` from F11
+- [x] Signup requires `username`, `email`, and `password` and creates a user record with `emailVerified = false` (or equivalent)
+- [x] Username is validated for uniqueness and length/format on the backend; the UI shows specific messages when:
+  - Username is already taken
+  - Username is too long / invalid
+- [x] Auth endpoints treat all user input as parameters (no string-concatenated SQL); tests (either here or in F11) exercise common SQL injection payloads and assert no SQL errors or data leakage
+- [x] After successful signup, the user is immediately redirected to a verification screen (e.g. `/auth/verify`) with a 6-digit input
+- [x] For this first version, submitting any 6-digit code marks the user as verified in the database (Option A), then routes them into `/app/user`
+- [x] Unverified users cannot access any `/app/*` routes; attempts redirect back to the verification screen with an explanatory message
+- [x] Login form includes a "Keep me logged in for 7 days" checkbox:
+  - When checked, the backend issues an HttpOnly, SameSite=Lax session cookie with a 7-day expiry
+  - Each successful login resets the 7-day expiry (new cookie is issued)
+  - When unchecked, session lifetime follows the shorter default from F7
+- [x] On app load, the frontend calls `GET /api/users/me` (or equivalent) to restore auth state from the cookie-backed session and redirect appropriately
+- [x] `/app` routing is wired through the G2 app shell and a route for `/app/user` is added
+- [x] `/app/user` renders an initial, minimal user page (welcome text and placeholders for future content such as the login heatmap from D9 and friends list)
+- [x] The `/app/*` header shows, in the upper-right corner:
+  - User icon/avatar
+  - Username
+  - Subscription tier label (e.g. "Free"), with the free/solo tier displayed in grey when not paid
+- [x] The header with user info and dropdown is only visible on `/app/*` routes (not on marketing routes)
+- [x] Clicking the main app logo/icon:
+  - Navigates to `/app/user` when the user is logged in
+  - Navigates to `/` when the user is not logged in
+- [x] Clicking the user icon/username opens a dropdown that includes:
+  - A working **Logout** item that calls `POST /api/auth/logout`, clears the session cookie, and navigates back to `/` or `/auth`
   - A **Settings** item that is visible but visually disabled (e.g. greyed out, "Coming soon") and does not navigate yet
 
 ---
@@ -1741,6 +1741,222 @@ Introduce a first-pass friends/social area in the app UI that defines the layout
 
 ---
 
+### G12. [Frontend] Implement Riot account linking on `/app/user`
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** G9, F12
+**Labels:** `frontend`, `users`, `riot-api`, `epic-g`
+
+#### Description
+
+Allow authenticated users to link one or more Riot accounts to their profile from the `/app/user` page. Linking is non-blocking—users can skip and link later. When an account is linked, match sync starts automatically.
+
+#### Acceptance Criteria
+
+- [ ] `/app/user` page displays linked Riot accounts (if any) in a card/list format showing:
+  - Game Name#Tag
+  - Region
+  - Sync status badge (pending, syncing, completed, failed)
+  - Progress bar when syncing
+  - Last sync timestamp
+- [ ] If no accounts are linked, show a prominent "Link Your Riot Account" card with a "+" button
+- [ ] User can dismiss/skip the prompt; preference stored in localStorage
+- [ ] Clicking "+" opens a `LinkRiotAccountModal.vue` with:
+  - Game Name input (required)
+  - Tag input (required)
+  - Region dropdown (euw1, na1, kr, etc.)
+  - Validation feedback
+  - Submit button that calls `POST /api/v2/users/me/riot-accounts`
+- [ ] On successful link:
+  - Modal closes
+  - Account appears in list with "Syncing..." status
+  - Match sync starts automatically (triggered by backend)
+- [ ] On error (account not found, already linked, etc.):
+  - Modal shows clear error message
+  - User can retry
+- [ ] Update `authStore` with:
+  - `riotAccounts` computed property from user data
+  - `hasLinkedAccount` getter
+  - `linkRiotAccount(gameName, tagLine, region)` action
+  - `refreshUser()` action to re-fetch user data
+- [ ] Update `GET /api/v2/users/me` response to include `riotAccounts` array (coordinate with F12)
+- [ ] "Add Another" button visible for users who may link multiple accounts (future feature, can be disabled initially)
+
+---
+
+### G13. [Frontend] Implement real-time match sync progress via WebSocket
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** G12, F13, F14
+**Labels:** `frontend`, `websocket`, `sync`, `epic-g`
+
+#### Description
+
+Provide real-time progress feedback when matches are being synced for a linked Riot account. Use WebSocket for live updates. Handle idle detection to trigger sync checks when user returns after inactivity.
+
+#### Acceptance Criteria
+
+- [ ] Create `useSyncWebSocket` composable that:
+  - Connects to `/ws/sync` WebSocket endpoint on mount (in AppLayout)
+  - Auto-reconnects on disconnect with exponential backoff
+  - Provides reactive `syncProgress` Map keyed by riotAccountId
+  - Exposes `subscribe(riotAccountId)` to listen for specific account updates
+  - Handles message types: `sync_progress`, `sync_complete`, `sync_error`
+- [ ] `/app/user` page shows real-time progress for syncing accounts:
+  - Progress bar updates live as matches are synced
+  - Shows "45 / 100 matches synced" text
+  - On `sync_complete`: progress bar fills, badge changes to "Completed"
+  - On `sync_error`: show error message with "Retry" button
+- [ ] Implement idle detection in `AppLayout.vue`:
+  - Track last active time in localStorage
+  - On `visibilitychange` to visible, check idle duration
+  - If idle > 30 minutes, call `authStore.refreshUser()` to trigger sync check
+  - Backend should start syncing new matches if `last_sync_at` > 30 minutes ago
+- [ ] Fallback: if WebSocket unavailable, poll `GET /api/v2/users/me/riot-accounts/{id}/sync-status` every 5 seconds during active sync
+- [ ] "Retry" button calls `POST /api/v2/users/me/riot-accounts/{id}/sync` to manually trigger sync
+
+---
+
+### F12. [API] Implement Riot account linking endpoints
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** F7, F11
+**Labels:** `api`, `users`, `riot-api`, `epic-f`
+
+#### Description
+
+Create v2 API endpoints for linking Riot accounts to authenticated users. Store linked accounts in a new `user_riot_accounts` table. Validate account existence via Riot API before linking.
+
+#### Acceptance Criteria
+
+- [ ] Create `user_riot_accounts` table:
+  ```sql
+  CREATE TABLE user_riot_accounts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    puuid VARCHAR(100) NOT NULL,
+    game_name VARCHAR(50) NOT NULL,
+    tag_line VARCHAR(10) NOT NULL,
+    region VARCHAR(10) NOT NULL,
+    sync_status ENUM('pending', 'syncing', 'completed', 'failed') DEFAULT 'pending',
+    sync_progress INT DEFAULT 0,
+    sync_total INT DEFAULT 100,
+    last_sync_at DATETIME NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    UNIQUE INDEX idx_user_riot_puuid (user_id, puuid),
+    UNIQUE INDEX idx_puuid (puuid)
+  );
+  ```
+- [ ] Create `V2UserRiotAccountsRepository` with CRUD operations
+- [ ] Create `POST /api/v2/users/me/riot-accounts` endpoint:
+  - Request: `{ "gameName": "Faker", "tagLine": "KR1", "region": "euw1" }`
+  - Validate Riot account exists via Riot API (`/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}`)
+  - Check account not already linked to any user (409 Conflict if so)
+  - Store link in `user_riot_accounts` with `sync_status = 'pending'`
+  - Trigger match sync job (enqueue or start immediately)
+  - Response (201): `{ "id": 1, "gameName": "Faker", "tagLine": "KR1", "puuid": "...", "region": "euw1", "syncStatus": "pending" }`
+  - Error responses: 400 (invalid input), 404 (Riot account not found), 409 (already linked)
+- [ ] Update `GET /api/v2/users/me` to include `riotAccounts` array with sync status
+- [ ] Create `DELETE /api/v2/users/me/riot-accounts/{id}` endpoint (for future use, can return 501 Not Implemented initially)
+- [ ] Create `POST /api/v2/users/me/riot-accounts/{id}/sync` endpoint to manually trigger sync retry
+- [ ] Create `GET /api/v2/users/me/riot-accounts/{id}/sync-status` endpoint for polling fallback
+
+---
+
+### F13. [API] Implement WebSocket endpoint for sync progress
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** F12
+**Labels:** `api`, `websocket`, `sync`, `epic-f`
+
+#### Description
+
+Create a WebSocket endpoint that broadcasts real-time match sync progress to connected clients. Authenticate connections using the existing session cookie.
+
+#### Acceptance Criteria
+
+- [ ] Create WebSocket endpoint at `/ws/sync`
+- [ ] Authenticate WebSocket connections using session cookie (same auth as HTTP endpoints)
+- [ ] Reject unauthenticated connections with appropriate close code
+- [ ] Implement message types from server to client:
+  ```json
+  { "type": "sync_progress", "riotAccountId": 1, "status": "syncing", "progress": 45, "total": 100, "matchId": "EUW1_123456789" }
+  { "type": "sync_complete", "riotAccountId": 1, "status": "completed", "totalSynced": 100 }
+  { "type": "sync_error", "riotAccountId": 1, "status": "failed", "error": "Rate limited, will retry in 60s" }
+  ```
+- [ ] Implement message types from client to server:
+  ```json
+  { "type": "subscribe", "riotAccountId": 1 }
+  { "type": "unsubscribe", "riotAccountId": 1 }
+  ```
+- [ ] Create `IWebSocketBroadcaster` service that sync job can call to push updates
+- [ ] Handle client disconnection gracefully (remove from subscription list)
+- [ ] Support multiple clients per user (e.g., user has app open in two tabs)
+
+---
+
+### F14. [Background] Implement V2 Match History Sync Job
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 8 points
+**Depends on:** E4, E5, F12, F13
+**Labels:** `background-job`, `sync`, `riot-api`, `epic-f`
+
+#### Description
+
+Create a v2 match history sync job that fetches matches for linked Riot accounts, stores them in v2 tables, and broadcasts progress via WebSocket. Supports automatic triggering on account link, on login, and after idle periods.
+
+#### Acceptance Criteria
+
+- [ ] Create `V2MatchHistorySyncJob` background job that:
+  - Picks up accounts with `sync_status = 'pending'` or due for refresh
+  - Fetches up to 100 matches from Riot Match API
+  - Stores match data in v2 tables (matches, participants, checkpoints, metrics, etc.)
+  - Updates `sync_progress` incrementally as matches are processed
+  - Broadcasts progress via `IWebSocketBroadcaster` after each match
+  - Sets `sync_status = 'completed'` and `last_sync_at = now()` on success
+  - Sets `sync_status = 'failed'` with error details on failure
+- [ ] Sync triggers:
+  - **On account link**: Immediately queue sync for new account (100 matches)
+  - **On login**: Check if `last_sync_at` > 30 minutes ago; if so, queue sync for new matches only
+  - **On manual retry**: `POST .../sync` endpoint queues sync
+- [ ] Rate limit handling:
+  - Respect Riot API rate limits
+  - On 429 response, pause and retry with exponential backoff
+  - Update `sync_status` to indicate waiting (optional: broadcast wait message)
+- [ ] Error handling:
+  - Partial failure: save progress, mark last successful point
+  - Allow resume from last successful match on retry
+  - Log errors with context for debugging
+- [ ] Create `sync_jobs` table (optional) for job tracking and audit:
+  ```sql
+  CREATE TABLE sync_jobs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_riot_account_id BIGINT NOT NULL,
+    status ENUM('pending', 'running', 'completed', 'failed') DEFAULT 'pending',
+    progress INT DEFAULT 0,
+    total INT DEFAULT 100,
+    started_at DATETIME NULL,
+    completed_at DATETIME NULL,
+    error_message TEXT NULL,
+    FOREIGN KEY (user_riot_account_id) REFERENCES user_riot_accounts(id)
+  );
+  ```
+- [ ] Job runs in background without blocking API responses
+- [ ] Multiple accounts can sync concurrently (with rate limit awareness)
+
+---
+
 # Summary
 
 ## All Issues by Priority
@@ -1779,8 +1995,13 @@ Introduce a first-pass friends/social area in the app UI that defines the layout
 | G2 | Implement new app shell & navigation | Frontend v2 | 3 |
 | G5 | Implement Solo dashboard v2 view | Frontend v2 | 5 |
 | G9 | Implement user login, signup, verification & `/app/user` shell | Frontend v2 | 5 |
+| G12 | Implement Riot account linking on `/app/user` | Frontend v2 | 5 |
+| G13 | Implement real-time match sync progress via WebSocket | Frontend v2 | 5 |
+| F12 | Implement Riot account linking endpoints | API v2 | 5 |
+| F13 | Implement WebSocket endpoint for sync progress | API v2 | 5 |
+| F14 | Implement V2 Match History Sync Job | API v2 | 8 |
 
-**P0 Total:** 82 points
+**P0 Total:** 110 points
 
 ### P1 - High
 
@@ -1855,16 +2076,19 @@ Introduce a first-pass friends/social area in the app UI that defines the layout
 ## Recommended Sprint Plan
 
 ### Sprint 0: Platform v2 Foundation
-**Focus:** Database v2 + API v2 + Solo dashboard v2  
-**Points:** ~30
+**Focus:** Database v2 + API v2 + Solo dashboard v2 + Auth + Account Linking
+**Points:** ~58
 
 - E1, E2, E3 (Database v2 schema & repositories)
 - E4, E5 (v2 ingestion: matches, participants, timeline & metrics)
 - F1, F2 (API v2 design + Solo dashboard endpoint)
 - G1, G2, G5 (App v2 IA, shell, Solo dashboard view)
+- G9 (User login, signup, verification & `/app/user` shell)
+- F12, F13, F14 (Riot account linking + WebSocket sync + v2 sync job)
+- G12, G13 (Riot account linking UI + real-time sync progress)
 
 ### Sprint 1: Foundation (P0 Core)
-**Focus:** Database + Mollie + Basic AI  
+**Focus:** Database + Mollie + Basic AI
 **Points:** ~20
 
 - C1, C2, C3 (Mollie + DB setup)
