@@ -9,15 +9,15 @@
 
       <!-- Desktop Navigation -->
       <div class="nav-links">
-        <a href="#features" class="nav-link">Features</a>
-        <a href="#pricing" class="nav-link">Pricing</a>
-        <a href="#how-it-works" class="nav-link">How It Works</a>
-        <router-link to="/auth" class="nav-link">Login</router-link>
+        <a href="/#features" class="nav-link">Features</a>
+        <a href="/#pricing" class="nav-link">Pricing</a>
+        <a href="/#how-it-works" class="nav-link">How It Works</a>
+        <router-link to="/auth?mode=login" class="nav-link">Login</router-link>
       </div>
 
       <!-- CTA Button -->
       <div class="nav-cta">
-        <router-link to="/auth" class="nav-btn-primary">
+        <router-link to="/auth?mode=signup" class="nav-btn-primary">
           Get Started
           <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
@@ -39,11 +39,11 @@
     <!-- Mobile Menu -->
     <Transition name="mobile-menu">
       <div v-if="mobileOpen" class="nav-mobile-menu">
-        <a href="#features" class="nav-mobile-link" @click="closeMobile">Features</a>
-        <a href="#pricing" class="nav-mobile-link" @click="closeMobile">Pricing</a>
-        <a href="#how-it-works" class="nav-mobile-link" @click="closeMobile">How It Works</a>
-        <router-link to="/auth" class="nav-mobile-link" @click="closeMobile">Login</router-link>
-        <router-link to="/auth" class="nav-mobile-cta" @click="closeMobile">
+        <a href="/#features" class="nav-mobile-link" @click="closeMobile">Features</a>
+        <a href="/#pricing" class="nav-mobile-link" @click="closeMobile">Pricing</a>
+        <a href="/#how-it-works" class="nav-mobile-link" @click="closeMobile">How It Works</a>
+        <router-link to="/auth?mode=login" class="nav-mobile-link" @click="closeMobile">Login</router-link>
+        <router-link to="/auth?mode=signup" class="nav-mobile-cta" @click="closeMobile">
           Get Started
         </router-link>
       </div>

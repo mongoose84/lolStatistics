@@ -63,14 +63,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 
+const route = useRoute();
 const isLogin = ref(true);
 const formData = ref({
   username: '',
   email: '',
   password: ''
+});
+
+onMounted(() => {
+  // Check query params for mode
+  if (route.query.mode === 'signup') {
+    isLogin.value = false;
+  } else if (route.query.mode === 'login') {
+    isLogin.value = true;
+  }
+  // Default is login if no mode specified
 });
 
 const toggleMode = () => {

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -27,7 +29,7 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   
-  --letter-spacing: -0.03em;
+  --letter-spacing: -0.015em;
   
   /* Spacing */
   --spacing-xs: 0.5rem;
@@ -49,7 +51,7 @@
   
   /* Background Image/Overlay */
   --bg-image: linear-gradient(to bottom right, #000000, #0a0a0a);
-  --bg-overlay: linear-gradient(135deg, rgba(109, 40, 217, 0.1), transparent);
+  --bg-overlay: linear-gradient(135deg, rgba(74, 27, 148, 0.1), transparent);
 }
 
 * {
@@ -58,20 +60,34 @@
   box-sizing: border-box;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 body {
-  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
-  background: var(--color-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--color-text);
   line-height: 1.6;
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  min-height: 100vh;
+  /* Global background image from public/ */
+  background: url('/gaming-bg.jpg') center/cover no-repeat fixed;
+}
+
+/* Removed global background overlay to start from a clean slate */
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.80));
 }
 
 #app {
   min-height: 100vh;
+   position: relative;
+   z-index: 1;
 }
 
 /* Custom scrollbar */

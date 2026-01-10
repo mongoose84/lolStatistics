@@ -23,7 +23,7 @@
           </p>
           
           <div class="hero-cta">
-            <router-link to="/auth" class="hero-btn-primary">
+            <router-link to="/auth?mode=signup" class="hero-btn-primary">
               Start Improving Now
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="hero-arrow">
                 <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
@@ -121,7 +121,7 @@
                 </li>
               </ul>
               
-              <router-link to="/auth" :class="['pricing-btn', { 'pricing-btn-primary': tier.popular }]">
+              <router-link to="/auth?mode=signup" :class="['pricing-btn', { 'pricing-btn-primary': tier.popular }]">
                 {{ tier.cta }}
               </router-link>
             </div>
@@ -286,7 +286,7 @@ const pricingTiers = [
 <style scoped>
 .landing-page {
   min-height: 100vh;
-  background: var(--color-bg);
+  background: transparent; /* Reset: no page-level background */
 }
 
 .landing-wrapper {
@@ -304,35 +304,8 @@ const pricingTiers = [
   overflow: hidden;
 }
 
-/* Background image layer */
-.hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.7)),
-    url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  pointer-events: none;
-  opacity: 0.6;
-}
-
-/* Accent gradient overlay */
-.hero-section::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(109, 40, 217, 0.25), transparent 60%);
-  pointer-events: none;
-}
+/* Accent gradient overlay (purple glow) */
+/* Removed hero overlay to simplify background */
 
 .hero-container {
   max-width: 800px;
@@ -722,7 +695,6 @@ const pricingTiers = [
 
 /* Footer */
 .footer {
-  background: rgba(0, 0, 0, 0.5);
   border-top: 1px solid var(--color-border);
   padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-lg);
   margin-top: var(--spacing-2xl);
