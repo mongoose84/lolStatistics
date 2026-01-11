@@ -45,8 +45,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function login({ username: uname, password, rememberMe = false }) {
     isLoading.value = true
     error.value = null
-    
+
     try {
+      // Call login API first
+      await authApi.login({ username: uname, password, rememberMe })
       // After login, fetch full user data
       const userData = await authApi.getCurrentUser()
       user.value = userData
@@ -62,8 +64,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function register({ username: uname, email: em, password }) {
     isLoading.value = true
     error.value = null
-    
+
     try {
+      // Call register API first
+      await authApi.register({ username: uname, email: em, password })
       // After registration, user is logged in but not verified
       const userData = await authApi.getCurrentUser()
       user.value = userData

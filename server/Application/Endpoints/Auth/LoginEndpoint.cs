@@ -45,29 +45,35 @@ public sealed class LoginEndpoint : IEndpoint
                 if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
                     return Results.BadRequest(new { error = "Username and password are required" });
 
-                // Normalize username to lowercase to match storage format
-                var normalizedUsername = request.Username.ToLowerInvariant().Trim();
+                // Normalize input to lowercase to match storage format
+                var normalizedInput = request.Username.ToLowerInvariant().Trim();
 
-                // Fetch user by username
-                var user = await usersRepo.GetByUsernameAsync(normalizedUsername);
+                // Fetch user by username first, then try email
+                var user = await usersRepo.GetByUsernameAsync(normalizedInput);
                 if (user == null)
                 {
-                    logger.LogWarning("Login attempt with non-existent username: {Username}", request.Username);
-                    return Results.Unauthorized();
+                    // Try email as fallback (user might be logging in with email)
+                    user = await usersRepo.GetByEmailAsync(normalizedInput);
+                }
+
+                if (user == null)
+                {
+                    logger.LogWarning("Login attempt with non-existent username/email: {Input}", request.Username);
+                    return Results.Json(new { error = "Invalid username or password" }, statusCode: 401);
                 }
 
                 // Verify password using BCrypt
                 if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
-                    logger.LogWarning("Login attempt with invalid password for username: {Username}", request.Username);
-                    return Results.Unauthorized();
+                    logger.LogWarning("Login attempt with invalid password for username: {Username}", user.Username);
+                    return Results.Json(new { error = "Invalid username or password" }, statusCode: 401);
                 }
 
                 // Check if user is active
                 if (!user.IsActive)
                 {
-                    logger.LogWarning("Login attempt for inactive user: {Username}", request.Username);
-                    return Results.Unauthorized();
+                    logger.LogWarning("Login attempt for inactive user: {Username}", user.Username);
+                    return Results.Json(new { error = "This account has been deactivated" }, statusCode: 401);
                 }
 
                 // Create claims identity for cookie auth
