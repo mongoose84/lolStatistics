@@ -41,9 +41,9 @@ First 500 users get free Pro tier. Keep a counter on the landing page of how man
 | **D. Analytics & Tracking** | User behavior tracking for product decisions | 19 pts | 0 pts |
 | **E. Database v2 & Analytics Schema** | New match/participant/timeline schema + ingestion | 4 pts | 16 pts ✅ |
 | **F. API v2** | New API surface aligned with v2 schema and dashboards | 20 pts | 13 pts ✅ |
-| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 20 pts | 5 pts ✅ |
+| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 15 pts | 10 pts ✅ |
 
-**Remaining:** 141 points | **Completed:** 34 points | **Grand Total:** 175 points
+**Remaining:** 136 points | **Completed:** 39 points | **Grand Total:** 175 points
 
 > Note: Platform v2 epics (E–G) are prerequisites for most feature work (B–D) and should generally be completed first.
 >
@@ -1390,7 +1390,7 @@ Provide API endpoints for managing friends/duos/teams and searching for LoL acco
 
 Create a new, professional user experience with a landing page, pricing, and app shell consuming API v2.
 
-> **Completed tasks (G9) have been moved to [product_backlog_completed.md](./product_backlog_completed.md).**
+> **Completed tasks (G9, G12) have been moved to [product_backlog_completed.md](./product_backlog_completed.md).**
 
 ### Decision (Jan 2026): Build a standalone `client_v2` Vue app
 - **Architecture**: Create a completely independent Vue 3 + Vite application in `/client_v2/` directory with its own `package.json`, `node_modules`, and build configuration. This is **not** nested within the legacy `/client` folder.
@@ -1641,50 +1641,6 @@ Introduce a first-pass friends/social area in the app UI that defines the layout
 - [ ] A simple frontend abstraction (e.g. `useFriendsStore` or `useSocialStore`) is introduced and used by the Friends UI to obtain data and actions, with TODO comments describing how it will later connect to social endpoints from F11
 
 ---
-
-### G12. [Frontend] Implement Riot account linking on `/app/user`
-
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 5 points
-**Depends on:** G9, F12
-**Labels:** `frontend`, `users`, `riot-api`, `epic-g`
-
-#### Description
-
-Allow authenticated users to link one or more Riot accounts to their profile from the `/app/user` page. Linking is non-blocking—users can skip and link later. When an account is linked, match sync starts automatically.
-
-#### Acceptance Criteria
-
-- [ ] `/app/user` page displays linked Riot accounts (if any) in a card/list format showing:
-  - Game Name#Tag
-  - Region
-  - Sync status badge (pending, syncing, completed, failed)
-  - Progress bar when syncing
-  - Last sync timestamp
-- [ ] The ui-design-guideline.md is used for the right feel
-- [ ] If no accounts are linked, show a prominent "Link Your Riot Account" card with a "+" button
-- [ ] User can dismiss/skip the prompt; preference stored in localStorage
-- [ ] Clicking "+" opens a `LinkRiotAccountModal.vue` with:
-  - Game Name input (required)
-  - Tag input (required)
-  - Region dropdown (euw1, na1, kr, etc.)
-  - Validation feedback
-  - Submit button that calls `POST /api/v2/users/me/riot-accounts`
-- [ ] On successful link:
-  - Modal closes
-  - Account appears in list with "Syncing..." status
-  - Match sync starts automatically (triggered by backend)
-- [ ] On error (account not found, already linked, etc.):
-  - Modal shows clear error message
-  - User can retry
-- [ ] Update `authStore` with:
-  - `riotAccounts` computed property from user data
-  - `hasLinkedAccount` getter
-  - `linkRiotAccount(gameName, tagLine, region)` action
-  - `refreshUser()` action to re-fetch user data
-- [ ] Update `GET /api/v2/users/me` response to include `riotAccounts` array (coordinate with F12)
-- [ ] "Add Another" button visible for users who may link multiple accounts (future feature, can be disabled initially)
 
 ---
 

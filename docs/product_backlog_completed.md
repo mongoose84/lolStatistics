@@ -244,6 +244,52 @@ Provide working user authentication flows and a minimal in-app shell under `/app
 
 ---
 
+### G12. [Frontend] Implement Riot account linking on `/app/user` ✅ COMPLETE
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** G9, F12
+**Labels:** `frontend`, `users`, `riot-api`, `epic-g`
+
+#### Description
+
+Allow authenticated users to link one or more Riot accounts to their profile from the `/app/user` page. Linking is non-blocking—users can skip and link later. When an account is linked, match sync starts automatically.
+
+#### Acceptance Criteria
+
+- [x] `/app/user` page displays linked Riot accounts (if any) in a card/list format showing:
+  - Game Name#Tag
+  - Region
+  - Sync status badge (pending, syncing, completed, failed)
+  - Progress bar when syncing
+  - Last sync timestamp
+- [x] The ui-design-guideline.md is used for the right feel
+- [x] If no accounts are linked, show a prominent "Link Your Riot Account" card with a "+" button
+- [x] User can dismiss/skip the prompt; preference stored in localStorage
+- [x] Clicking "+" opens a `LinkRiotAccountModal.vue` with:
+  - Game Name input (required)
+  - Tag input (required)
+  - Region dropdown (euw1, na1, kr, etc.)
+  - Validation feedback
+  - Submit button that calls `POST /api/v2/users/me/riot-accounts`
+- [x] On successful link:
+  - Modal closes
+  - Account appears in list with "Syncing..." status
+  - Match sync starts automatically (triggered by backend)
+- [x] On error (account not found, already linked, etc.):
+  - Modal shows clear error message
+  - User can retry
+- [x] Update `authStore` with:
+  - `riotAccounts` computed property from user data
+  - `hasLinkedAccount` getter
+  - `linkRiotAccount(gameName, tagLine, region)` action
+  - `refreshUser()` action to re-fetch user data
+- [x] Update `GET /api/v2/users/me` response to include `riotAccounts` array (coordinate with F12)
+- [x] "Add Another" button visible for users who may link multiple accounts (future feature, can be disabled initially)
+
+---
+
 ## Summary of Completed Work
 
 | Epic | Task | Points | Completed |
@@ -258,5 +304,6 @@ Provide working user authentication flows and a minimal in-app shell under `/app
 | F | F7 - Session authentication | 3 | ✅ |
 | F | F11 - User auth endpoints (core) | 5 | ✅ |
 | G | G9 - Login, signup, verification & user shell | 5 | ✅ |
+| G | G12 - Riot account linking on `/app/user` | 5 | ✅ |
 
-**Total Completed Points:** 34
+**Total Completed Points:** 39
