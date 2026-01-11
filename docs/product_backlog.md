@@ -1687,33 +1687,55 @@ Provide working user authentication flows and a minimal in-app shell under `/app
 
 ### G10. [Frontend] Implement user dropdown details & account settings page
 
-**Priority:** P1 - High  
-**Type:** Feature  
-**Estimate:** 5 points  
-**Depends on:** G9, C7, C10, F11  
-**Labels:** `frontend`, `auth`, `users`, `settings`, `epic-g`
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 8 points
+**Depends on:** G9, G12, C7, C10, F11, F12
+**Labels:** `frontend`, `auth`, `users`, `settings`, `subscription`, `riot-api`, `epic-g`
 
 #### Description
 
-Extend the user dropdown to show key account information and link to a new `/app/settings` page. On this settings page, users can update their username, email, password, and profile icon. Changing email reuses the verification flow and sets a flag in the database to unverified until validation is complete. The page also displays subscription tier/status and links to the existing subscription/pricing flow once Epic C is available.
+Extend the user dropdown to show key account information and link to a new `/app/settings` page. On this settings page, users can update their username, email, password, profile icon, subscription plan, and manage their linked game accounts (Riot accounts). Changing email reuses the verification flow and sets a flag in the database to unverified until validation is complete.
 
 #### Acceptance Criteria
 
-- [ ] User dropdown displays current username, email, and subscription tier/status using data from the profile endpoint (enriched by C10)  
-- [ ] The Settings item in the dropdown is now active and navigates to `/app/settings`  
-- [ ] `/app/settings` is only accessible to authenticated users and is rendered inside the G2 app shell  
+- [ ] User dropdown displays current username, email, and subscription tier/status using data from the profile endpoint (enriched by C10)
+- [ ] The Settings item in the dropdown is now active and navigates to `/app/settings`
+- [ ] `/app/settings` is only accessible to authenticated users and is rendered inside the G2 app shell
 - [ ] Users can update their **username**:
-  - Uses the same uniqueness and length/format validation rules as signup  
-  - Shows clear error messages when the username is already taken or invalid  
+  - Uses the same uniqueness and length/format validation rules as signup
+  - Shows clear error messages when the username is already taken or invalid
 - [ ] Users can update their **email**:
-  - Changing email updates the stored email and sets `emailVerified = false` (or equivalent)  
-  - The UI clearly indicates the email is pending verification and prompts the user to complete the 6-digit verification flow again  
-- [ ] Users can change their **password** using a form that includes current password, new password, and confirmation; failures (wrong current password or policy violations) are handled with clear messages  
-- [ ] Users can change their **profile icon** by selecting from a predefined set of avatar icons (no file upload yet); the chosen icon is persisted and reflected in the `/app/*` header and dropdown  
-- [ ] A Subscription section on `/app/settings` shows the current tier and status and includes a single button/link that routes to the existing pricing/subscription flow (e.g. `/pricing`), without duplicating subscription management UI  
+  - Changing email updates the stored email and sets `emailVerified = false` (or equivalent)
+  - The UI clearly indicates the email is pending verification and prompts the user to complete the 6-digit verification flow again
+- [ ] Users can change their **password** using a form that includes current password, new password, and confirmation; failures (wrong current password or policy violations) are handled with clear messages
+- [ ] Users can change their **profile icon** by selecting from a predefined set of avatar icons (no file upload yet); the chosen icon is persisted and reflected in the `/app/*` header and dropdown
+- [ ] **Subscription Management** section on `/app/settings`:
+  - Shows current subscription tier (Free, Solo, Duo, Team) and status (active, cancelled, past_due)
+  - Shows billing period end date if subscribed
+  - "Upgrade Plan" button opens a plan selection modal or routes to `/pricing`
+  - "Change Plan" button (for existing subscribers) allows switching between tiers
+  - "Cancel Subscription" button with confirmation dialog; calls backend to cancel at period end
+  - "Reactivate" button if subscription is cancelled but still within billing period
+  - Payment method display (last 4 digits of card) with "Update Payment Method" link to Stripe portal
+- [ ] **Game Accounts** section on `/app/settings`:
+  - Lists all linked Riot accounts showing: Game Name#Tag, Region, Sync status, Last synced timestamp
+  - "Link New Account" button opens `LinkRiotAccountModal.vue` (reused from G12)
+  - Per-account actions:
+    - "Set as Primary" button to designate main account for dashboard defaults
+    - "Unlink" button with confirmation dialog; calls `DELETE /api/v2/users/me/riot-accounts/{accountId}`
+    - "Refresh Sync" button to manually trigger match sync for that account
+  - Empty state with prominent CTA if no accounts are linked
+  - Visual indicator for primary account
 - [ ] Update or add backend tests (in this issue or F11) to confirm that username/email/password update endpoints:
-  - Use parameterized queries / ORM APIs (no dynamic SQL)  
+  - Use parameterized queries / ORM APIs (no dynamic SQL)
   - Do not leak SQL error details when given malicious input
+- [ ] Add backend endpoints if not already present:
+  - `PATCH /api/v2/users/me` for profile updates (username, email, avatar)
+  - `POST /api/v2/users/me/change-password` for password changes
+  - `DELETE /api/v2/users/me/riot-accounts/{accountId}` for unlinking game accounts
+  - `PATCH /api/v2/users/me/riot-accounts/{accountId}` for setting primary account
+  - `POST /api/v2/users/me/riot-accounts/{accountId}/sync` for manual sync trigger
 
 ---
 
