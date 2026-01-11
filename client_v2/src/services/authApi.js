@@ -126,3 +126,98 @@ export async function getCurrentUser() {
   return response.json()
 }
 
+// ============ Riot Account API ============
+
+/**
+ * Link a Riot account to the current user
+ * @param {Object} params - Link params
+ * @param {string} params.gameName - Riot game name (e.g., "Faker")
+ * @param {string} params.tagLine - Riot tag line (e.g., "KR1")
+ * @param {string} params.region - Region code (e.g., "euw1", "na1", "kr")
+ * @returns {Promise<Object>} Linked account data
+ */
+export async function linkRiotAccount({ gameName, tagLine, region }) {
+  const response = await fetch(`${API_BASE}/users/me/riot-accounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ gameName, tagLine, region })
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to link Riot account')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+
+  return data
+}
+
+/**
+ * Unlink a Riot account from the current user
+ * @param {string} puuid - The PUUID of the account to unlink
+ * @returns {Promise<void>}
+ */
+export async function unlinkRiotAccount(puuid) {
+  const response = await fetch(`${API_BASE}/users/me/riot-accounts/${puuid}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    const error = new Error(data.error || 'Failed to unlink Riot account')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+}
+
+/**
+ * Trigger a sync for a Riot account
+ * @param {string} puuid - The PUUID of the account to sync
+ * @returns {Promise<Object>} Sync status
+ */
+export async function triggerRiotAccountSync(puuid) {
+  const response = await fetch(`${API_BASE}/users/me/riot-accounts/${puuid}/sync`, {
+    method: 'POST',
+    credentials: 'include'
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to trigger sync')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+
+  return data
+}
+
+/**
+ * Get sync status for a Riot account
+ * @param {string} puuid - The PUUID of the account
+ * @returns {Promise<Object>} Sync status data
+ */
+export async function getRiotAccountSyncStatus(puuid) {
+  const response = await fetch(`${API_BASE}/users/me/riot-accounts/${puuid}/sync-status`, {
+    method: 'GET',
+    credentials: 'include'
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to get sync status')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+
+  return data
+}
