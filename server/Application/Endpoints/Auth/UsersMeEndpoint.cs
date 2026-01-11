@@ -8,7 +8,7 @@ namespace RiotProxy.Application.Endpoints.Auth;
 
 /// <summary>
 /// v2 Users/Me Endpoint
-/// Returns the current authenticated user's information.
+/// Returns the current authenticated user's information including linked Riot accounts.
 /// </summary>
 public sealed class UsersMeEndpoint : IEndpoint
 {
@@ -24,6 +24,7 @@ public sealed class UsersMeEndpoint : IEndpoint
         app.MapGet(Route, [Authorize] async (
             HttpContext httpContext,
             [FromServices] V2UsersRepository usersRepo,
+            [FromServices] V2RiotAccountsRepository riotAccountsRepo,
             [FromServices] ILogger<UsersMeEndpoint> logger
         ) =>
         {
@@ -51,13 +52,28 @@ public sealed class UsersMeEndpoint : IEndpoint
                     return Results.Unauthorized();
                 }
 
+                // Get linked Riot accounts
+                var riotAccounts = await riotAccountsRepo.GetByUserIdAsync(userId);
+                var riotAccountResponses = riotAccounts.Select(ra => new RiotAccountResponse(
+                    ra.Puuid,
+                    ra.GameName,
+                    ra.TagLine,
+                    ra.SummonerName,
+                    ra.Region,
+                    ra.IsPrimary,
+                    ra.SyncStatus,
+                    ra.LastSyncAt,
+                    ra.CreatedAt
+                )).ToList();
+
                 return Results.Ok(new UserMeResponse(
                     user.UserId,
                     user.Username,
                     user.Email,
                     user.EmailVerified,
                     user.Tier,
-                    user.CreatedAt
+                    user.CreatedAt,
+                    riotAccountResponses
                 ));
             }
             catch (Exception ex)
@@ -74,6 +90,23 @@ public sealed class UsersMeEndpoint : IEndpoint
         [property: JsonPropertyName("email")] string Email,
         [property: JsonPropertyName("emailVerified")] bool EmailVerified,
         [property: JsonPropertyName("tier")] string Tier,
+        [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+        [property: JsonPropertyName("riotAccounts")] List<RiotAccountResponse> RiotAccounts
+    );
+
+    /// <summary>
+    /// Riot account response. Includes summonerName as a convenience field
+    /// containing the pre-formatted display name (gameName#tagLine).
+    /// </summary>
+    public record RiotAccountResponse(
+        [property: JsonPropertyName("puuid")] string Puuid,
+        [property: JsonPropertyName("gameName")] string GameName,
+        [property: JsonPropertyName("tagLine")] string TagLine,
+        [property: JsonPropertyName("summonerName")] string SummonerName,
+        [property: JsonPropertyName("region")] string Region,
+        [property: JsonPropertyName("isPrimary")] bool IsPrimary,
+        [property: JsonPropertyName("syncStatus")] string SyncStatus,
+        [property: JsonPropertyName("lastSyncAt")] DateTime? LastSyncAt,
         [property: JsonPropertyName("createdAt")] DateTime CreatedAt
     );
 }

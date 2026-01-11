@@ -28,6 +28,7 @@ builder.Services.AddScoped<DuoStatsRepository>();
 builder.Services.AddScoped<TeamStatsRepository>();
 // V2 repositories
 builder.Services.AddScoped<V2UsersRepository>();
+builder.Services.AddScoped<V2RiotAccountsRepository>();
 builder.Services.AddScoped<V2MatchesRepository>();
 builder.Services.AddScoped<V2ParticipantsRepository>();
 builder.Services.AddScoped<V2ParticipantCheckpointsRepository>();

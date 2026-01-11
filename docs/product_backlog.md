@@ -1662,6 +1662,7 @@ Allow authenticated users to link one or more Riot accounts to their profile fro
   - Sync status badge (pending, syncing, completed, failed)
   - Progress bar when syncing
   - Last sync timestamp
+- [ ] The ui-design-guideline.md is used for the right feel
 - [ ] If no accounts are linked, show a prominent "Link Your Riot Account" card with a "+" button
 - [ ] User can dismiss/skip the prompt; preference stored in localStorage
 - [ ] Clicking "+" opens a `LinkRiotAccountModal.vue` with:
@@ -1736,30 +1737,33 @@ Create v2 API endpoints for linking Riot accounts to authenticated users. Store 
 
 #### Acceptance Criteria
 
-- [ ] Validate the existing `riot_accounts` table schema meets requirements:
+- [x] Validate the existing `riot_accounts` table schema meets requirements:
   | Column | Type | Nullable | Default |
   |--------|------|----------|---------|
   | puuid (PK) | varchar(78) | No | None |
   | user_id | bigint unsigned | No | None |
+  | game_name | varchar(100) | No | None |
+  | tag_line | varchar(10) | No | None |
   | summoner_name | varchar(100) | No | None |
   | region | varchar(10) | No | None |
   | is_primary | tinyint(1) | Yes | 0 |
+  | sync_status | enum('pending','syncing','completed','failed') | Yes | 'pending' |
+  | last_sync_at | timestamp | Yes | NULL |
   | created_at | timestamp | Yes | CURRENT_TIMESTAMP |
   | updated_at | timestamp | Yes | CURRENT_TIMESTAMP ON UPDATE |
-- [ ] Use the `V2RiotAccountsRepository` with CRUD operations
-- [ ] Create `POST /api/v2/users/me/game-account` endpoint:
-  - Request: `{ "game": "lol", "gameInfo": { "gameName": "Faker", "tagLine": "KR1", "region": "euw1" }}`
-  - `game=lol` is Riot; this abstraction allows adding other games in the future
+- [x] Use the `V2RiotAccountsRepository` with CRUD operations
+- [x] Create `POST /api/v2/users/me/riot-accounts` endpoint:
+  - Request: `{ "gameName": "Faker", "tagLine": "KR1", "region": "euw1" }`
   - Validate Riot account exists via Riot API (`/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}`)
   - Check account not already linked to any user (409 Conflict if so)
-  - Store link in `user_riot_accounts` with `sync_status = 'pending'`
+  - Store link in `riot_accounts` with `sync_status = 'pending'`
   - Trigger match sync job (enqueue or start immediately)
-  - Response (201): `{ "id": 1, "gameName": "Faker", "tagLine": "KR1", "puuid": "...", "region": "euw1", "syncStatus": "pending" }`
+  - Response (201): `{ "puuid": "...", "gameName": "Faker", "tagLine": "KR1", "region": "euw1", "isPrimary": true, "syncStatus": "pending" }`
   - Error responses: 400 (invalid input), 404 (Riot account not found), 409 (already linked)
-- [ ] Update `GET /api/v2/users/me` to include `riotAccounts` array with sync status
-- [ ] Create `DELETE /api/v2/users/me/riot-accounts/{id}` endpoint (for future use, can return 501 Not Implemented initially)
-- [ ] Create `POST /api/v2/users/me/riot-accounts/{id}/sync` endpoint to manually trigger sync retry
-- [ ] Create `GET /api/v2/users/me/riot-accounts/{id}/sync-status` endpoint for polling fallback
+- [x] Update `GET /api/v2/users/me` to include `riotAccounts` array with sync status
+- [x] Create `DELETE /api/v2/users/me/riot-accounts/{puuid}` endpoint
+- [x] Create `POST /api/v2/users/me/riot-accounts/{puuid}/sync` endpoint to manually trigger sync retry
+- [x] Create `GET /api/v2/users/me/riot-accounts/{puuid}/sync-status` endpoint for polling fallback
 
 ---
 
