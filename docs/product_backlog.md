@@ -811,6 +811,64 @@ Implement frontend feature gating.
 
 ---
 
+### C17. [Product] Implement 2-tier pricing (Free + Pro) with Guests, Duo/Team collaboration paywall, and goal tracking paywall
+
+**Priority:** P1 - High  
+**Type:** Feature  
+**Estimate:** 5 points  
+**Depends on:** C2, C3, C7, C8, C10, C12, C13, C14, F11-social  
+**Labels:** `pricing`, `subscription`, `entitlements`, `backend`, `frontend`, `client_v2`, `epic-c`
+
+#### Description
+
+Ship the updated monetization model in the product:
+
+- **Only 2 tiers:** Free + Pro (remove Team tier from UI/backend logic)
+- **Guests can create and join Duo/Team spaces**, but **Guests only see their own data** (plus upgrade nudges)
+- **Pro unlocks collaboration** (shared goals + duo/team dashboards) and **goal setting/tracking**
+- **Downgrade behavior:** if a Pro user downgrades, they become a Guest and must not break groups for others
+
+This aligns with the product positioning: not a builds app; focused on champ-select personal matchup highlights + post-game takeaways + progress over time.
+
+#### Database impact (analyze + implement if needed)
+
+Evaluate the current schema and add migrations as required to support:
+
+- A reliable source of truth for user access (e.g., `users.tier` = `free|pro`, subscription status/renewal metadata from C2)
+- Duo/Team grouping and invites (if not already covered by existing social tables/endpoints):
+  - Group entity (type: `duo|team`)
+  - Membership table (user_id, group_id, role/created_by, joined_at, left_at)
+  - Invite table (inviter, invitee/email, token, expires_at, accepted_at)
+- Shared goals/collaboration artifacts (if not already planned elsewhere): shared goals + optional voting/comments metadata
+
+#### Acceptance Criteria
+
+**Backend**
+
+- [ ] Tier model supports only **Free** and **Pro**; legacy "Team" references removed/mapped safely
+- [ ] Feature gating implemented server-side for:
+  - [ ] **Goal setting + tracking** (Pro)
+  - [ ] **Duo/Team dashboards** (Pro)
+  - [ ] **Shared goals / collaboration actions** (Pro)
+- [ ] Guest access enforced: Guests in a group can only access **their own** data; no teammate stats are returned
+- [ ] Downgrade does not break groups: Pro→Free transitions preserve memberships; user becomes Guest in groups
+- [ ] API returns clear, consistent errors for gated features (e.g., `403` + error code like `TIER_REQUIRED`)
+
+**Frontend (`client_v2`)**
+
+- [ ] Pricing page updated to show **2 tiers** (Free + Pro) with gamer-language value props
+- [ ] Upgrade prompts updated (remove "Upgrade to Team"); Pro is the only paid upgrade
+- [ ] Users can create/join Duo/Team spaces as Guests
+- [ ] In-group collaboration modules (team dashboard/shared goals/voting) show locked state + upgrade nudges for Guests
+- [ ] Goal setting/tracking UX is paywalled cleanly for Free users with upgrade path to Pro
+
+**Validation**
+
+- [ ] Add/update tests for tier gating (guest vs pro) for at least one goal endpoint and one duo/team endpoint
+- [ ] Verify that no endpoint leaks teammate data to Guests
+
+---
+
 ### C15. [Service] Create founding member pricing
 
 **Priority:** P2 - Medium  

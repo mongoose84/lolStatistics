@@ -92,6 +92,7 @@ For full task details, see:
 | C12 | Create upgrade prompt component | Subscription | 2 | |
 | C13 | Create pricing page | Subscription | 3 | |
 | C14 | Gate features based on tier | Subscription | 2 | |
+| C17 | Implement 2-tier pricing (Free + Pro) + Guests + collaboration/goal paywalls | Subscription | 5 | |
 | D1 | Set up analytics provider | Analytics | 2 | |
 | D2 | Implement core tracking events | Analytics | 3 | |
 | D3 | Track page views and sessions | Analytics | 1 | |
@@ -107,7 +108,7 @@ For full task details, see:
 | G7 | Implement Team dashboard v2 view | Frontend v2 | 5 | |
 | G10 | Implement user dropdown details & account settings page | Frontend v2 | 8 | |
 
-**P1 Total:** 66 points
+**P1 Total:** 71 points
 
 ### P2 - Medium
 
@@ -148,9 +149,9 @@ For full task details, see:
 
 | Category | Points |
 |----------|--------|
-| **Remaining** | 141 pts |
+| **Remaining** | 146 pts |
 | **Completed** | 34 pts |
-| **Grand Total** | 175 pts |
+| **Grand Total** | 180 pts |
 
 ---
 
@@ -191,9 +192,10 @@ For full task details, see:
 
 ### Sprint 4: Polish (P1)
 **Focus:** Feature gates + analytics
-**Points:** ~20
+**Points:** ~25
 
 - C9, C10, C11, C12, C13, C14 (Frontend subscription)
+- C17 (2-tier pricing model + Guests + collaboration/goal paywalls)
 - D1, D2, D3 (Analytics)
 - B3 (LLM rate limiting)
 
