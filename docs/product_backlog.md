@@ -1232,12 +1232,12 @@ Expose a new HTTP API surface aligned with Database v2 and the new dashboards.
 
 ## Issues
 
-### F1. [Design] Define API v2 surface & versioning
+### F1. [Design] Define API v2 surface & versioning ✅ COMPLETE
 
-**Priority:** P0 - Critical  
-**Type:** Architecture  
-**Estimate:** 2 points  
-**Depends on:** E1  
+**Priority:** P0 - Critical
+**Type:** Architecture
+**Estimate:** 2 points
+**Depends on:** E1
 **Labels:** `api`, `v2`, `epic-f`
 
 #### Description
@@ -1246,19 +1246,19 @@ Design the v2 API surface (routes, DTOs, versioning strategy) for solo, duo, tea
 
 #### Acceptance Criteria
 
-- [x] API v2 route scheme decided (e.g. `/api/v2/...`)  
-- [x] Request/response models defined for solo/duo/team summary endpoints  
+- [x] API v2 route scheme decided (e.g. `/api/v2/...`)
+- [x] Request/response models defined for solo/duo/team summary endpoints
 - [x] Response shapes optimized for frontend dashboards (minimal client-side aggregation)
 - [x] Standardize optional queue filtering for v2 endpoints (e.g. `queueType=ranked_solo|ranked_flex|normal|aram|all`)
 
 ---
 
-### F2. [API] Implement Solo dashboard v2 endpoint
+### F2. [API] Implement Solo dashboard v2 endpoint ✅ COMPLETE
 
-**Priority:** P0 - Critical  
-**Type:** Feature  
-**Estimate:** 3 points  
-**Depends on:** E3, E4, F1  
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** E3, E4, F1
 **Labels:** `api`, `solo`, `v2`, `epic-f`
 
 #### Description
@@ -1267,8 +1267,8 @@ Create a v2 endpoint that returns all data required for the Solo dashboard (over
 
 #### Acceptance Criteria
 
-- [x] Endpoint implemented (e.g. `GET /api/v2/solo/dashboard/{userId}`)  
-- [x] Uses only v2 repositories  
+- [x] Endpoint implemented (e.g. `GET /api/v2/solo/dashboard/{userId}`)
+- [x] Uses only v2 repositories
 - [x] Returns a single well-structured payload consumed by the new Solo dashboard view
 - [x] Supports optional queue filtering via the standardized v2 queue filter
 
@@ -1356,12 +1356,12 @@ Once the new frontend is migrated to API v2, mark v1 endpoints as deprecated and
 
 ---
 
-### F7. [Security] Implement authenticated access for backend
+### F7. [Security] Implement authenticated access for backend ✅ COMPLETE
 
-**Priority:** P0 - Critical  
-**Type:** Security  
-**Estimate:** 3 points  
-**Depends on:** F1  
+**Priority:** P0 - Critical
+**Type:** Security
+**Estimate:** 3 points
+**Depends on:** F1
 **Labels:** `security`, `auth`, `api`, `epic-f`
 
 #### Description
@@ -1370,13 +1370,13 @@ Protect the .NET backend with cookie-based session authentication so only author
 
 #### Acceptance Criteria
 
-- [ ] Configure session middleware (httpOnly, secure, SameSite=Lax cookies) for all v2 endpoints  
-- [ ] Create a login endpoint that validates credentials and sets a session cookie  
-- [ ] Require valid session for non-public endpoints; missing/expired → `401 Unauthorized`  
-- [ ] Session timeout configurable via appsettings (default 30 min)  
-- [ ] Authorization policies can be applied per-route where needed  
-- [ ] Local development can relax cookie.SecurePolicy via configuration  
-- [ ] Authentication failures are logged without exposing user data
+- [x] Configure session middleware (httpOnly, secure, SameSite=Lax cookies) for all v2 endpoints
+- [x] Create a login endpoint that validates credentials and sets a session cookie
+- [x] Require valid session for non-public endpoints; missing/expired → `401 Unauthorized`
+- [x] Session timeout configurable via appsettings (default 30 min)
+- [x] Authorization policies can be applied per-route where needed
+- [x] Local development can relax cookie.SecurePolicy via configuration
+- [x] Authentication failures are logged without exposing user data
 
 ---
 
@@ -1444,11 +1444,11 @@ Ensure all important async operations in the backend respect `CancellationToken`
 
 ---
 
-### F11. [API] Implement user auth, profile & social endpoints
+### F11. [API] Implement user auth, profile & social endpoints ✅ COMPLETE (Core Auth)
 
-**Priority:** P0 - Critical  
-**Type:** Feature  
-**Estimate:** 5 points  
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
 **Labels:** `api`, `auth`, `users`, `epic-f`
 
 #### Description
@@ -1457,11 +1457,11 @@ Provide API endpoints for user login, user profile data, and managing friends/du
 
 #### Acceptance Criteria
 
-- [ ] Implement basic user authentication endpoints (e.g. `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`)  
-- [ ] Expose a `GET /api/users/me` endpoint that returns the current user's profile, subscription tier and linked LoL accounts  
-- [ ] Provide endpoints to manage friends / duo partners and team members (e.g. add/remove friends, manage team roster)  
-- [ ] Provide a user search endpoint that lets you look up LoL accounts by Riot ID / game name + tagline when creating or linking a user  
-- [ ] All new endpoints are protected by API key authentication and follow the unified error-handling conventions
+- [x] Implement basic user authentication endpoints (e.g. `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`)
+- [x] Expose a `GET /api/users/me` endpoint that returns the current user's profile, subscription tier and linked LoL accounts
+- [ ] Provide endpoints to manage friends / duo partners and team members (e.g. add/remove friends, manage team roster)
+- [ ] Provide a user search endpoint that lets you look up LoL accounts by Riot ID / game name + tagline when creating or linking a user
+- [x] All new endpoints are protected by API key authentication and follow the unified error-handling conventions
 
 ---
 
@@ -1641,12 +1641,12 @@ Remove old dashboard views, components and routes that are no longer used after 
 
 ---
 
-### G9. [Frontend] Implement user login, signup, verification & `/app/user` shell
+### G9. [Frontend] Implement user login, signup, verification & `/app/user` shell ✅ COMPLETE
 
-**Priority:** P0 - Critical  
-**Type:** Feature  
-**Estimate:** 5 points  
-**Depends on:** F7, F11, G2  
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** F7, F11, G2
 **Labels:** `frontend`, `auth`, `users`, `epic-g`
 
 #### Description
@@ -1821,54 +1821,49 @@ Provide real-time progress feedback when matches are being synced for a linked R
 
 ---
 
-### F12. [API] Implement Riot account linking endpoints
+F12. [API] Implement Riot account linking endpoints
 
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 5 points
-**Depends on:** F7, F11
-**Labels:** `api`, `users`, `riot-api`, `epic-f`
+Priority: P0 - Critical
+Type: Feature
+Estimate: 5 points
+Depends on: F7, F11
+Labels: api, users, riot-api, epic-f
+Description
 
-#### Description
+Create v2 API endpoints for linking Riot accounts to authenticated users. Store linked accounts in a new user_riot_accounts table. Validate account existence via Riot API before linking.
+Acceptance Criteria
 
-Create v2 API endpoints for linking Riot accounts to authenticated users. Store linked accounts in a new `user_riot_accounts` table. Validate account existence via Riot API before linking.
+Current riot_account table looks like this:
 
-#### Acceptance Criteria
+Name Type Collation Attributes Null Default Comments Extra Action
 
-- [ ] Create `user_riot_accounts` table:
-  ```sql
-  CREATE TABLE user_riot_accounts (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    puuid VARCHAR(100) NOT NULL,
-    game_name VARCHAR(50) NOT NULL,
-    tag_line VARCHAR(10) NOT NULL,
-    region VARCHAR(10) NOT NULL,
-    sync_status ENUM('pending', 'syncing', 'completed', 'failed') DEFAULT 'pending',
-    sync_progress INT DEFAULT 0,
-    sync_total INT DEFAULT 100,
-    last_sync_at DATETIME NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    UNIQUE INDEX idx_user_riot_puuid (user_id, puuid),
-    UNIQUE INDEX idx_puuid (puuid)
-  );
-  ```
-- [ ] Create `V2UserRiotAccountsRepository` with CRUD operations
-- [ ] Create `POST /api/v2/users/me/riot-accounts` endpoint:
-  - Request: `{ "gameName": "Faker", "tagLine": "KR1", "region": "euw1" }`
-  - Validate Riot account exists via Riot API (`/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}`)
-  - Check account not already linked to any user (409 Conflict if so)
-  - Store link in `user_riot_accounts` with `sync_status = 'pending'`
-  - Trigger match sync job (enqueue or start immediately)
-  - Response (201): `{ "id": 1, "gameName": "Faker", "tagLine": "KR1", "puuid": "...", "region": "euw1", "syncStatus": "pending" }`
-  - Error responses: 400 (invalid input), 404 (Riot account not found), 409 (already linked)
+1 	puuid Primary 	varchar(78) 	utf8mb4_unicode_ci 		No 	None 			Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=puuid&change_column=1)	Drop[ Drop ](https://mysql.simply.com/index.php?route=/sql)	
+2 	user_id Index 	bigint 		UNSIGNED 	No 	None 			Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=user_id&change_column=1)	Drop[ Drop ](https://mysql.simply.com/index.php?route=/sql)	
+3 	summoner_name Index 	varchar(100) 	utf8mb4_unicode_ci 		No 	None 			Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=summoner_name&change_column=1)	Drop[ Drop ](https://mysql.simply.com/index.php?route=/sql)	
+4 	region Index 	varchar(10) 	utf8mb4_unicode_ci 		No 	None 			Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=region&change_column=1)	Drop[ Drop ](https://mysql.simply.com/index.php?route=/sql)	
+5 	is_primary Index 	tinyint(1) 			Yes 	0 			Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=is_primary&change_column=1)	Drop[ Drop ](https://mysql.simply.com/index.php?route=/sql)	
+6 	created_at 	timestamp 			Yes 	CURRENT_TIMESTAMP 		DEFAULT_GENERATED 	Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=created_at&change_column=1)	Drop[ Drop ](https://mysql.simply.com/index.php?route=/sql)	
+7 	updated_at 	timestamp 		on update CURRENT_TIMESTAMP 	Yes 	CURRENT_TIMESTAMP 		DEFAULT_GENERATED ON UPDATE CURRENT_TIMESTAMP 	Change[ Change ](https://mysql.simply.com/index.php?route=/table/structure/change&db=agileastronaut_com_db&table=riot_accounts&field=updated_at&change_column=1)	Drop Drop
+
+-validate the existing table to see
+
+- [ ] Use the `V2RiotAccountsRepository` with CRUD operations
+- [ ] Create `POST /api/v2/users/me/game-account` endpoint:
+- Request: `{ "game": "lol{", "gameInfo": { "gameName": "Faker", "tagLine": "KR1", "region": "euw1" }}`
+- game=lol is riot. But this abstraction also lets us add other games in the future
+- Validate Riot account exists via Riot API (`/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}`)
+- Check account not already linked to any user (409 Conflict if so)
+- Store link in `user_riot_accounts` with `sync_status = 'pending'`
+- Trigger match sync job (enqueue or start immediately)
+- Response (201): `{ "id": 1, "gameName": "Faker", "tagLine": "KR1", "puuid": "...", "region": "euw1", "syncStatus": "pending" }`
+- Error responses: 400 (invalid input), 404 (Riot account not found), 409 (already linked)
 - [ ] Update `GET /api/v2/users/me` to include `riotAccounts` array with sync status
 - [ ] Create `DELETE /api/v2/users/me/riot-accounts/{id}` endpoint (for future use, can return 501 Not Implemented initially)
 - [ ] Create `POST /api/v2/users/me/riot-accounts/{id}/sync` endpoint to manually trigger sync retry
 - [ ] Create `GET /api/v2/users/me/riot-accounts/{id}/sync-status` endpoint for polling fallback
 
 ---
+
 
 ### F13. [API] Implement WebSocket endpoint for sync progress
 
