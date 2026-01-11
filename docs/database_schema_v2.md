@@ -64,18 +64,24 @@ Stores Riot account identity information linked to user accounts.
 |--------|------|-------------|-------------|
 | `puuid` | VARCHAR(78) | PRIMARY KEY | Riot Player Universally Unique Identifier |
 | `user_id` | BIGINT | NOT NULL | Foreign key to users |
-| `summoner_name` | VARCHAR(100) | NOT NULL | Current summoner name |
+| `game_name` | VARCHAR(100) | NOT NULL | Riot account game name (e.g., "Faker") |
+| `tag_line` | VARCHAR(10) | NOT NULL | Riot account tag line (e.g., "KR1") |
+| `summoner_name` | VARCHAR(100) | NOT NULL | Display name (game_name#tag_line) |
 | `region` | VARCHAR(10) | NOT NULL | Region code (e.g., 'na1', 'euw1') |
 | `is_primary` | BOOLEAN | DEFAULT FALSE | Whether this is the user's primary account |
+| `sync_status` | ENUM | DEFAULT 'pending' | Match sync status: pending, syncing, completed, failed |
+| `last_sync_at` | TIMESTAMP | NULL | Last successful match sync time |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Record creation time |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Last update time |
 
 **Indexes:**
 - PRIMARY KEY: `puuid`
 - INDEX: `idx_user_id` ON (`user_id`)
+- INDEX: `idx_game_name_tag` ON (`game_name`, `tag_line`)
 - INDEX: `idx_summoner_name` ON (`summoner_name`)
 - INDEX: `idx_region` ON (`region`)
 - INDEX: `idx_user_primary` ON (`user_id`, `is_primary`)
+- INDEX: `idx_sync_status` ON (`sync_status`)
 
 **Foreign Keys:**
 - `user_id` → `users(user_id)` ON DELETE CASCADE
@@ -84,6 +90,8 @@ Stores Riot account identity information linked to user accounts.
 - One user can link multiple Riot accounts
 - One Riot account (puuid) belongs to one user
 - `is_primary` flag identifies the main account for the user
+- `sync_status` tracks match history synchronization state
+- `game_name` and `tag_line` reflect new Riot ID format (gameName#tagLine)
 
 **Source:** Riot summoner-v4 / account-v1 API
 

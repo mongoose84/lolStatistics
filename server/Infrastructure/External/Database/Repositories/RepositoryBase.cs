@@ -126,4 +126,40 @@ public abstract class RepositoryBase
         await using var cmd = new MySqlCommand { Connection = conn };
         return await action(conn, cmd);
     }
+
+    /// <summary>
+    /// Execute multiple commands within a transaction.
+    /// </summary>
+    protected async Task ExecuteTransactionAsync(Func<MySqlConnection, Task> action)
+    {
+        await using var conn = _factory.CreateConnection();
+        await conn.OpenAsync();
+        await using var transaction = await conn.BeginTransactionAsync();
+
+        try
+        {
+            await action(conn);
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Execute a non-query command using an existing connection (for use within transactions).
+    /// </summary>
+    protected static async Task<int> ExecuteNonQueryWithConnectionAsync(MySqlConnection conn, string sql, params (string name, object? value)[] parameters)
+    {
+        await using var cmd = new MySqlCommand(sql, conn);
+
+        foreach (var (name, value) in parameters)
+        {
+            cmd.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        }
+
+        return await cmd.ExecuteNonQueryAsync();
+    }
 }
