@@ -39,13 +39,13 @@ public class V2RiotAccountsRepository : RepositoryBase
 
     public Task<IList<V2RiotAccount>> GetByUserIdAsync(long userId)
     {
-        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, last_sync_at, created_at, updated_at FROM riot_accounts WHERE user_id = @user_id ORDER BY is_primary DESC, created_at ASC";
+        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, sync_progress, sync_total, last_sync_at, created_at, updated_at FROM riot_accounts WHERE user_id = @user_id ORDER BY is_primary DESC, created_at ASC";
         return ExecuteListAsync(sql, Map, ("@user_id", userId));
     }
 
     public async Task<V2RiotAccount?> GetByPuuidAsync(string puuid)
     {
-        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, last_sync_at, created_at, updated_at FROM riot_accounts WHERE puuid = @puuid";
+        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, sync_progress, sync_total, last_sync_at, created_at, updated_at FROM riot_accounts WHERE puuid = @puuid";
         var results = await ExecuteListAsync(sql, Map, ("@puuid", puuid));
         return results.FirstOrDefault();
     }
@@ -96,6 +96,101 @@ public class V2RiotAccountsRepository : RepositoryBase
         });
     }
 
+    /// <summary>
+    /// Atomically claims the next pending account for sync.
+    /// Uses UPDATE ... WHERE to prevent race conditions.
+    /// Returns null if no pending accounts or if another worker claimed it first.
+    /// </summary>
+    public async Task<V2RiotAccount?> ClaimNextPendingForSyncAsync()
+    {
+        return await ExecuteWithConnectionAsync(async conn =>
+        {
+            await using var tx = await conn.BeginTransactionAsync();
+
+            try
+            {
+                // Find one pending account (oldest first by updated_at)
+                const string selectSql = @"
+                    SELECT puuid FROM riot_accounts
+                    WHERE sync_status = 'pending'
+                    ORDER BY updated_at ASC
+                    LIMIT 1
+                    FOR UPDATE";
+
+                await using var selectCmd = new MySqlCommand(selectSql, conn, tx);
+                var puuid = (string?)await selectCmd.ExecuteScalarAsync();
+
+                if (puuid == null)
+                {
+                    await tx.RollbackAsync();
+                    return null;
+                }
+
+                // Atomically claim it (WHERE ensures we only claim if still pending)
+                const string updateSql = @"
+                    UPDATE riot_accounts
+                    SET sync_status = 'syncing', updated_at = @now
+                    WHERE puuid = @puuid AND sync_status = 'pending'";
+
+                await using var updateCmd = new MySqlCommand(updateSql, conn, tx);
+                updateCmd.Parameters.AddWithValue("@puuid", puuid);
+                updateCmd.Parameters.AddWithValue("@now", DateTime.UtcNow);
+                var affected = await updateCmd.ExecuteNonQueryAsync();
+
+                if (affected == 0)
+                {
+                    // Race condition: someone else claimed it
+                    await tx.RollbackAsync();
+                    return null;
+                }
+
+                await tx.CommitAsync();
+
+                // Fetch the full account (outside transaction)
+                return await GetByPuuidAsync(puuid);
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
+        });
+    }
+
+    /// <summary>
+    /// Reset accounts stuck in 'syncing' state (crash recovery).
+    /// Accounts that have been syncing for longer than the threshold are reset to 'pending'.
+    /// </summary>
+    public Task ResetStuckSyncingAccountsAsync(TimeSpan threshold)
+    {
+        var cutoff = DateTime.UtcNow - threshold;
+        const string sql = @"
+            UPDATE riot_accounts
+            SET sync_status = 'pending', updated_at = @now
+            WHERE sync_status = 'syncing' AND updated_at < @cutoff";
+
+        return ExecuteNonQueryAsync(sql,
+            ("@now", DateTime.UtcNow),
+            ("@cutoff", cutoff));
+    }
+
+    /// <summary>
+    /// Updates sync progress for an account.
+    /// </summary>
+    public Task UpdateSyncProgressAsync(string puuid, int progress, int total)
+    {
+        const string sql = @"
+            UPDATE riot_accounts
+            SET sync_progress = @progress, sync_total = @total, updated_at = @now
+            WHERE puuid = @puuid";
+
+        return ExecuteNonQueryAsync(sql,
+            ("@puuid", puuid),
+            ("@progress", progress),
+            ("@total", total),
+            ("@now", DateTime.UtcNow));
+    }
+
     private static V2RiotAccount Map(MySqlDataReader r) => new()
     {
         Puuid = r.GetString(0),
@@ -106,8 +201,10 @@ public class V2RiotAccountsRepository : RepositoryBase
         Region = r.GetString(5),
         IsPrimary = r.GetBoolean(6),
         SyncStatus = r.GetString(7),
-        LastSyncAt = r.IsDBNull(8) ? null : r.GetDateTime(8),
-        CreatedAt = r.GetDateTime(9),
-        UpdatedAt = r.GetDateTime(10)
+        SyncProgress = r.GetInt32(8),
+        SyncTotal = r.GetInt32(9),
+        LastSyncAt = r.IsDBNull(10) ? null : r.GetDateTime(10),
+        CreatedAt = r.GetDateTime(11),
+        UpdatedAt = r.GetDateTime(12)
     };
 }

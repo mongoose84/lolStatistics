@@ -427,7 +427,10 @@ namespace RiotProxy.Infrastructure.External
             }
         }
 
-        private static RiotProxy.External.Domain.Entities.V2.V2Match MapToV2Match(JsonDocument matchInfo, string matchId)
+        /// <summary>
+        /// Maps Riot API match info to a V2Match entity.
+        /// </summary>
+        public static RiotProxy.External.Domain.Entities.V2.V2Match MapToV2Match(JsonDocument matchInfo, string matchId)
         {
             var v2 = new RiotProxy.External.Domain.Entities.V2.V2Match
             {
@@ -470,7 +473,10 @@ namespace RiotProxy.Infrastructure.External
             return v2;
         }
 
-        private static IList<RiotProxy.External.Domain.Entities.V2.V2Participant> MapToV2Participants(JsonDocument matchInfo, string matchId)
+        /// <summary>
+        /// Maps Riot API match info to a list of V2Participant entities.
+        /// </summary>
+        public static IList<RiotProxy.External.Domain.Entities.V2.V2Participant> MapToV2Participants(JsonDocument matchInfo, string matchId)
         {
             var list = new List<RiotProxy.External.Domain.Entities.V2.V2Participant>();
             if (matchInfo.RootElement.TryGetProperty("info", out var infoElement) &&
@@ -528,7 +534,10 @@ namespace RiotProxy.Infrastructure.External
         private static int GetMinuteFromTimestamp(long timestampMs)
             => (int)Math.Round(timestampMs / 60000.0);
 
-        private async Task PersistV2TimelineDerivedAsync(
+        /// <summary>
+        /// Persists timeline-derived data (checkpoints, metrics, objectives) to V2 tables.
+        /// </summary>
+        public static async Task PersistV2TimelineDerivedAsync(
             string matchId,
             JsonDocument matchInfo,
             JsonDocument timeline,

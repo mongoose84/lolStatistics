@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS riot_accounts (
     region VARCHAR(10) NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
     sync_status ENUM('pending', 'syncing', 'completed', 'failed') DEFAULT 'pending',
+    sync_progress INT NOT NULL DEFAULT 0,
+    sync_total INT NOT NULL DEFAULT 0,
     last_sync_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
