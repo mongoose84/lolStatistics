@@ -528,7 +528,7 @@ Add subscription tier to User for quick access.
 
 #### Acceptance Criteria
 
-- [ ] `ALTER TABLE User ADD COLUMN Tier ENUM('free', 'pro', 'team') DEFAULT 'free';`
+- [ ] `ALTER TABLE User ADD COLUMN Tier ENUM('free', 'pro') DEFAULT 'free';`
 - [ ] Update `User` entity
 - [ ] Sync tier on subscription changes
 
