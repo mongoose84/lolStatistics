@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS riot_accounts (
     KEY idx_summoner_name (summoner_name),
     KEY idx_region (region),
     KEY idx_user_primary_created (user_id, is_primary, created_at),
-    KEY idx_sync_status (sync_status),
+    KEY idx_sync_status_updated (sync_status, updated_at),
     CONSTRAINT fk_riot_accounts_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

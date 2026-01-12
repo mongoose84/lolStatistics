@@ -271,13 +271,13 @@ internal sealed class FakeV2RiotAccountsRepository : V2RiotAccountsRepository
     public override Task ResetStuckSyncingAccountsAsync(TimeSpan threshold)
     {
         var cutoff = DateTime.UtcNow - threshold;
-        foreach (var account in _accounts.Values)
+        var stuckAccounts = _accounts.Values
+            .Where(a => a.SyncStatus == "syncing" && a.UpdatedAt < cutoff);
+
+        foreach (var account in stuckAccounts)
         {
-            if (account.SyncStatus == "syncing" && account.UpdatedAt < cutoff)
-            {
-                account.SyncStatus = "pending";
-                account.UpdatedAt = DateTime.UtcNow;
-            }
+            account.SyncStatus = "pending";
+            account.UpdatedAt = DateTime.UtcNow;
         }
         return Task.CompletedTask;
     }

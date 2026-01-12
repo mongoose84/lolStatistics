@@ -165,31 +165,34 @@ public class V2MatchHistorySyncJob : BackgroundService
                     v2PartMetrics, v2TeamObjectives, v2PartObjectives,
                     v2TeamMetrics, v2DuoMetrics, ct);
 
-                processed++;
-
-                // Update progress
-                await riotAccountsRepo.UpdateSyncProgressAsync(account.Puuid, processed, total);
-
-                // TODO: When IWebSocketBroadcaster is implemented (F13), broadcast progress here
-                // await broadcaster.SendSyncProgressAsync(account.UserId, account.Id, processed, total, matchId);
-
                 _logger.LogDebug("Processed match {MatchId} ({Processed}/{Total}) for {Puuid}",
-                    matchId, processed, total, account.Puuid);
+                    matchId, processed + 1, total, account.Puuid);
             }
             catch (TaskCanceledException)
             {
                 // Timeout - common for timeline requests, don't log full stack trace
-                _logger.LogDebug("Timeout fetching match {MatchId} for {Puuid}", matchId, account.Puuid);
+                _logger.LogDebug("Timeout fetching match {MatchId} for {Puuid} - skipping", matchId, account.Puuid);
             }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 // Match not found - skip silently
-                _logger.LogDebug("Match {MatchId} not found (404)", matchId);
+                _logger.LogDebug("Match {MatchId} not found (404) - skipping", matchId);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to process match {MatchId} for {Puuid}", matchId, account.Puuid);
-                // Continue with next match - partial progress is better than none
+                _logger.LogWarning(ex, "Failed to process match {MatchId} for {Puuid} - skipping", matchId, account.Puuid);
+            }
+            finally
+            {
+                // Always increment progress counter, even for failed matches
+                // This ensures progress bar moves forward and doesn't appear stuck
+                processed++;
+
+                // Update progress after each match (success or failure)
+                await riotAccountsRepo.UpdateSyncProgressAsync(account.Puuid, processed, total);
+
+                // TODO: When IWebSocketBroadcaster is implemented (F13), broadcast progress here
+                // await broadcaster.SendSyncProgressAsync(account.UserId, account.Id, processed, total, matchId);
             }
         }
 
