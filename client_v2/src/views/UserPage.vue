@@ -47,10 +47,42 @@
                   <span class="riot-account-name">{{ account.gameName }}#{{ account.tagLine }}</span>
                   <span class="riot-account-region">{{ getRegionLabel(account.region) }}</span>
                 </div>
-                <div class="riot-account-status">
-                  <span class="sync-badge" :class="getSyncStatusClass(account.syncStatus)">
-                    {{ getSyncStatusLabel(account.syncStatus) }}
-                  </span>
+                <div class="riot-account-status-container">
+                  <!-- Show progress bar when syncing -->
+                  <template v-if="getAccountSyncStatus(account) === 'syncing'">
+                    <div class="sync-progress-container">
+                      <div class="sync-progress-bar">
+                        <div
+                          class="sync-progress-fill"
+                          :style="{ width: getProgressPercent(account) + '%' }"
+                        ></div>
+                      </div>
+                      <span class="sync-progress-text">
+                        {{ getProgressText(account) }}
+                      </span>
+                    </div>
+                  </template>
+
+                  <!-- Show error with retry button -->
+                  <template v-else-if="getAccountSyncStatus(account) === 'failed'">
+                    <div class="sync-error-container">
+                      <span class="sync-error-text">{{ getErrorMessage(account) }}</span>
+                      <button
+                        class="btn-retry"
+                        @click="handleRetrySync(account.puuid)"
+                        :disabled="isRetrying"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </template>
+
+                  <!-- Show normal status badge -->
+                  <template v-else>
+                    <span class="sync-badge" :class="getSyncStatusClass(getAccountSyncStatus(account))">
+                      {{ getSyncStatusLabel(getAccountSyncStatus(account)) }}
+                    </span>
+                  </template>
                 </div>
               </div>
               <button class="btn-link-account" @click="showLinkModal = true">
@@ -122,11 +154,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
+import { useSyncWebSocket } from '../composables/useSyncWebSocket';
 import LinkRiotAccountModal from '../components/LinkRiotAccountModal.vue';
 
 const authStore = useAuthStore();
+const { syncProgress, subscribe, resetProgress } = useSyncWebSocket();
 
 const username = computed(() => authStore.username || 'User');
 const email = computed(() => authStore.email || '');
@@ -136,6 +170,7 @@ const hasLinkedAccount = computed(() => authStore.hasLinkedAccount);
 
 const showLinkModal = ref(false);
 const linkPromptDismissed = ref(localStorage.getItem('linkPromptDismissed') === 'true');
+const isRetrying = ref(false);
 
 const tierLabel = computed(() => {
   if (tier.value === 'pro') return 'Pro';
@@ -169,6 +204,76 @@ const regionLabels = {
 
 function getRegionLabel(region) {
   return regionLabels[region] || region?.toUpperCase() || 'Unknown';
+}
+
+// Subscribe to WebSocket updates for all linked accounts
+onMounted(() => {
+  for (const account of riotAccounts.value) {
+    subscribe(account.puuid);
+  }
+});
+
+// Watch for new accounts and subscribe
+watch(riotAccounts, (newAccounts) => {
+  for (const account of newAccounts) {
+    subscribe(account.puuid);
+  }
+}, { deep: true });
+
+/**
+ * Get the effective sync status for an account (WebSocket or API)
+ */
+function getAccountSyncStatus(account) {
+  const wsProgress = syncProgress.get(account.puuid);
+  if (wsProgress && wsProgress.status !== 'idle') {
+    return wsProgress.status;
+  }
+  return account.syncStatus || 'pending';
+}
+
+/**
+ * Get progress percentage for an account
+ */
+function getProgressPercent(account) {
+  const wsProgress = syncProgress.get(account.puuid);
+  if (wsProgress && wsProgress.total > 0) {
+    return Math.round((wsProgress.progress / wsProgress.total) * 100);
+  }
+  return 0;
+}
+
+/**
+ * Get progress text (e.g., "45 / 100 matches synced")
+ */
+function getProgressText(account) {
+  const wsProgress = syncProgress.get(account.puuid);
+  if (wsProgress) {
+    return `${wsProgress.progress} / ${wsProgress.total} matches synced`;
+  }
+  return 'Syncing...';
+}
+
+/**
+ * Get error message for failed sync
+ */
+function getErrorMessage(account) {
+  const wsProgress = syncProgress.get(account.puuid);
+  return wsProgress?.error || 'Sync failed';
+}
+
+/**
+ * Handle retry sync button click
+ */
+async function handleRetrySync(puuid) {
+  isRetrying.value = true;
+  try {
+    resetProgress(puuid);
+    await authStore.triggerSync(puuid);
+  } catch (e) {
+    console.error('Failed to trigger sync:', e);
+  } finally {
+    isRetrying.value = false;
+  }
 }
 
 function getSyncStatusClass(status) {
@@ -391,6 +496,77 @@ function handleLinkSuccess() {
 .sync-failed {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
+}
+
+/* Sync Progress Styles */
+.riot-account-status-container {
+  display: flex;
+  align-items: center;
+  min-width: 140px;
+  justify-content: flex-end;
+}
+
+.sync-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 140px;
+}
+
+.sync-progress-bar {
+  height: 6px;
+  background: var(--color-surface-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sync-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.sync-progress-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.sync-error-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sync-error-text {
+  font-size: var(--font-size-xs);
+  color: #ef4444;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-retry {
+  padding: 4px 8px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-retry:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-link-account {
