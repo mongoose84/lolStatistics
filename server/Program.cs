@@ -181,7 +181,7 @@ app.UseCors("VueClientPolicy");
 // Enable WebSocket support
 app.UseWebSockets(new WebSocketOptions
 {
-    KeepAliveInterval = TimeSpan.FromSeconds(30)
+    KeepAliveInterval = TimeSpan.FromMinutes(2)
 });
 
 // Session middleware (must come before routing)

@@ -1,8 +1,11 @@
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using RiotProxy.External.Domain.Entities.V2;
+using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 using RiotProxy.Infrastructure.WebSocket;
 using Xunit;
 
@@ -15,11 +18,13 @@ public class SyncProgressHubTests
 {
     private readonly SyncProgressHub _hub;
     private readonly FakeLogger<SyncProgressHub> _logger;
+    private readonly FakeV2RiotAccountsRepositoryForHub _riotAccountsRepo;
 
     public SyncProgressHubTests()
     {
         _logger = new FakeLogger<SyncProgressHub>();
-        _hub = new SyncProgressHub(_logger);
+        _riotAccountsRepo = new FakeV2RiotAccountsRepositoryForHub();
+        _hub = new SyncProgressHub(_logger, _riotAccountsRepo);
     }
 
     [Fact]
@@ -159,6 +164,27 @@ public class SyncProgressHubTests
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+    }
+}
+
+/// <summary>
+/// Fake V2RiotAccountsRepository for SyncProgressHub tests.
+/// </summary>
+internal sealed class FakeV2RiotAccountsRepositoryForHub : V2RiotAccountsRepository
+{
+    private readonly ConcurrentDictionary<string, V2RiotAccount> _accounts = new();
+
+    public FakeV2RiotAccountsRepositoryForHub() : base(null!) { }
+
+    public override Task<V2RiotAccount?> GetByPuuidAsync(string puuid)
+    {
+        _accounts.TryGetValue(puuid, out var account);
+        return Task.FromResult(account);
+    }
+
+    public void AddAccount(V2RiotAccount account)
+    {
+        _accounts[account.Puuid] = account;
     }
 }
 

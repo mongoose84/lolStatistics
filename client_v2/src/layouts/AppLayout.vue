@@ -57,21 +57,30 @@ function handleVisibilityChange() {
   }
 }
 
+// Throttle interval for activity tracking (30 seconds)
+const ACTIVITY_THROTTLE_MS = 30 * 1000;
+let lastActivityUpdate = 0;
+
 /**
- * Handle user activity events
+ * Handle user activity events with throttling to avoid excessive localStorage writes
  */
 function handleUserActivity() {
-  updateLastActiveTime();
+  const now = Date.now();
+  if (now - lastActivityUpdate >= ACTIVITY_THROTTLE_MS) {
+    lastActivityUpdate = now;
+    updateLastActiveTime();
+  }
 }
 
 onMounted(() => {
   // Initialize last active time
   updateLastActiveTime();
+  lastActivityUpdate = Date.now();
 
   // Listen for visibility changes
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
-  // Track user activity (throttled via passive events)
+  // Track user activity (throttled to avoid excessive localStorage writes)
   window.addEventListener('mousemove', handleUserActivity, { passive: true });
   window.addEventListener('keydown', handleUserActivity, { passive: true });
   window.addEventListener('click', handleUserActivity, { passive: true });

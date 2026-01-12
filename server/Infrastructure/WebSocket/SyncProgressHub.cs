@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 
 namespace RiotProxy.Infrastructure.WebSocket;
 
@@ -14,16 +15,21 @@ namespace RiotProxy.Infrastructure.WebSocket;
 public sealed class SyncProgressHub : ISyncProgressBroadcaster
 {
     private readonly ILogger<SyncProgressHub> _logger;
-    
+    private readonly V2RiotAccountsRepository _riotAccountsRepo;
+
+    // Maximum message size in bytes (4KB should be plenty for JSON messages)
+    private const int MaxMessageSize = 4096;
+
     // Connected clients: ConnectionId -> ClientConnection
     private readonly ConcurrentDictionary<string, ClientConnection> _connections = new();
 
     // Subscriptions: Puuid -> Set of ConnectionIds
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _subscriptions = new(StringComparer.OrdinalIgnoreCase);
 
-    public SyncProgressHub(ILogger<SyncProgressHub> logger)
+    public SyncProgressHub(ILogger<SyncProgressHub> logger, V2RiotAccountsRepository riotAccountsRepo)
     {
         _logger = logger;
+        _riotAccountsRepo = riotAccountsRepo;
     }
 
     /// <summary>
@@ -33,10 +39,10 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
     {
         var connectionId = Guid.NewGuid().ToString("N");
         var connection = new ClientConnection(connectionId, webSocket, userId);
-        
+
         _connections[connectionId] = connection;
         _logger.LogDebug("WebSocket connected: {ConnectionId} for user {UserId}", connectionId, userId);
-        
+
         try
         {
             await ReceiveMessagesAsync(connection, ct);
@@ -49,6 +55,7 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
                 Unsubscribe(connectionId, riotAccountId);
             }
             _connections.TryRemove(connectionId, out _);
+            connection.Dispose();
             _logger.LogDebug("WebSocket disconnected: {ConnectionId}", connectionId);
         }
     }
@@ -56,25 +63,46 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
     private async Task ReceiveMessagesAsync(ClientConnection connection, CancellationToken ct)
     {
         var buffer = new byte[1024];
-        
+        using var messageBuffer = new MemoryStream();
+
         while (!ct.IsCancellationRequested && connection.WebSocket.State == WebSocketState.Open)
         {
             try
             {
-                var result = await connection.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
-                
-                if (result.MessageType == WebSocketMessageType.Close)
+                messageBuffer.SetLength(0);
+                WebSocketReceiveResult result;
+
+                // Accumulate frames until EndOfMessage is true
+                do
                 {
-                    await connection.WebSocket.CloseAsync(
-                        WebSocketCloseStatus.NormalClosure, 
-                        "Client requested close", 
-                        CancellationToken.None);
-                    break;
-                }
-                
+                    result = await connection.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await connection.WebSocket.CloseAsync(
+                            WebSocketCloseStatus.NormalClosure,
+                            "Client requested close",
+                            CancellationToken.None);
+                        return;
+                    }
+
+                    messageBuffer.Write(buffer, 0, result.Count);
+
+                    // Guard against excessively large messages
+                    if (messageBuffer.Length > MaxMessageSize)
+                    {
+                        _logger.LogWarning("WebSocket message too large from {ConnectionId}, closing connection", connection.ConnectionId);
+                        await connection.WebSocket.CloseAsync(
+                            WebSocketCloseStatus.MessageTooBig,
+                            "Message exceeds maximum size",
+                            CancellationToken.None);
+                        return;
+                    }
+                } while (!result.EndOfMessage);
+
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
-                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    var message = Encoding.UTF8.GetString(messageBuffer.GetBuffer(), 0, (int)messageBuffer.Length);
                     await HandleClientMessageAsync(connection, message);
                 }
             }
@@ -90,7 +118,7 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
         }
     }
 
-    private Task HandleClientMessageAsync(ClientConnection connection, string messageJson)
+    private async Task HandleClientMessageAsync(ClientConnection connection, string messageJson)
     {
         try
         {
@@ -103,8 +131,11 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
                     var subscribePuuid = doc.RootElement.GetProperty("puuid").GetString();
                     if (!string.IsNullOrEmpty(subscribePuuid))
                     {
-                        Subscribe(connection.ConnectionId, connection.UserId, subscribePuuid);
-                        connection.SubscribedAccounts.Add(subscribePuuid);
+                        var subscribed = await TrySubscribeAsync(connection.ConnectionId, connection.UserId, subscribePuuid);
+                        if (subscribed)
+                        {
+                            connection.SubscribedAccounts.Add(subscribePuuid);
+                        }
                     }
                     break;
 
@@ -126,16 +157,26 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
         {
             _logger.LogWarning(ex, "Failed to parse WebSocket message: {Message}", messageJson);
         }
-
-        return Task.CompletedTask;
     }
 
-    private void Subscribe(string connectionId, long userId, string puuid)
+    /// <summary>
+    /// Attempts to subscribe a connection to a puuid after verifying ownership.
+    /// Returns true if subscription was successful, false if user doesn't own the account.
+    /// </summary>
+    private async Task<bool> TrySubscribeAsync(string connectionId, long userId, string puuid)
     {
-        // TODO: Optionally verify user owns this puuid via V2RiotAccountsRepository
+        // Verify user owns this Riot account
+        var account = await _riotAccountsRepo.GetByPuuidAsync(puuid);
+        if (account == null || account.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to subscribe to unowned account {Puuid}", userId, puuid);
+            return false;
+        }
+
         var subscribers = _subscriptions.GetOrAdd(puuid, _ => new ConcurrentDictionary<string, byte>());
         subscribers[connectionId] = 0;
         _logger.LogDebug("Connection {ConnectionId} subscribed to account {Puuid}", connectionId, puuid);
+        return true;
     }
 
     private void Unsubscribe(string connectionId, string puuid)
@@ -195,32 +236,33 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
         var bytes = Encoding.UTF8.GetBytes(json);
         var segment = new ArraySegment<byte>(bytes);
 
-        foreach (var connectionId in subscribers.Keys)
+        // Get open connections explicitly
+        var openConnections = subscribers.Keys
+            .Select(id => _connections.TryGetValue(id, out var conn) ? conn : null)
+            .Where(conn => conn != null && conn.WebSocket.State == WebSocketState.Open);
+
+        foreach (var connection in openConnections)
         {
-            if (_connections.TryGetValue(connectionId, out var connection) &&
-                connection.WebSocket.State == WebSocketState.Open)
+            try
             {
+                await connection!.SendLock.WaitAsync();
                 try
                 {
-                    await connection.SendLock.WaitAsync();
-                    try
-                    {
-                        await connection.WebSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
-                    }
-                    finally
-                    {
-                        connection.SendLock.Release();
-                    }
+                    await connection.WebSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
                 }
-                catch (Exception ex)
+                finally
                 {
-                    _logger.LogWarning(ex, "Failed to send WebSocket message to {ConnectionId}", connectionId);
+                    connection.SendLock.Release();
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send WebSocket message to {ConnectionId}", connection!.ConnectionId);
             }
         }
     }
 
-    private sealed class ClientConnection
+    private sealed class ClientConnection : IDisposable
     {
         public string ConnectionId { get; }
         public System.Net.WebSockets.WebSocket WebSocket { get; }
@@ -233,6 +275,11 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
             ConnectionId = connectionId;
             WebSocket = webSocket;
             UserId = userId;
+        }
+
+        public void Dispose()
+        {
+            SendLock.Dispose();
         }
     }
 }
