@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using RiotProxy.External.Domain.Entities.V2;
 using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 using RiotProxy.Infrastructure.External.Riot;
+using RiotProxy.Infrastructure.WebSocket;
 using System.Text.Json;
 
 namespace RiotProxy.Infrastructure.External;
@@ -90,11 +91,18 @@ public class V2MatchHistorySyncJob : BackgroundService
 
         try
         {
-            await SyncAccountMatchesAsync(scope.ServiceProvider, account, ct);
+            var syncedCount = await SyncAccountMatchesAsync(scope.ServiceProvider, account, ct);
 
             // Mark completed
             await riotAccountsRepo.UpdateSyncStatusAsync(account.Puuid, "completed", DateTime.UtcNow);
             _logger.LogInformation("Sync completed for account {Puuid}", account.Puuid);
+
+            // Broadcast completion via WebSocket
+            var broadcaster = scope.ServiceProvider.GetService<ISyncProgressBroadcaster>();
+            if (broadcaster != null)
+            {
+                await broadcaster.BroadcastCompleteAsync(account.Puuid, syncedCount);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -106,12 +114,22 @@ public class V2MatchHistorySyncJob : BackgroundService
         {
             _logger.LogError(ex, "Sync failed for account {Puuid}", account.Puuid);
             await riotAccountsRepo.UpdateSyncStatusAsync(account.Puuid, "failed");
+
+            // Broadcast error via WebSocket
+            var broadcaster = scope.ServiceProvider.GetService<ISyncProgressBroadcaster>();
+            if (broadcaster != null)
+            {
+                await broadcaster.BroadcastErrorAsync(account.Puuid, ex.Message);
+            }
         }
 
         return true;
     }
 
-    private async Task SyncAccountMatchesAsync(
+    /// <summary>
+    /// Syncs matches for a Riot account. Returns the number of matches processed.
+    /// </summary>
+    private async Task<int> SyncAccountMatchesAsync(
         IServiceProvider services,
         V2RiotAccount account,
         CancellationToken ct)
@@ -126,6 +144,7 @@ public class V2MatchHistorySyncJob : BackgroundService
         var v2PartObjectives = services.GetRequiredService<V2ParticipantObjectivesRepository>();
         var v2TeamMetrics = services.GetRequiredService<V2TeamMatchMetricsRepository>();
         var v2DuoMetrics = services.GetRequiredService<V2DuoMetricsRepository>();
+        var broadcaster = services.GetService<ISyncProgressBroadcaster>();
 
         // 1. Fetch existing match IDs to avoid re-processing
         var existingMatchIds = await v2Participants.GetMatchIdsForPuuidAsync(account.Puuid);
@@ -147,6 +166,12 @@ public class V2MatchHistorySyncJob : BackgroundService
 
         // Update total for progress tracking
         await riotAccountsRepo.UpdateSyncProgressAsync(account.Puuid, 0, total);
+
+        // Broadcast initial progress (0/total)
+        if (broadcaster != null)
+        {
+            await broadcaster.BroadcastProgressAsync(account.Puuid, 0, total);
+        }
 
         foreach (var matchId in matchIds)
         {
@@ -191,12 +216,16 @@ public class V2MatchHistorySyncJob : BackgroundService
                 // Update progress after each match (success or failure)
                 await riotAccountsRepo.UpdateSyncProgressAsync(account.Puuid, processed, total);
 
-                // TODO: When IWebSocketBroadcaster is implemented (F13), broadcast progress here
-                // await broadcaster.SendSyncProgressAsync(account.UserId, account.Id, processed, total, matchId);
+                // Broadcast progress via WebSocket
+                if (broadcaster != null)
+                {
+                    await broadcaster.BroadcastProgressAsync(account.Puuid, processed, total, matchId);
+                }
             }
         }
 
         _logger.LogInformation("Synced {Processed}/{Total} matches for {Puuid}", processed, total, account.Puuid);
+        return processed;
     }
 
     private async Task<IList<string>> FetchNewMatchIdsAsync(

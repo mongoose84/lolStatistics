@@ -9,6 +9,8 @@ using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 using RiotProxy.Infrastructure.External.Riot;
 using RiotProxy.Infrastructure.External;
 using RiotProxy.Infrastructure.Security;
+using RiotProxy.Infrastructure.WebSocket;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +86,10 @@ if (enableV2MatchHistorySync)
 {
     builder.Services.AddHostedService<V2MatchHistorySyncJob>();
 }
+
+// WebSocket hub for sync progress (singleton - shared across all connections)
+builder.Services.AddSingleton<SyncProgressHub>();
+builder.Services.AddSingleton<ISyncProgressBroadcaster>(sp => sp.GetRequiredService<SyncProgressHub>());
 
 // Add distributed cache for session storage (in-memory for dev, Redis for prod)
 builder.Services.AddDistributedMemoryCache();
@@ -172,12 +178,44 @@ var app = builder.Build();
 // Apply the CORS policy globally
 app.UseCors("VueClientPolicy");
 
+// Enable WebSocket support
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(30)
+});
+
 // Session middleware (must come before routing)
 app.UseSession();
 
 // AuthN/Z middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+// WebSocket endpoint for sync progress at /ws/sync
+app.Map("/ws/sync", async (HttpContext context, SyncProgressHub hub) =>
+{
+    if (!context.WebSockets.IsWebSocketRequest)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        return;
+    }
+
+    // Authenticate using session cookie (same as HTTP endpoints)
+    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier);
+    if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out var userId))
+    {
+        // Reject unauthenticated connections with 4001 (custom close code for auth failure)
+        var ws = await context.WebSockets.AcceptWebSocketAsync();
+        await ws.CloseAsync(
+            (System.Net.WebSockets.WebSocketCloseStatus)4001,
+            "Authentication required",
+            CancellationToken.None);
+        return;
+    }
+
+    var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+    await hub.HandleConnectionAsync(webSocket, userId, context.RequestAborted);
+});
 
 // Enable routing and map endpoints
 var riotProxyApplication = new RiotProxyApplication(app);
