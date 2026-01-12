@@ -44,6 +44,11 @@ const router = createRouter({
           path: 'user',
           name: 'app-user',
           component: () => import('../views/UserPage.vue')
+        },
+        {
+          path: 'solo',
+          name: 'app-solo',
+          component: () => import('../views/SoloPage.vue')
         }
       ]
     }

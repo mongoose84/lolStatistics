@@ -150,10 +150,23 @@ public class V2MatchHistorySyncJob : BackgroundService
         var existingMatchIds = await v2Participants.GetMatchIdsForPuuidAsync(account.Puuid);
         var existingSet = new HashSet<string>(existingMatchIds, StringComparer.OrdinalIgnoreCase);
 
-        // Use startTime filter if we have LastSyncAt
-        long? startTime = account.LastSyncAt.HasValue
-            ? new DateTimeOffset(account.LastSyncAt.Value).ToUnixTimeSeconds()
-            : null;
+        // Use startTime filter: either LastSyncAt for returning users, or 6 months ago for new accounts
+        // We limit to 6 months to avoid fetching excessive historical data
+        var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+        long? startTime;
+
+        if (account.LastSyncAt.HasValue)
+        {
+            // Returning user: fetch from last sync time
+            startTime = new DateTimeOffset(account.LastSyncAt.Value).ToUnixTimeSeconds();
+        }
+        else
+        {
+            // New account: limit to last 6 months
+            startTime = new DateTimeOffset(sixMonthsAgo).ToUnixTimeSeconds();
+            _logger.LogInformation("New account {Puuid}: limiting initial sync to matches from {StartDate}",
+                account.Puuid, sixMonthsAgo.ToString("yyyy-MM-dd"));
+        }
 
         // 2. Fetch new match IDs from Riot
         var matchIds = await FetchNewMatchIdsAsync(riotApiClient, account.Puuid, existingSet, startTime, ct);

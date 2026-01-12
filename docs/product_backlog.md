@@ -40,10 +40,10 @@ First 500 users get free Pro tier. Keep a counter on the landing page of how man
 | **C. Subscription & Paywall** | Mollie integration, tiers, feature flags | 34 pts | 0 pts |
 | **D. Analytics & Tracking** | User behavior tracking for product decisions | 19 pts | 0 pts |
 | **E. Database v2 & Analytics Schema** | New match/participant/timeline schema + ingestion | 4 pts | 16 pts ✅ |
-| **F. API v2** | New API surface aligned with v2 schema and dashboards | 15 pts | 18 pts ✅ |
+| **F. API v2** | New API surface aligned with v2 schema and dashboards | 23 pts | 18 pts ✅ |
 | **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 10 pts | 15 pts ✅ |
 
-**Remaining:** 126 points | **Completed:** 49 points | **Grand Total:** 175 points
+**Remaining:** 134 points | **Completed:** 49 points | **Grand Total:** 183 points
 
 > Note: Platform v2 epics (E–G) are prerequisites for most feature work (B–D) and should generally be completed first.
 >
@@ -1386,6 +1386,59 @@ Provide API endpoints for managing friends/duos/teams and searching for LoL acco
 
 ---
 
+### F13. [API] Implement Riot League API for rank/LP data + LP over time graph
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** F2, G5
+**Labels:** `api`, `riot-api`, `solo`, `v2`, `epic-f`
+
+#### Description
+
+Implement the Riot League API integration to fetch and store player rank data (Solo/Duo and Flex tiers, divisions, LP). Use this to power the LP over time graph on the Solo dashboard, similar to how blitz.gg displays LP progression.
+
+Reference: https://developer.riotgames.com/apis#league-v4
+
+#### Acceptance Criteria
+
+- [ ] Add `GetLeagueEntriesByPuuidAsync` method to `IRiotApiClient` that calls Riot's League-v4 API
+- [ ] Create `RankSnapshot` entity with fields: puuid, queue_type (RANKED_SOLO_5x5, RANKED_FLEX_SR), tier, rank (division), lp, wins, losses, timestamp
+- [ ] Create `rank_snapshots` table in schema-v2.sql with appropriate indexes
+- [ ] Create `V2RankSnapshotsRepository` with insert and query methods
+- [ ] Store rank snapshot on account link and after each match sync completion
+- [ ] Create endpoint `GET /api/v2/solo/{puuid}/lp-history` that returns LP progression data
+- [ ] Frontend `LpChart.vue` component that displays LP over time with time period filter
+- [ ] Chart shows tier/division boundaries visually (e.g., lines at Gold 1, Plat 4, etc.)
+
+---
+
+### F14. [API] Check for new matches on user login and auto-sync
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** F7, G12
+**Labels:** `api`, `sync`, `riot-api`, `v2`, `epic-f`
+
+#### Description
+
+When a user logs in, automatically check if their linked Riot accounts have new matches since the last sync. If new matches are found, trigger a sync and show syncing status via WebSocket updates, just like when a new account is linked.
+
+Also check if profile data (icon, level, rank) has changed and update if needed.
+
+#### Acceptance Criteria
+
+- [ ] On successful login, check each linked account for new matches since `last_sync_at`
+- [ ] If new matches exist, set `sync_status` to 'pending' to trigger the V2MatchHistorySyncJob
+- [ ] Frontend shows syncing indicator when sync is in progress after login
+- [ ] WebSocket updates flow to the logged-in user's session for real-time progress
+- [ ] Fetch current summoner data and compare icon/level; update if changed
+- [ ] Fetch current rank data and store new snapshot if rank/LP has changed
+- [ ] Add reasonable cooldown (e.g., don't re-check if last sync was < 5 minutes ago)
+
+---
+
 # Epic G: Frontend v2 App & Marketing
 
 Create a new, professional user experience with a landing page, pricing, and app shell consuming API v2.
@@ -1446,22 +1499,34 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ### G5. [Frontend] Implement Solo dashboard v2 view
 
-**Priority:** P0 - Critical  
-**Type:** Feature  
-**Estimate:** 5 points  
-**Depends on:** F2, G2  
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** F2, G2
 **Labels:** `frontend`, `solo`, `dashboard`, `epic-g`
 
 #### Description
 
-Create a new Solo dashboard screen under `/app/solo` that consumes the Solo dashboard v2 endpoint and presents the key solo stats (overview, champion performance, role distribution, death efficiency, match duration, etc.).
+Create a new Solo dashboard screen under `/app/solo` that consumes the Solo dashboard v2 endpoint and presents the key solo stats:
+
+1. Icon, GameName#Tagline, Level, Rank in solo/duo, Rank in Flex, winrate, KDA, main champion
+2. Winrate over time
+3. LP over time
+4. KDA over time
+5. Main champion performance pr role
+6. Champion matchups (see v1 in solo dashboard)
 
 #### Acceptance Criteria
 
-- [ ] Solo v2 view implemented and wired to API v2  
+- [ ] Solo v2 view implemented and wired to API v2
 - [ ] Replace the "Features" box with a clickable solo dashboard link. It should show some overall stats and metrics (e.g. recent ranked winrate, KDA, main champion) to entice users to explore further
-- [ ] Queue filter control implemented (Ranked Solo/Duo, Ranked Flex, Normal, ARAM, All Ranked) and wired into API requests
+- [ ] Queue filter control implemented (All Ranked, Ranked Solo/Duo, Ranked Flex, Normal, ARAM) with "All Ranked" as default, wired into API requests
+- [ ] Time period filter control implemented (Last Week, Last Month, Last 3 Months, Last 6 Months) for trend charts
 - [ ] Layout matches the new app shell and feels consistent with the product branding
+- [ ] Add `profile_icon_id` and `summoner_level` fields to the v2 `riot_accounts` database table
+- [ ] Fetch and store profile data (icon, level) during account linking (uses `GetSummonerByPuuIdAsync`)
+- [ ] Create v2 champion matchups endpoint using v2 repositories
+- [ ] Champion matchups component adapted from v1 with search opponent functionality
 
 ---
 

@@ -123,6 +123,26 @@
           </div>
         </div>
 
+        <!-- Solo Dashboard Card -->
+        <div v-if="hasSyncedAccount" class="user-card solo-dashboard-card">
+          <div class="card-header">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="card-icon">
+              <path fill-rule="evenodd" d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z" clip-rule="evenodd" />
+              <path fill-rule="evenodd" d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z" clip-rule="evenodd" />
+            </svg>
+            <h2 class="card-title">Solo Performance</h2>
+          </div>
+          <div class="card-content">
+            <p class="solo-description">View your detailed performance stats, champion matchups, and role breakdown.</p>
+            <router-link to="/app/solo" class="btn-view-solo">
+              <span>View Dashboard</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-arrow">
+                <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
+              </svg>
+            </router-link>
+          </div>
+        </div>
+
         <!-- Coming Soon Card -->
         <div class="user-card coming-soon-card">
           <div class="card-header">
@@ -134,10 +154,9 @@
           <div class="card-content">
             <p class="coming-soon-text">More features coming soon!</p>
             <ul class="feature-list">
-              <li>Game statistics tracking</li>
-              <li>Performance analytics</li>
               <li>Team management</li>
-              <li>Match history</li>
+              <li>AI-powered recommendations</li>
+              <li>Advanced analytics</li>
             </ul>
           </div>
         </div>
@@ -167,6 +186,15 @@ const email = computed(() => authStore.email || '');
 const tier = computed(() => authStore.tier || 'free');
 const riotAccounts = computed(() => authStore.riotAccounts);
 const hasLinkedAccount = computed(() => authStore.hasLinkedAccount);
+
+// Check if any account has completed sync (ready for dashboard)
+const hasSyncedAccount = computed(() => {
+  return riotAccounts.value?.some(account => {
+    const wsProgress = syncProgress.get(account.puuid);
+    const status = wsProgress?.status || account.syncStatus;
+    return status === 'completed';
+  }) || false;
+});
 
 const showLinkModal = ref(false);
 const linkPromptDismissed = ref(localStorage.getItem('linkPromptDismissed') === 'true');
@@ -652,6 +680,42 @@ function handleLinkSuccess() {
 .link-dismissed-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+/* Solo Dashboard Card */
+.solo-dashboard-card {
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.solo-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.btn-view-solo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--color-primary);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  transition: all 0.2s;
+}
+
+.btn-view-solo:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-arrow {
+  width: 16px;
+  height: 16px;
 }
 </style>
 
