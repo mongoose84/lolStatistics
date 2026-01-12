@@ -63,6 +63,10 @@ namespace RiotProxy.Application
             var soloDashboardV2Endpoint = new SoloDashboardV2Endpoint(basePath_v2);
             _endpoints.Add(soloDashboardV2Endpoint);
 
+            // Champion Matchups V2 (auth required)
+            var championMatchupsV2Endpoint = new V2ChampionMatchupsEndpoint(basePath_v2);
+            _endpoints.Add(championMatchupsV2Endpoint);
+
             // ========== V1 API Endpoints ==========
             var overallStatsEndpoint = new ComparisonEndpoint(_basePath);
             _endpoints.Add(overallStatsEndpoint);

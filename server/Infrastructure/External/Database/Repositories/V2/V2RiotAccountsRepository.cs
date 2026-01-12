@@ -10,8 +10,8 @@ public class V2RiotAccountsRepository : RepositoryBase
     public virtual Task UpsertAsync(V2RiotAccount account)
     {
         const string sql = @"INSERT INTO riot_accounts
-            (puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, last_sync_at, created_at, updated_at)
-            VALUES (@puuid, @user_id, @game_name, @tag_line, @summoner_name, @region, @is_primary, @sync_status, @last_sync_at, @created_at, @updated_at) AS new
+            (puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, profile_icon_id, summoner_level, sync_status, last_sync_at, created_at, updated_at)
+            VALUES (@puuid, @user_id, @game_name, @tag_line, @summoner_name, @region, @is_primary, @profile_icon_id, @summoner_level, @sync_status, @last_sync_at, @created_at, @updated_at) AS new
             ON DUPLICATE KEY UPDATE
                 user_id = new.user_id,
                 game_name = new.game_name,
@@ -19,6 +19,8 @@ public class V2RiotAccountsRepository : RepositoryBase
                 summoner_name = new.summoner_name,
                 region = new.region,
                 is_primary = new.is_primary,
+                profile_icon_id = new.profile_icon_id,
+                summoner_level = new.summoner_level,
                 sync_status = new.sync_status,
                 last_sync_at = new.last_sync_at,
                 updated_at = new.updated_at;";
@@ -31,6 +33,8 @@ public class V2RiotAccountsRepository : RepositoryBase
             ("@summoner_name", account.SummonerName),
             ("@region", account.Region),
             ("@is_primary", account.IsPrimary),
+            ("@profile_icon_id", (object?)account.ProfileIconId ?? DBNull.Value),
+            ("@summoner_level", (object?)account.SummonerLevel ?? DBNull.Value),
             ("@sync_status", account.SyncStatus),
             ("@last_sync_at", account.LastSyncAt),
             ("@created_at", account.CreatedAt == default ? DateTime.UtcNow : account.CreatedAt),
@@ -39,13 +43,13 @@ public class V2RiotAccountsRepository : RepositoryBase
 
     public virtual Task<IList<V2RiotAccount>> GetByUserIdAsync(long userId)
     {
-        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, sync_progress, sync_total, last_sync_at, created_at, updated_at FROM riot_accounts WHERE user_id = @user_id ORDER BY is_primary DESC, created_at ASC";
+        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, profile_icon_id, summoner_level, sync_status, sync_progress, sync_total, last_sync_at, created_at, updated_at FROM riot_accounts WHERE user_id = @user_id ORDER BY is_primary DESC, created_at ASC";
         return ExecuteListAsync(sql, Map, ("@user_id", userId));
     }
 
     public virtual async Task<V2RiotAccount?> GetByPuuidAsync(string puuid)
     {
-        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, sync_status, sync_progress, sync_total, last_sync_at, created_at, updated_at FROM riot_accounts WHERE puuid = @puuid";
+        const string sql = "SELECT puuid, user_id, game_name, tag_line, summoner_name, region, is_primary, profile_icon_id, summoner_level, sync_status, sync_progress, sync_total, last_sync_at, created_at, updated_at FROM riot_accounts WHERE puuid = @puuid";
         var results = await ExecuteListAsync(sql, Map, ("@puuid", puuid));
         return results.FirstOrDefault();
     }
@@ -200,11 +204,13 @@ public class V2RiotAccountsRepository : RepositoryBase
         SummonerName = r.GetString(4),
         Region = r.GetString(5),
         IsPrimary = r.GetBoolean(6),
-        SyncStatus = r.GetString(7),
-        SyncProgress = r.GetInt32(8),
-        SyncTotal = r.GetInt32(9),
-        LastSyncAt = r.IsDBNull(10) ? null : r.GetDateTime(10),
-        CreatedAt = r.GetDateTime(11),
-        UpdatedAt = r.GetDateTime(12)
+        ProfileIconId = r.IsDBNull(7) ? null : r.GetInt32(7),
+        SummonerLevel = r.IsDBNull(8) ? null : r.GetInt32(8),
+        SyncStatus = r.GetString(9),
+        SyncProgress = r.GetInt32(10),
+        SyncTotal = r.GetInt32(11),
+        LastSyncAt = r.IsDBNull(12) ? null : r.GetDateTime(12),
+        CreatedAt = r.GetDateTime(13),
+        UpdatedAt = r.GetDateTime(14)
     };
 }

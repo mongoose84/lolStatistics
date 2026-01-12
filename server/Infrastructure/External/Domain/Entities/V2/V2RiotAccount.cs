@@ -11,6 +11,8 @@ public class V2RiotAccount : EntityBase
     public string SummonerName { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public bool IsPrimary { get; set; }
+    public int? ProfileIconId { get; set; }
+    public int? SummonerLevel { get; set; }
     public string SyncStatus { get; set; } = "pending";
     public int SyncProgress { get; set; }
     public int SyncTotal { get; set; }

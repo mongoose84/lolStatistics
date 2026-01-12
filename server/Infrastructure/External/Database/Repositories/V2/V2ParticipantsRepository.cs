@@ -92,6 +92,73 @@ public class V2ParticipantsRepository : RepositoryBase
         return ExecuteListAsync(sql, Map, parameters.ToArray());
     }
 
+    /// <summary>
+    /// Get champion matchup statistics for multiple puuids.
+    /// Returns data grouped by champion+role showing performance against each opponent champion.
+    /// Excludes ARAM games (queue_id 450).
+    /// </summary>
+    public virtual async Task<IList<V2ChampionMatchupRecord>> GetChampionMatchupsByPuuidsAsync(string[] puuids, int? queueId = null)
+    {
+        if (puuids == null || puuids.Length == 0)
+        {
+            return new List<V2ChampionMatchupRecord>();
+        }
+
+        return await ExecuteWithConnectionAsync(async conn =>
+        {
+            var records = new List<V2ChampionMatchupRecord>();
+            var puuidParams = string.Join(",", puuids.Select((_, i) => $"@puuid{i}"));
+
+            var sql = $@"
+                SELECT player.champion_id, player.champion_name, player.role,
+                       opponent.champion_id as opponent_champion_id, opponent.champion_name as opponent_champion_name,
+                       COUNT(*) as games_played, SUM(CASE WHEN player.win = 1 THEN 1 ELSE 0 END) as wins
+                FROM participants player
+                INNER JOIN participants opponent
+                    ON player.match_id = opponent.match_id
+                    AND player.team_id != opponent.team_id
+                    AND player.role = opponent.role
+                INNER JOIN matches m ON player.match_id = m.match_id
+                WHERE player.puuid IN ({puuidParams})
+                    AND player.role IS NOT NULL AND player.role != ''
+                    AND m.queue_id != 450"; // Exclude ARAM
+
+            if (queueId.HasValue)
+            {
+                sql += " AND m.queue_id = @queue_id";
+            }
+
+            sql += @"
+                GROUP BY player.champion_id, player.champion_name, player.role, opponent.champion_id, opponent.champion_name
+                ORDER BY player.champion_name, player.role, games_played DESC";
+
+            await using var cmd = new MySqlCommand(sql, conn);
+            for (int i = 0; i < puuids.Length; i++)
+            {
+                cmd.Parameters.AddWithValue($"@puuid{i}", puuids[i]);
+            }
+            if (queueId.HasValue)
+            {
+                cmd.Parameters.AddWithValue("@queue_id", queueId.Value);
+            }
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                records.Add(new V2ChampionMatchupRecord(
+                    reader.GetInt32("champion_id"),
+                    reader.GetString("champion_name"),
+                    reader.GetString("role"),
+                    reader.GetInt32("opponent_champion_id"),
+                    reader.GetString("opponent_champion_name"),
+                    reader.GetInt32("games_played"),
+                    reader.GetInt32("wins")
+                ));
+            }
+            return records;
+        });
+    }
+
     private static V2Participant Map(MySqlDataReader r) => new()
     {
         Id = r.GetInt64(0),
@@ -112,3 +179,16 @@ public class V2ParticipantsRepository : RepositoryBase
         CreatedAt = r.GetDateTime(15)
     };
 }
+
+/// <summary>
+/// Record representing champion matchup statistics for v2.
+/// </summary>
+public record V2ChampionMatchupRecord(
+    int ChampionId,
+    string ChampionName,
+    string Role,
+    int OpponentChampionId,
+    string OpponentChampionName,
+    int GamesPlayed,
+    int Wins
+);

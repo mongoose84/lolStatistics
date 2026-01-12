@@ -130,6 +130,32 @@ public sealed class RiotAccountsEndpoint : IEndpoint
                     return Results.Json(new { error = "Failed to verify Riot account", code = "RIOT_API_ERROR" }, statusCode: 503);
                 }
 
+                // Fetch summoner data (profile icon, level) from Riot API
+                int? profileIconId = null;
+                int? summonerLevel = null;
+                try
+                {
+                    var summoner = await riotApiClient.GetSummonerByPuuIdAsync(request.Region.ToLowerInvariant(), puuid);
+                    if (summoner != null)
+                    {
+                        profileIconId = summoner.ProfileIconId;
+                        summonerLevel = (int?)summoner.SummonerLevel;
+                        logger.LogInformation("Fetched summoner data for {GameName}#{TagLine}: icon={IconId}, level={Level}",
+                            request.GameName, request.TagLine, profileIconId, summonerLevel);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Summoner data not found for {GameName}#{TagLine}, continuing without profile data",
+                            request.GameName, request.TagLine);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail - profile data is optional
+                    logger.LogWarning(ex, "Failed to fetch summoner data for {GameName}#{TagLine}, continuing without profile data",
+                        request.GameName, request.TagLine);
+                }
+
                 // Check if account is already linked
                 var existingAccount = await riotAccountsRepo.GetByPuuidAsync(puuid);
                 if (existingAccount != null)
@@ -155,6 +181,8 @@ public sealed class RiotAccountsEndpoint : IEndpoint
                         SummonerName = $"{request.GameName}#{request.TagLine}",
                         Region = request.Region.ToLowerInvariant(),
                         IsPrimary = existingAccount.IsPrimary,
+                        ProfileIconId = profileIconId ?? existingAccount.ProfileIconId,
+                        SummonerLevel = summonerLevel ?? existingAccount.SummonerLevel,
                         SyncStatus = existingAccount.SyncStatus,
                         LastSyncAt = existingAccount.LastSyncAt,
                         CreatedAt = existingAccount.CreatedAt,
@@ -187,6 +215,8 @@ public sealed class RiotAccountsEndpoint : IEndpoint
                     SummonerName = $"{request.GameName}#{request.TagLine}",
                     Region = request.Region.ToLowerInvariant(),
                     IsPrimary = isPrimary,
+                    ProfileIconId = profileIconId,
+                    SummonerLevel = summonerLevel,
                     SyncStatus = "pending",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
