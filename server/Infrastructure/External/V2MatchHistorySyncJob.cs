@@ -184,11 +184,7 @@ public class V2MatchHistorySyncJob : BackgroundService
                 var timeline = await riotApiClient.GetMatchTimelineAsync(matchId, ct);
 
                 // Persist to V2 tables - reuse the mapping logic from MatchHistorySyncJob
-                await PersistMatchDataAsync(
-                    matchId, matchInfo, timeline,
-                    v2Matches, v2Participants, v2Checkpoints,
-                    v2PartMetrics, v2TeamObjectives, v2PartObjectives,
-                    v2TeamMetrics, v2DuoMetrics, ct);
+                // Todo: persist data 
 
                 _logger.LogDebug("Processed match {MatchId} ({Processed}/{Total}) for {Puuid}",
                     matchId, processed + 1, total, account.Puuid);
@@ -275,37 +271,6 @@ public class V2MatchHistorySyncJob : BackgroundService
         return newMatchIds;
     }
 
-    private async Task PersistMatchDataAsync(
-        string matchId,
-        JsonDocument matchInfo,
-        JsonDocument timeline,
-        V2MatchesRepository v2Matches,
-        V2ParticipantsRepository v2Participants,
-        V2ParticipantCheckpointsRepository v2Checkpoints,
-        V2ParticipantMetricsRepository v2PartMetrics,
-        V2TeamObjectivesRepository v2TeamObjectives,
-        V2ParticipantObjectivesRepository v2PartObjectives,
-        V2TeamMatchMetricsRepository v2TeamMetrics,
-        V2DuoMetricsRepository v2DuoMetrics,
-        CancellationToken ct)
-    {
-        // Persist match
-        var v2Match = MatchHistorySyncJob.MapToV2Match(matchInfo, matchId);
-        await v2Matches.UpsertAsync(v2Match);
-
-        // Persist participants (InsertAsync is actually an upsert - INSERT ON DUPLICATE KEY UPDATE)
-        var participants = MatchHistorySyncJob.MapToV2Participants(matchInfo, matchId);
-        foreach (var p in participants)
-        {
-            await v2Participants.InsertAsync(p);
-        }
-
-        // Persist timeline-derived data (checkpoints, metrics, objectives)
-        await MatchHistorySyncJob.PersistV2TimelineDerivedAsync(
-            matchId, matchInfo, timeline,
-            v2Participants, v2Checkpoints, v2PartMetrics,
-            v2TeamObjectives, v2PartObjectives, v2TeamMetrics, v2DuoMetrics,
-            ct);
-    }
+    
 }
 

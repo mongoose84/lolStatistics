@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using RiotProxy.Infrastructure;
 using RiotProxy.Application;
 using RiotProxy.Infrastructure.External.Database;
-using RiotProxy.Infrastructure.External.Database.Repositories;
 using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 using RiotProxy.Infrastructure.External.Riot;
 using RiotProxy.Infrastructure.External;
@@ -18,7 +15,6 @@ var builder = WebApplication.CreateBuilder(args);
 Secrets.Initialize(builder.Configuration);
 
 builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
-builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 builder.Services.AddSingleton<IV2DbConnectionFactory, V2DbConnectionFactory>();
 
 // Email encryption for secure storage - registered via factory to allow test override
@@ -42,14 +38,6 @@ builder.Services.AddSingleton<IEmailEncryptor>(sp =>
     return new AesEmailEncryptor(encryptionKey);
 });
 
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<GamerRepository>();
-builder.Services.AddScoped<UserGamerRepository>();
-builder.Services.AddScoped<LolMatchRepository>();
-builder.Services.AddScoped<LolMatchParticipantRepository>();
-builder.Services.AddScoped<SoloStatsRepository>();
-builder.Services.AddScoped<DuoStatsRepository>();
-builder.Services.AddScoped<TeamStatsRepository>();
 // V2 repositories
 builder.Services.AddScoped<V2UsersRepository>();
 builder.Services.AddScoped<V2RiotAccountsRepository>();
@@ -72,13 +60,6 @@ builder.Services.AddHttpClient("RiotApi", client =>
     if (!string.IsNullOrWhiteSpace(Secrets.ApiKey))
         client.DefaultRequestHeaders.Add("X-Riot-Token", Secrets.ApiKey);
 });
-
-var enableMatchHistorySync = builder.Configuration.GetValue<bool>("Jobs:EnableMatchHistorySync", true);
-if (enableMatchHistorySync)
-{
-    builder.Services.AddSingleton<MatchHistorySyncJob>();
-    builder.Services.AddHostedService(provider => provider.GetRequiredService<MatchHistorySyncJob>());
-}
 
 // V2 Match History Sync Job (per-account sync for linked Riot accounts)
 var enableV2MatchHistorySync = builder.Configuration.GetValue<bool>("Jobs:EnableV2MatchHistorySync", true);

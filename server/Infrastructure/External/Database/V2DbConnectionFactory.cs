@@ -7,7 +7,13 @@ namespace RiotProxy.Infrastructure.External.Database
         public MySqlConnection CreateConnection()
         {
             if (string.IsNullOrWhiteSpace(Secrets.DatabaseConnectionStringV2))
-                throw new InvalidOperationException("Database v2 connection string is not configured. Set LOL_DB_CONNECTIONSTRING_V2 or a connection string named 'DatabaseV2'.");
+                throw new InvalidOperationException(
+                    "Database connection string is not configured. " +
+                    "Please set one of: " +
+                    "appsettings.json[ConnectionStrings:Default], " +
+                    "environment variable LOL_DB_CONNECTIONSTRING, " +
+                    "See README.md for setup instructions."
+                );
 
             return new MySqlConnection(Secrets.DatabaseConnectionStringV2);
         }

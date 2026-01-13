@@ -8,9 +8,9 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories;
 /// </summary>
 public abstract class RepositoryBase
 {
-    protected readonly IDbConnectionFactory _factory;
+    protected readonly IV2DbConnectionFactory _factory;
 
-    protected RepositoryBase(IDbConnectionFactory factory)
+    protected RepositoryBase(IV2DbConnectionFactory factory)
     {
         _factory = factory;
     }

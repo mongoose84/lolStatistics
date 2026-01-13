@@ -2,8 +2,8 @@ using MySqlConnector;
 
 namespace RiotProxy.Infrastructure.External.Database
 {
-    public interface IV2DbConnectionFactory : IDbConnectionFactory
+    public interface IV2DbConnectionFactory
     {
-        new MySqlConnection CreateConnection();
+        MySqlConnection CreateConnection();
     }
 }
