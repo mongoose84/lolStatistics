@@ -1510,32 +1510,6 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ## G5 Epic: Frontend Solo Dashboard v2
 
-<!-- G5a moved to completed backlog; see docs/product_backlog_completed.md -->
-
-### G5b1. [Frontend] Create empty Solo dashboard view & routing
-
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 1 point
-**Depends on:** G2, G5b0
-**Labels:** `frontend`, `solo`, `dashboard`, `epic-g`
-
-#### Description
-
-Create the base `/app/solo` route and view component with basic structure (header, placeholder sections, no data yet). This establishes the layout skeleton so subsequent tasks can fill in the sections.
-
-#### Acceptance Criteria
-
-- [ ] Route `/v2/app/solo` added to router configuration
-- [ ] `SoloDashboard.vue` created with basic structure (divs/sections for each upcoming section)
-- [ ] View is protected by authentication (unauthenticated users redirected to `/v2/auth`)
-- [ ] Rendered within the app shell (G2) with correct header and sidebar
-- [ ] Queue filter dropdown and time range dropdown created (no functionality yet, just UI)
-- [ ] Placeholder text or loading state for each section visible
-- [ ] No data displayed (all sections empty until subsequent tasks)
-
----
-
 ### G5b2. [Frontend] Implement Profile Header Card component
 
 **Priority:** P0 - Critical

@@ -553,23 +553,27 @@ Design the Solo Dashboard layout and user experience for v2.
 
 ---
 
-### G5b1. [Frontend] Solo Dashboard implementation
+### G5b1. [Frontend] Create empty Solo dashboard view & routing
 
 **Priority:** P0 - Critical
 **Type:** Feature
-**Estimate:** 2 points
-**Labels:** `frontend`, `vue`, `epic-g`
+**Estimate:** 1 point
+**Depends on:** G2, G5b0
+**Labels:** `frontend`, `solo`, `dashboard`, `epic-g`
 
 #### Description
 
-Implement the Solo Dashboard view in the frontend, based on the approved design.
+Create the base `/app/solo` route and view component with basic structure (header, placeholder sections, no data yet). This establishes the layout skeleton so subsequent tasks can fill in the sections.
 
 #### Acceptance Criteria
 
-- [x] Solo Dashboard view implemented in Vue
-- [x] Integrated with API v2 endpoints
-- [x] Responsive design for desktop and mobile
-- [x] Unit tests cover core functionality
+- [x] Route `/v2/app/solo` added to router configuration
+- [x] `SoloDashboard.vue` created with basic structure (divs/sections for each upcoming section)
+- [x] View is protected by authentication (unauthenticated users redirected to `/v2/auth`)
+- [x] Rendered within the app shell (G2) with correct header and sidebar
+- [x] Queue filter dropdown and time range dropdown created (no functionality yet, just UI)
+- [x] Placeholder text or loading state for each section visible
+- [x] No data displayed (all sections empty until subsequent tasks)
 
 ---
 
@@ -595,6 +599,6 @@ Implement the Solo Dashboard view in the frontend, based on the approved design.
 | G | G12 - Riot account linking on `/app/user` | 5 | ✅ |
 | G | G13 - Real-time match sync progress via WebSocket | 5 | ✅ |
 | G | G5b0 - Solo Dashboard design | 2 | ✅ |
-| G | G5b1 - Solo Dashboard implementation | 2 | ✅ |
+| G | G5b1 - Create empty Solo dashboard view & routing | 1 | ✅ |
 
-**Total Completed Points:** 69
+**Total Completed Points:** 70
