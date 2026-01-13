@@ -534,6 +534,70 @@ Design the `/app/user` (Dashboard Hub) page: summarize Solo + Duos + Teams and e
 
 ---
 
+### G5b0. [Design] Solo Dashboard design 
+
+**Priority:** P0 - Critical
+**Type:** Design
+**Estimate:** 2 points
+**Labels:** `frontend`, `design`, `epic-g`
+
+#### Description
+
+Design the Solo Dashboard layout and user experience for v2.
+
+#### Acceptance Criteria
+
+- [x] Wireframes created for Solo Dashboard
+- [x] Design reviewed and approved by stakeholders
+- [x] Design handed off to frontend team
+
+---
+
+### G5b1. [Frontend] Create empty Solo dashboard view & routing
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 1 point
+**Depends on:** G2, G5b0
+**Labels:** `frontend`, `solo`, `dashboard`, `epic-g`
+
+#### Description
+
+Create the base `/app/solo` route and view component with basic structure (header, placeholder sections, no data yet). This establishes the layout skeleton so subsequent tasks can fill in the sections.
+
+#### Acceptance Criteria
+
+- [x] Route `/v2/app/solo` added to router configuration
+- [x] `SoloDashboard.vue` created with basic structure (divs/sections for each upcoming section)
+- [x] View is protected by authentication (unauthenticated users redirected to `/v2/auth`)
+- [x] Rendered within the app shell (G2) with correct header and sidebar
+- [x] Queue filter dropdown and time range dropdown created (no functionality yet, just UI)
+- [x] Placeholder text or loading state for each section visible
+- [x] No data displayed (all sections empty until subsequent tasks)
+
+---
+
+### G5b8. [Backend] Add profile_icon_id and summoner_level to riot_accounts table ✅ COMPLETE
+
+**Priority:** P0 - Critical
+**Type:** Database Migration
+**Estimate:** 1 point
+**Depends on:** None
+**Labels:** `database`, `migration`, `epic-g`
+
+#### Description
+
+Add two columns to the `riot_accounts` table: `profile_icon_id` (string) and `summoner_level` (integer). These are fetched from the Riot API during account linking and displayed on the Solo dashboard Profile Header.
+
+#### Acceptance Criteria
+
+- [x] SQL migration created and tested: `ALTER TABLE riot_accounts ADD COLUMN profile_icon_id VARCHAR(255), ADD COLUMN summoner_level INT`
+- [x] Migration is idempotent (safe to run multiple times)
+- [x] Entity class updated to include these fields
+- [x] No data loss or errors on existing records
+
+---
+
 ## Summary of Completed Work
 
 | Epic | Task | Points | Completed |
@@ -555,5 +619,8 @@ Design the `/app/user` (Dashboard Hub) page: summarize Solo + Duos + Teams and e
 | G | G9 - Login, signup, verification & user shell | 5 | ✅ |
 | G | G12 - Riot account linking on `/app/user` | 5 | ✅ |
 | G | G13 - Real-time match sync progress via WebSocket | 5 | ✅ |
+| G | G5b0 - Solo Dashboard design | 2 | ✅ |
+| G | G5b1 - Create empty Solo dashboard view & routing | 1 | ✅ |
+| G | G5b8 - Add profile_icon_id and summoner_level to riot_accounts | 1 | ✅ |
 
-**Total Completed Points:** 67
+**Total Completed Points:** 71

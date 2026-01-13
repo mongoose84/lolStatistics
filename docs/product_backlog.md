@@ -39,21 +39,25 @@ First 500 users get free Pro tier. Keep a counter on the landing page of how man
 | **B. AI Goal Recommendations** | LLM-powered improvement suggestions | 44 pts | 0 pts |
 | **C. Subscription & Paywall** | Mollie integration, tiers, feature flags | 34 pts | 0 pts |
 | **D. Analytics & Tracking** | User behavior tracking for product decisions | 19 pts | 0 pts |
-| **E. Database v2 & Analytics Schema** | New match/participant/timeline schema + ingestion | 4 pts | 16 pts ✅ |
-| **F. API v2** | New API surface aligned with v2 schema and dashboards | 23 pts | 18 pts ✅ |
-| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 28 pts | 15 pts ✅ |
+| **E. Database v2 & Analytics Schema** | New match/participant/timeline schema + ingestion | 4 pts | 17 pts ✅ |
+| **F. API v2** | New API surface aligned with v2 schema and dashboards | 31 pts | 31 pts ✅ |
+| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 55 pts | 25 pts ✅ |
 
-**Remaining:** 152 points | **Completed:** 49 points | **Grand Total:** 201 points
+**Remaining:** 187 points | **Completed:** 73 points | **Grand Total:** 260 points
 
-### G5 Epic: Frontend Solo Dashboard v2 (Split into smaller tasks)
+### G5 Epic: Frontend Solo Dashboard v2 (Vertical slices)
 
-The original G5 (5 points) has been split into **15 focused tasks** (28 points total):
-- **G5a:** Dashboard Hub design (2 pts)
-- **G5b0:** Solo Dashboard design (2 pts)
-- **G5b1-b7:** Frontend implementation (1+2+3+2+3+3+2 = 16 pts)
-- **G5b8-b15:** Backend support & endpoints (1+2+1+3+2+2+2+2 = 15 pts)
+The original G5 (5 points) has been split into **11 focused tasks** (35 points total), structured as vertical slices where possible:
+- **G5a:** Dashboard Hub design (2 pts) ✅
+- **G5b0:** Solo Dashboard design (2 pts) ✅
+- **G5b1:** Empty Solo dashboard view & routing (1 pt) ✅
+- **G5b2–G5b7:** Solo dashboard components **plus their backing data** (27 pts total; profile header, main champions, winrate chart, LP chart UI, matchups table, goals panel)
+- **G5b8:** Database support for profile data (1 pt) ✅
+- **G5b14:** Backend LP trend data for Solo dashboard (2 pts)
 
-Each task is a vertical slice with clear acceptance criteria, enabling parallel frontend/backend work and incremental value delivery.
+Backend tasks **G5b9–G5b13** and **G5b15** are treated as backend **subtasks** of the corresponding vertical slices (G5b2–G5b7). In `docs/product_plan.md` their effort is rolled up into the main G5b2–G5b7 items; in this backlog they remain as separate subsections to spell out backend behaviour and acceptance criteria.
+
+Each vertical slice has clear acceptance criteria, enabling parallel frontend/backend work and incremental value delivery.
 
 > Note: Platform v2 epics (E–G) are prerequisites for most feature work (B–D) and should generally be completed first.
 >
@@ -1511,74 +1515,11 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ## G5 Epic: Frontend Solo Dashboard v2
 
-<!-- G5a moved to completed backlog; see docs/product_backlog_completed.md -->
-
-### G5b0. [Design] Solo Dashboard - Layout, sections & component breakdown
-
-**Priority:** P0 - Critical
-**Type:** Design
-**Estimate:** 2 points
-**Depends on:** G2
-**Labels:** `design`, `frontend`, `ux`, `epic-g`
-
-#### Description
-
-Design the `/app/solo` dashboard page using a single-scroll layout (no tabs). Define the section order, component hierarchy, filters, and visual treatment for locked features (Pro tier).
-
-#### Key Requirements
-
-- Single-scroll layout: Profile Header → Main Champion Card → Winrate Chart → LP Chart → Matchups Table → Goals Panel
-- Queue filter: All Ranked (default), Ranked Solo/Duo, Ranked Flex, Normal, ARAM
-- Time range filter: Last Week, Last Month, Last 3 Months, Last 6 Months (for charts only)
-- Tier-based locking: Free users see greyed-out locked sections with CTA buttons, not a banner
-- Main Champion Card: Dynamic by role (shows roles played, top 3 champs per role with winrate)
-- Winrate Chart: Rolling average line chart, shared component (reusable for duo/team)
-- LP Chart: Per-game line chart, Ranked only
-- Matchups Table: Top 5 champions sorted by winrate, expandable rows for opponent details
-- Goals Panel: Displays active goals + progress, expandable, with "Set New Goal" CTA
-- Save documentation in `docs/design/` folder
-
-#### Acceptance Criteria
-
-- [ ] Complete layout specification with visual hierarchy and spacing
-- [ ] Section-by-section UX spec (header, charts, tables, panels)
-- [ ] Component breakdown and data flow diagram
-- [ ] Wireframe or mockup showing all sections at desktop and mobile sizes
-- [ ] API data shapes for each section clearly defined
-- [ ] Tier-based locking treatment specified (visual examples)
-- [ ] Responsive behavior documented (stacking on mobile, chart resizing, etc.)
-
----
-
-### G5b1. [Frontend] Create empty Solo dashboard view & routing
+### G5b2. [FE+BE] Profile header + profile data (Solo dashboard)
 
 **Priority:** P0 - Critical
 **Type:** Feature
-**Estimate:** 1 point
-**Depends on:** G2, G5b0
-**Labels:** `frontend`, `solo`, `dashboard`, `epic-g`
-
-#### Description
-
-Create the base `/app/solo` route and view component with basic structure (header, placeholder sections, no data yet). This establishes the layout skeleton so subsequent tasks can fill in the sections.
-
-#### Acceptance Criteria
-
-- [ ] Route `/v2/app/solo` added to router configuration
-- [ ] `SoloDashboard.vue` created with basic structure (divs/sections for each upcoming section)
-- [ ] View is protected by authentication (unauthenticated users redirected to `/v2/auth`)
-- [ ] Rendered within the app shell (G2) with correct header and sidebar
-- [ ] Queue filter dropdown and time range dropdown created (no functionality yet, just UI)
-- [ ] Placeholder text or loading state for each section visible
-- [ ] No data displayed (all sections empty until subsequent tasks)
-
----
-
-### G5b2. [Frontend] Implement Profile Header Card component
-
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 2 points
+**Estimate:** 5 points (2 FE + 3 BE; rolls up backend work from G5b9 & G5b10)
 **Depends on:** G5b1, F2 (solo endpoint needs icon/level/rank data)
 **Labels:** `frontend`, `solo`, `dashboard`, `component`, `epic-g`
 
@@ -1588,6 +1529,7 @@ Create the Profile Header Card that displays user's overall stats at the top of 
 
 #### Backend Requirements
 
+- [ ] Backend subtasks **G5b9** (fetch & store profile data on account linking) and **G5b10** (expose profile data on Solo dashboard endpoint) are complete.
 - [ ] Solo dashboard v2 endpoint (F2) must return:
   - `profileIconId`, `summonerLevel`
   - `rankedSoloDuoRank`, `rankedFlexRank` (or tiers/divisions)
@@ -1746,7 +1688,7 @@ Create an LP Over Time chart that displays LP change per game (only for Ranked q
 **Priority:** P0 - Critical
 **Type:** Feature
 **Estimate:** 3 points
-**Depends on:** G5b1, F3 (new endpoint needed)
+**Depends on:** G5b1, G5b11
 **Labels:** `frontend`, `solo`, `dashboard`, `component`, `table`, `epic-g`
 
 #### Description
@@ -1834,33 +1776,12 @@ Create a Goals Panel that displays active goals (if Pro tier) or shows an upgrad
 
 ---
 
-### G5b8. [Backend] Add profile_icon_id and summoner_level to riot_accounts table
-
-**Priority:** P0 - Critical
-**Type:** Database Migration
-**Estimate:** 1 point
-**Depends on:** None
-**Labels:** `database`, `migration`, `epic-g`
-
-#### Description
-
-Add two columns to the `riot_accounts` table: `profile_icon_id` (string) and `summoner_level` (integer). These are fetched from the Riot API during account linking and displayed on the Solo dashboard Profile Header.
-
-#### Acceptance Criteria
-
-- [ ] SQL migration created and tested: `ALTER TABLE riot_accounts ADD COLUMN profile_icon_id VARCHAR(255), ADD COLUMN summoner_level INT`
-- [ ] Migration is idempotent (safe to run multiple times)
-- [ ] Entity class updated to include these fields
-- [ ] No data loss or errors on existing records
-
----
-
 ### G5b9. [Backend] Fetch and store profile data during account linking
 
 **Priority:** P0 - Critical
 **Type:** Feature
 **Estimate:** 2 points
-**Depends on:** G5b8
+**Depends on:** None (G5b8 complete)
 **Labels:** `backend`, `riot-api`, `epic-g`
 
 #### Description
@@ -1883,7 +1804,7 @@ Update the account linking flow to fetch summoner profile data (icon ID, level) 
 **Priority:** P0 - Critical
 **Type:** Feature
 **Estimate:** 1 point
-**Depends on:** G5b8, G5b9, F2
+**Depends on:** G5b9, F2
 **Labels:** `backend`, `api`, `epic-g`
 
 #### Description
@@ -1943,7 +1864,7 @@ Create a new endpoint `GET /api/v2/solo/matchups/{userId}?queueType=...` that re
   ```
 - [ ] Data sourced from v2 repositories (`ParticipantRepository`, `MatchRepository`)
 - [ ] Sorted by champion winrate (descending)
-- [ ] Opponents sorted by games played (descending)
+- [ ] Opponent sorting: by games played (most played first)
 - [ ] Authenticated users only (401 if not logged in)
 - [ ] Unit tests verify correct sorting and filtering
 
