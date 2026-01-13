@@ -51,6 +51,11 @@ Option A: Use a unified grid that mixes Duos and Teams in the same collection, w
   - Sync/update: `{ id, type: 'sync', message, createdAt, href }`
 - Accessibility: keyboard navigable, focus trapping in dropdown, ARIA roles for list items.
 
+### Sync Progress in Notifications
+- Include `sync_progress`, `sync_complete`, `sync_error` items in the preview list when active.
+- Preview shows up to 3 newest sync-related items before "View All".
+- Clicking a sync item focuses the relevant account or group and opens details (or a retry action for errors).
+
 ## Empty States & Entitlements
 
 - No linked Riot account:
@@ -63,6 +68,23 @@ Option A: Use a unified grid that mixes Duos and Teams in the same collection, w
 - Feature gating:
   - Duo/Team dashboards and collaboration features require Pro.
   - Show upgrade prompt when accessing gated views from cards.
+
+## Syncing UX (WebSocket-driven)
+
+- Global indicator:
+  - When any linked account is syncing, show a subtle spinner badge in the top bar next to the Notifications icon.
+  - Tooltip: "Syncing matches…" with a brief status.
+- SoloCard:
+  - Displays a compact progress bar (e.g., 45/100) and a syncing badge when active.
+  - Shows "Last synced" timestamp when idle; switches to spinner + progress during active sync.
+- Duo/Team Cards:
+  - Cards show a syncing badge and a compact progress bar if any member's account is currently syncing.
+  - Status text: "Syncing" / "Waiting" / "Completed"; error state shows a retry affordance.
+- Live updates:
+  - Progress is streamed from `SyncProgressHub` via WebSocket.
+  - UI updates are non-blocking; cards remain clickable with current data while new data streams in.
+- Idle detection:
+  - When the app becomes visible after idle, trigger a lightweight refresh that may start a sync if needed (see AppLayout behavior).
 
 ## Data Refresh & Live Updates
 
@@ -79,6 +101,7 @@ Option A: Use a unified grid that mixes Duos and Teams in the same collection, w
 - `DuoCard`, `TeamCard` — item renderers for the unified grid.
 - `GridTableToggle` — persistent toggle control for the collection view.
 - `NotificationBadge` + `NotificationsDropdown` — badge & preview in top nav.
+- `SyncStatusBadge` + `SyncProgressBar` — reusable sync indicators for cards and header.
 - `CreateGroupCtas` — guided creation area when no duos/teams exist.
 
 ## Persistence & Settings
@@ -145,12 +168,18 @@ Option A: Use a unified grid that mixes Duos and Teams in the same collection, w
   ```json
   {
     "id": "notif_789",
-    "type": "invite|goal|sync",
+    "type": "invite|goal|sync_progress|sync_complete|sync_error",
     "title": "Team invite from PlayerA",
     "createdAt": "2026-01-13T19:40:00Z",
     "href": "/v2/app/notifications"
   }
   ```
+
+## Acceptance Notes (Sync UX)
+- Top bar shows a sync spinner when any account is syncing.
+- SoloCard and Duo/Team cards display progress bars during sync.
+- Notifications preview lists sync items (up to 3) and links to details.
+- UI remains interactive; data refreshes progressively without hard blocking.
 
 ## Responsive Behavior
 
