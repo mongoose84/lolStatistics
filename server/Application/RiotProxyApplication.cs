@@ -46,9 +46,7 @@ namespace RiotProxy.Application
             
             // Solo Dashboard V2 (auth required)
             var soloDashboardV2Endpoint = new SoloDashboardV2Endpoint(basePath);
-            _endpoints.Add(soloDashboardV2Endpoint);
-
-            
+            _endpoints.Add(soloDashboardV2Endpoint);           
         }
 
         public void ConfigureEndpoints()

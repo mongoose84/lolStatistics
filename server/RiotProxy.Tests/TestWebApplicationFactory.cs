@@ -20,15 +20,11 @@ namespace RiotProxy.Tests;
 internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly IDictionary<string, string?> _overrides;
-    private readonly IUserRepository _userRepository;
     private readonly FakeV2UsersRepository _v2UsersRepository;
 
-    public TestWebApplicationFactory(
-        IDictionary<string, string?>? overrides = null,
-        IUserRepository? userRepository = null)
+    public TestWebApplicationFactory(IDictionary<string, string?>? overrides = null)
     {
         _overrides = overrides ?? new Dictionary<string, string?>();
-        _userRepository = userRepository ?? new FakeUserRepository();
         _v2UsersRepository = new FakeV2UsersRepository();
     }
 
@@ -67,41 +63,12 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Replace the user repository with a test double to avoid DB access.
-            services.RemoveAll<IUserRepository>();
-            services.AddSingleton(_userRepository);
-
             // Replace V2UsersRepository with a fake to avoid real DB connections
             services.RemoveAll<V2UsersRepository>();
             services.AddSingleton<V2UsersRepository>(_v2UsersRepository);
         });
 
         return base.CreateHost(builder);
-    }
-
-    private sealed class FakeUserRepository : IUserRepository
-    {
-        private readonly ConcurrentDictionary<string, User> _users = new(StringComparer.OrdinalIgnoreCase);
-
-        public FakeUserRepository()
-        {
-            _users.TryAdd("tester", new User { UserId = 1, UserName = "tester", UserType = UserTypeEnum.Solo });
-        }
-
-        public Task<IList<User>> GetAllUsersAsync() => Task.FromResult<IList<User>>(_users.Values.ToList());
-
-        public Task<User?> GetByUserNameAsync(string userName)
-        {
-            _users.TryGetValue(userName, out var user);
-            return Task.FromResult<User?>(user);
-        }
-
-        public Task<User?> CreateUserAsync(string userName, UserTypeEnum userType)
-        {
-            var user = new User { UserId = _users.Count + 1, UserName = userName, UserType = userType };
-            _users[userName] = user;
-            return Task.FromResult<User?>(user);
-        }
     }
 
     internal sealed class FakeV2UsersRepository : V2UsersRepository
