@@ -3,25 +3,25 @@
     <header class="dashboard-header">
       <h1>Solo Dashboard</h1>
       <div class="filters">
-        <label>
-          Queue
-          <select v-model="queueFilter">
-            <option value="ranked_all">All Ranked</option>
+        <div class="filter-group">
+          <label for="queue-filter">Queue</label>
+          <select id="queue-filter" v-model="queueFilter" aria-label="Filter matches by queue type">
+            <option value="all">All Queues</option>
             <option value="ranked_solo">Ranked Solo/Duo</option>
             <option value="ranked_flex">Ranked Flex</option>
             <option value="normal">Normal</option>
             <option value="aram">ARAM</option>
           </select>
-        </label>
-        <label>
-          Time Range
-          <select v-model="timeRange">
+        </div>
+        <div class="filter-group">
+          <label for="time-range-filter">Time Range</label>
+          <select id="time-range-filter" v-model="timeRange" aria-label="Filter matches by time range">
             <option value="1w">Last Week</option>
             <option value="1m">Last Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
           </select>
-        </label>
+        </div>
       </div>
     </header>
 
@@ -63,36 +63,72 @@
 import { ref } from 'vue'
 
 // UI-only state for filters (no functionality yet)
-const queueFilter = ref('ranked_all')
+const queueFilter = ref('all')
 const timeRange = ref('3m')
 </script>
 
 <style scoped>
 .solo-dashboard {
-  padding: 16px;
+  padding: var(--spacing-lg);
 }
 .dashboard-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-lg);
 }
 .filters {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+.filter-group label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+.filter-group select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.filter-group select:hover {
+  border-color: var(--color-primary);
+}
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
 }
 .sections {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: var(--spacing-lg);
 }
 .placeholder-card {
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 16px;
-  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  background: var(--color-surface);
 }
 .placeholder-card h2 {
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.placeholder-card p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 </style>

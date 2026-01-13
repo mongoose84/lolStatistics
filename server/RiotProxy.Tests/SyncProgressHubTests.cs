@@ -15,12 +15,12 @@ namespace RiotProxy.Tests;
 /// <summary>
 /// Unit tests for SyncProgressHub WebSocket functionality.
 /// </summary>
-public class SyncProgressHubTests
+public class SyncProgressHubTests : IDisposable
 {
     private readonly SyncProgressHub _hub;
     private readonly FakeLogger<SyncProgressHub> _logger;
     private readonly FakeV2RiotAccountsRepositoryForHub _riotAccountsRepo;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly FakeScopeFactory _scopeFactory;
 
     public SyncProgressHubTests()
     {
@@ -28,6 +28,11 @@ public class SyncProgressHubTests
         _riotAccountsRepo = new FakeV2RiotAccountsRepositoryForHub();
         _scopeFactory = new FakeScopeFactory(_riotAccountsRepo);
         _hub = new SyncProgressHub(_logger, _scopeFactory);
+    }
+
+    public void Dispose()
+    {
+        _scopeFactory.Dispose();
     }
 
     [Fact]
@@ -191,9 +196,9 @@ internal sealed class FakeV2RiotAccountsRepositoryForHub : V2RiotAccountsReposit
     }
 }
 
-internal sealed class FakeScopeFactory : IServiceScopeFactory
+internal sealed class FakeScopeFactory : IServiceScopeFactory, IDisposable
 {
-    private readonly IServiceProvider _provider;
+    private readonly ServiceProvider _provider;
 
     public FakeScopeFactory(V2RiotAccountsRepository repo)
     {
@@ -205,6 +210,11 @@ internal sealed class FakeScopeFactory : IServiceScopeFactory
     public IServiceScope CreateScope()
     {
         return new FakeScope(_provider);
+    }
+
+    public void Dispose()
+    {
+        _provider.Dispose();
     }
 
     private sealed class FakeScope : IServiceScope
