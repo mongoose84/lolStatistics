@@ -1511,42 +1511,7 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ## G5 Epic: Frontend Solo Dashboard v2
 
-### G5a. [Design] Dashboard Hub (/app/user) - Context switcher & account management
-
-**Priority:** P0 - Critical
-**Type:** Design
-**Estimate:** 2 points
-**Depends on:** G2, G9
-**Labels:** `design`, `frontend`, `ux`, `epic-g`
-
-#### Description
-
-Design the `/app/user` (Dashboard Hub) page, which serves as the landing page after login. Users see a summary of all their active contexts (Solo + Duos + Teams) and can switch between them. Act as a UX expert to define the layout, card designs, interactions, and empty states.
-
-#### Key Requirements
-
-- Account nudge: if no Riot account is linked, show a gentle prompt before any data
-- Solo card: icon, level, name#tagline, winrate, solo/duo rank, flex rank
-- Duo cards: 2 player icons side-by-side, duo name, duo winrate, grid/table toggle
-- Team cards: team member icons, team name, team winrate, grid/table toggle
-- Create new Duo/Team: if no duos/teams exist, show a prominent CTA button; if duos/teams exist, allow adding new ones
-- Notifications: red badge in top nav showing pending invites/goals; dropdown preview; click to go to notification center
-- Overall information architecture matching `docs/information_architecture_v2.md`
-- Save documentation in `docs/design/` folder
-
-#### Acceptance Criteria
-
-- [ ] Complete UX specification document created describing:
-  - Card layouts (solo, duo, team) with sketches or wireframes
-  - Empty states (no account, no duos, no teams)
-  - Notification badge + dropdown interaction flow
-  - Mobile responsiveness strategy
-  - Accessibility considerations
-- [ ] Design decisions documented (grid vs. table toggle, card size, data density)
-- [ ] Component breakdown identified (DuoCard, TeamCard, SoloCard, NotificationBadge, etc.)
-- [ ] Data shapes defined (what fields each card needs from the backend)
-
----
+<!-- G5a moved to completed backlog; see docs/product_backlog_completed.md -->
 
 ### G5b0. [Design] Solo Dashboard - Layout, sections & component breakdown
 
