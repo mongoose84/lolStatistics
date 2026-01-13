@@ -16,6 +16,10 @@ const router = createRouter({
       component: () => import('../views/AuthPage.vue')
     },
     {
+      path: '/v2/auth',
+      redirect: '/auth'
+    },
+    {
       path: '/auth/verify',
       name: 'verify',
       component: () => import('../views/VerifyPage.vue'),
@@ -44,8 +48,17 @@ const router = createRouter({
           path: 'user',
           name: 'app-user',
           component: () => import('../views/UserPage.vue')
+        },
+        {
+          path: 'solo',
+          name: 'app-solo',
+          component: () => import('../views/SoloDashboard.vue')
         }
       ]
+    },
+    {
+      path: '/v2/app/solo',
+      redirect: '/app/solo'
     }
   ],
   scrollBehavior(to, from, savedPosition) {

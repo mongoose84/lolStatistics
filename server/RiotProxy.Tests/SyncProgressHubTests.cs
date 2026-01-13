@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using RiotProxy.External.Domain.Entities.V2;
 using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 using RiotProxy.Infrastructure.WebSocket;
@@ -14,17 +15,24 @@ namespace RiotProxy.Tests;
 /// <summary>
 /// Unit tests for SyncProgressHub WebSocket functionality.
 /// </summary>
-public class SyncProgressHubTests
+public class SyncProgressHubTests : IDisposable
 {
     private readonly SyncProgressHub _hub;
     private readonly FakeLogger<SyncProgressHub> _logger;
     private readonly FakeV2RiotAccountsRepositoryForHub _riotAccountsRepo;
+    private readonly FakeScopeFactory _scopeFactory;
 
     public SyncProgressHubTests()
     {
         _logger = new FakeLogger<SyncProgressHub>();
         _riotAccountsRepo = new FakeV2RiotAccountsRepositoryForHub();
-        _hub = new SyncProgressHub(_logger, _riotAccountsRepo);
+        _scopeFactory = new FakeScopeFactory(_riotAccountsRepo);
+        _hub = new SyncProgressHub(_logger, _scopeFactory);
+    }
+
+    public void Dispose()
+    {
+        _scopeFactory.Dispose();
     }
 
     [Fact]
@@ -185,6 +193,40 @@ internal sealed class FakeV2RiotAccountsRepositoryForHub : V2RiotAccountsReposit
     public void AddAccount(V2RiotAccount account)
     {
         _accounts[account.Puuid] = account;
+    }
+}
+
+internal sealed class FakeScopeFactory : IServiceScopeFactory, IDisposable
+{
+    private readonly ServiceProvider _provider;
+
+    public FakeScopeFactory(V2RiotAccountsRepository repo)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<V2RiotAccountsRepository>(repo);
+        _provider = services.BuildServiceProvider();
+    }
+
+    public IServiceScope CreateScope()
+    {
+        return new FakeScope(_provider);
+    }
+
+    public void Dispose()
+    {
+        _provider.Dispose();
+    }
+
+    private sealed class FakeScope : IServiceScope
+    {
+        public IServiceProvider ServiceProvider { get; }
+
+        public FakeScope(IServiceProvider serviceProvider)
+        {
+            ServiceProvider = serviceProvider;
+        }
+
+        public void Dispose() { }
     }
 }
 

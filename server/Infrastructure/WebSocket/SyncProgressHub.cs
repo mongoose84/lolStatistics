@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using RiotProxy.Infrastructure.External.Database.Repositories.V2;
 
 namespace RiotProxy.Infrastructure.WebSocket;
@@ -15,7 +16,7 @@ namespace RiotProxy.Infrastructure.WebSocket;
 public sealed class SyncProgressHub : ISyncProgressBroadcaster
 {
     private readonly ILogger<SyncProgressHub> _logger;
-    private readonly V2RiotAccountsRepository _riotAccountsRepo;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     // Maximum message size in bytes (4KB should be plenty for JSON messages)
     private const int MaxMessageSize = 4096;
@@ -26,10 +27,10 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
     // Subscriptions: Puuid -> Set of ConnectionIds
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _subscriptions = new(StringComparer.OrdinalIgnoreCase);
 
-    public SyncProgressHub(ILogger<SyncProgressHub> logger, V2RiotAccountsRepository riotAccountsRepo)
+    public SyncProgressHub(ILogger<SyncProgressHub> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        _riotAccountsRepo = riotAccountsRepo;
+        _scopeFactory = scopeFactory;
     }
 
     /// <summary>
@@ -165,8 +166,10 @@ public sealed class SyncProgressHub : ISyncProgressBroadcaster
     /// </summary>
     private async Task<bool> TrySubscribeAsync(string connectionId, long userId, string puuid)
     {
-        // Verify user owns this Riot account
-        var account = await _riotAccountsRepo.GetByPuuidAsync(puuid);
+        // Verify user owns this Riot account (resolve scoped repository per call)
+        using var scope = _scopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<V2RiotAccountsRepository>();
+        var account = await repo.GetByPuuidAsync(puuid);
         if (account == null || account.UserId != userId)
         {
             _logger.LogWarning("User {UserId} attempted to subscribe to unowned account {Puuid}", userId, puuid);

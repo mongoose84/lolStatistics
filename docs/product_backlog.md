@@ -40,10 +40,20 @@ First 500 users get free Pro tier. Keep a counter on the landing page of how man
 | **C. Subscription & Paywall** | Mollie integration, tiers, feature flags | 34 pts | 0 pts |
 | **D. Analytics & Tracking** | User behavior tracking for product decisions | 19 pts | 0 pts |
 | **E. Database v2 & Analytics Schema** | New match/participant/timeline schema + ingestion | 4 pts | 16 pts ✅ |
-| **F. API v2** | New API surface aligned with v2 schema and dashboards | 15 pts | 18 pts ✅ |
-| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 10 pts | 15 pts ✅ |
+| **F. API v2** | New API surface aligned with v2 schema and dashboards | 23 pts | 18 pts ✅ |
+| **G. Frontend v2 App & Marketing** | New app shell, landing, and dashboards using v2 API | 28 pts | 15 pts ✅ |
 
-**Remaining:** 126 points | **Completed:** 49 points | **Grand Total:** 175 points
+**Remaining:** 152 points | **Completed:** 49 points | **Grand Total:** 201 points
+
+### G5 Epic: Frontend Solo Dashboard v2 (Split into smaller tasks)
+
+The original G5 (5 points) has been split into **15 focused tasks** (28 points total):
+- **G5a:** Dashboard Hub design (2 pts)
+- **G5b0:** Solo Dashboard design (2 pts)
+- **G5b1-b7:** Frontend implementation (1+2+3+2+3+3+2 = 16 pts)
+- **G5b8-b15:** Backend support & endpoints (1+2+1+3+2+2+2+2 = 15 pts)
+
+Each task is a vertical slice with clear acceptance criteria, enabling parallel frontend/backend work and incremental value delivery.
 
 > Note: Platform v2 epics (E–G) are prerequisites for most feature work (B–D) and should generally be completed first.
 >
@@ -1386,6 +1396,59 @@ Provide API endpoints for managing friends/duos/teams and searching for LoL acco
 
 ---
 
+### F13. [API] Implement Riot League API for rank/LP data + LP over time graph
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 5 points
+**Depends on:** F2, G5
+**Labels:** `api`, `riot-api`, `solo`, `v2`, `epic-f`
+
+#### Description
+
+Implement the Riot League API integration to fetch and store player rank data (Solo/Duo and Flex tiers, divisions, LP). Use this to power the LP over time graph on the Solo dashboard, similar to how blitz.gg displays LP progression.
+
+Reference: https://developer.riotgames.com/apis#league-v4
+
+#### Acceptance Criteria
+
+- [ ] Add `GetLeagueEntriesByPuuidAsync` method to `IRiotApiClient` that calls Riot's League-v4 API
+- [ ] Create `RankSnapshot` entity with fields: puuid, queue_type (RANKED_SOLO_5x5, RANKED_FLEX_SR), tier, rank (division), lp, wins, losses, timestamp
+- [ ] Create `rank_snapshots` table in schema-v2.sql with appropriate indexes
+- [ ] Create `V2RankSnapshotsRepository` with insert and query methods
+- [ ] Store rank snapshot on account link and after each match sync completion
+- [ ] Create endpoint `GET /api/v2/solo/{puuid}/lp-history` that returns LP progression data
+- [ ] Frontend `LpChart.vue` component that displays LP over time with time period filter
+- [ ] Chart shows tier/division boundaries visually (e.g., lines at Gold 1, Plat 4, etc.)
+
+---
+
+### F14. [API] Check for new matches on user login and auto-sync
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** F7, G12
+**Labels:** `api`, `sync`, `riot-api`, `v2`, `epic-f`
+
+#### Description
+
+When a user logs in, automatically check if their linked Riot accounts have new matches since the last sync. If new matches are found, trigger a sync and show syncing status via WebSocket updates, just like when a new account is linked.
+
+Also check if profile data (icon, level, rank) has changed and update if needed.
+
+#### Acceptance Criteria
+
+- [ ] On successful login, check each linked account for new matches since `last_sync_at`
+- [ ] If new matches exist, set `sync_status` to 'pending' to trigger the V2MatchHistorySyncJob
+- [ ] Frontend shows syncing indicator when sync is in progress after login
+- [ ] WebSocket updates flow to the logged-in user's session for real-time progress
+- [ ] Fetch current summoner data and compare icon/level; update if changed
+- [ ] Fetch current rank data and store new snapshot if rank/LP has changed
+- [ ] Add reasonable cooldown (e.g., don't re-check if last sync was < 5 minutes ago)
+
+---
+
 # Epic G: Frontend v2 App & Marketing
 
 Create a new, professional user experience with a landing page, pricing, and app shell consuming API v2.
@@ -1444,24 +1507,602 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ---
 
-### G5. [Frontend] Implement Solo dashboard v2 view
+---
 
-**Priority:** P0 - Critical  
-**Type:** Feature  
-**Estimate:** 5 points  
-**Depends on:** F2, G2  
+## G5 Epic: Frontend Solo Dashboard v2
+
+<!-- G5a moved to completed backlog; see docs/product_backlog_completed.md -->
+
+### G5b0. [Design] Solo Dashboard - Layout, sections & component breakdown
+
+**Priority:** P0 - Critical
+**Type:** Design
+**Estimate:** 2 points
+**Depends on:** G2
+**Labels:** `design`, `frontend`, `ux`, `epic-g`
+
+#### Description
+
+Design the `/app/solo` dashboard page using a single-scroll layout (no tabs). Define the section order, component hierarchy, filters, and visual treatment for locked features (Pro tier).
+
+#### Key Requirements
+
+- Single-scroll layout: Profile Header → Main Champion Card → Winrate Chart → LP Chart → Matchups Table → Goals Panel
+- Queue filter: All Ranked (default), Ranked Solo/Duo, Ranked Flex, Normal, ARAM
+- Time range filter: Last Week, Last Month, Last 3 Months, Last 6 Months (for charts only)
+- Tier-based locking: Free users see greyed-out locked sections with CTA buttons, not a banner
+- Main Champion Card: Dynamic by role (shows roles played, top 3 champs per role with winrate)
+- Winrate Chart: Rolling average line chart, shared component (reusable for duo/team)
+- LP Chart: Per-game line chart, Ranked only
+- Matchups Table: Top 5 champions sorted by winrate, expandable rows for opponent details
+- Goals Panel: Displays active goals + progress, expandable, with "Set New Goal" CTA
+- Save documentation in `docs/design/` folder
+
+#### Acceptance Criteria
+
+- [ ] Complete layout specification with visual hierarchy and spacing
+- [ ] Section-by-section UX spec (header, charts, tables, panels)
+- [ ] Component breakdown and data flow diagram
+- [ ] Wireframe or mockup showing all sections at desktop and mobile sizes
+- [ ] API data shapes for each section clearly defined
+- [ ] Tier-based locking treatment specified (visual examples)
+- [ ] Responsive behavior documented (stacking on mobile, chart resizing, etc.)
+
+---
+
+### G5b1. [Frontend] Create empty Solo dashboard view & routing
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 1 point
+**Depends on:** G2, G5b0
 **Labels:** `frontend`, `solo`, `dashboard`, `epic-g`
 
 #### Description
 
-Create a new Solo dashboard screen under `/app/solo` that consumes the Solo dashboard v2 endpoint and presents the key solo stats (overview, champion performance, role distribution, death efficiency, match duration, etc.).
+Create the base `/app/solo` route and view component with basic structure (header, placeholder sections, no data yet). This establishes the layout skeleton so subsequent tasks can fill in the sections.
 
 #### Acceptance Criteria
 
-- [ ] Solo v2 view implemented and wired to API v2  
-- [ ] Queue filter control implemented (Ranked Solo/Duo, Ranked Flex, Normal, ARAM, All) and wired into API requests
-- [ ] Old Solo dashboard route either redirects or is clearly deprecated  
-- [ ] Layout matches the new app shell and feels consistent with the product branding
+- [ ] Route `/v2/app/solo` added to router configuration
+- [ ] `SoloDashboard.vue` created with basic structure (divs/sections for each upcoming section)
+- [ ] View is protected by authentication (unauthenticated users redirected to `/v2/auth`)
+- [ ] Rendered within the app shell (G2) with correct header and sidebar
+- [ ] Queue filter dropdown and time range dropdown created (no functionality yet, just UI)
+- [ ] Placeholder text or loading state for each section visible
+- [ ] No data displayed (all sections empty until subsequent tasks)
+
+---
+
+### G5b2. [Frontend] Implement Profile Header Card component
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** G5b1, F2 (solo endpoint needs icon/level/rank data)
+**Labels:** `frontend`, `solo`, `dashboard`, `component`, `epic-g`
+
+#### Description
+
+Create the Profile Header Card that displays user's overall stats at the top of the solo dashboard: profile icon, summoner name + tag, level, solo/duo rank, flex rank, overall winrate (respects queue filter).
+
+#### Backend Requirements
+
+- [ ] Solo dashboard v2 endpoint (F2) must return:
+  - `profileIconId`, `summonerLevel`
+  - `rankedSoloDuoRank`, `rankedFlexRank` (or tiers/divisions)
+  - `overallWinRate`, `totalGamesPlayed`
+
+#### Frontend Requirements
+
+- [ ] ProfileHeaderCard component created
+- [ ] Shows: icon (72px circle), name#tagline, level badge, rank badges (solo/duo, flex)
+- [ ] Displays overall winrate % and total games played
+- [ ] Styled consistently with app theme (dark, purple accent)
+- [ ] Responsive: stacks vertically on mobile
+- [ ] Data fetched from F2 endpoint and passed via props
+- [ ] Updates when queue filter changes (re-fetches data)
+
+#### Acceptance Criteria
+
+- [ ] Component displays all required fields without errors
+- [ ] Styling matches UI design guidelines
+- [ ] Icon loads correctly from Riot CDN
+- [ ] Rank badges show appropriate icons/colors
+- [ ] Component updates when queue filter changes
+- [ ] Mobile layout verified on small screens
+- [ ] No placeholder text visible (all data shown)
+
+---
+
+### G5b3. [Frontend] Implement Main Champion Card (role-based)
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** G5b1, F2
+**Labels:** `frontend`, `solo`, `dashboard`, `component`, `epic-g`
+
+#### Description
+
+Create the Main Champion Card that shows the user's champions grouped by role. Clicking a role tab reveals the top 3 champions for that role with their winrates and quick stats. Matches the design in the reference image (ADC, Mid, Jungle tabs with champion cards).
+
+#### Backend Requirements
+
+- [ ] Solo dashboard endpoint (F2) must return:
+  - `mainChampions`: Array of roles, each with top 3 champions including:
+    - `championName`, `championId`, `role`, `winRate`, `gamesPlayed`, `wins`, `losses`
+
+#### Frontend Requirements
+
+- [ ] MainChampionCard component created
+- [ ] Role pill/tab UI: shows all roles user has played (default to most-played role)
+- [ ] Clicking role pill displays that role's top 3 champions
+- [ ] Each champion shows: icon, name, role badge, winrate %, W-L record, games played
+- [ ] Champion icons load from Riot CDN
+- [ ] Smooth tab switching animation
+- [ ] Responsive: role pills wrap on mobile, champion cards stack
+
+#### Acceptance Criteria
+
+- [ ] Component displays all roles and champions without errors
+- [ ] Role pill tabs are clickable and update the displayed champions
+- [ ] Each champion card shows all required stats
+- [ ] Icons load correctly
+- [ ] Default role is correctly selected on mount
+- [ ] Tab switching is smooth and fast
+- [ ] Mobile layout tested and responsive
+- [ ] Respects queue filter (updates when filter changes)
+
+---
+
+### G5b4. [Frontend] Implement Winrate Over Time chart component
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** G5b1, F2
+**Labels:** `frontend`, `solo`, `dashboard`, `component`, `chart`, `epic-g`
+
+#### Description
+
+Create a reusable Winrate Over Time chart component that displays a rolling average winrate line chart. This chart is used on solo, duo, and team dashboards, so design for reusability. Data point is per game, rolling average is calculated over a window (e.g., 20-game rolling avg).
+
+#### Backend Requirements
+
+- [ ] Solo dashboard endpoint (F2) must return `winrateTrend`:
+  - Array of: `{ gameIndex: number, winRate: number, timestamp: timestamp }`
+  - Pre-calculated rolling average (20-game window) to reduce client computation
+  - Respects queue filter and time range filter
+
+#### Frontend Requirements
+
+- [ ] WinrateChart component created (generic, accepts data prop)
+- [ ] Uses Chart.js or similar library to render line chart
+- [ ] X-axis: game number or date (depending on time range)
+- [ ] Y-axis: winrate percentage (0-100%)
+- [ ] Line color: purple accent, smooth curve
+- [ ] Hover tooltip shows exact winrate, game number, date
+- [ ] Responsive: chart resizes on mobile, readable at all sizes
+- [ ] Empty state: "No data for selected time range" message
+- [ ] Light animation on load (optional)
+
+#### Acceptance Criteria
+
+- [ ] Chart renders without errors
+- [ ] Data points are accurate and match backend
+- [ ] Rolling average line is smooth and readable
+- [ ] Tooltip shows correct values on hover
+- [ ] Chart resizes properly on window resize
+- [ ] Mobile display is readable (not cramped)
+- [ ] Time range filter causes chart to re-fetch and update
+- [ ] No visual glitches or rendering artifacts
+
+---
+
+### G5b5. [Frontend] Implement LP Over Time chart component
+
+**Priority:** P0 - High
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** G5b1, F2
+**Labels:** `frontend`, `solo`, `dashboard`, `component`, `chart`, `epic-g`
+
+#### Description
+
+Create an LP Over Time chart that displays LP change per game (only for Ranked queue). Shows individual data points connected by lines, with annotations for rank promotions/demotions. Uses same charting library as WinrateChart for consistency.
+
+#### Backend Requirements
+
+- [ ] Solo dashboard endpoint (F2) must return `lpTrend`:
+  - Array of: `{ gameIndex: number, lpGain: number, currentLp: number, rank: string, timestamp: timestamp }`
+  - Only included if `queueFilter` includes ranked modes
+  - Pre-sorted by game timestamp
+
+#### Frontend Requirements
+
+- [ ] LpChart component created
+- [ ] X-axis: game number, Y-axis: LP (0-100 per rank, resets at promotions)
+- [ ] Line chart with individual game LP gains/losses marked
+- [ ] Rank badges shown where promotions/demotions occur
+- [ ] Hover shows LP change, new LP, current rank
+- [ ] Only visible for Ranked queue filters; hidden for Normal/ARAM
+- [ ] Responsive: resizes on mobile
+
+#### Acceptance Criteria
+
+- [ ] Chart renders correctly for ranked games
+- [ ] LP gains/losses are accurate
+- [ ] Rank badges display at rank boundaries
+- [ ] Chart hides when queue filter is non-ranked
+- [ ] Data matches backend values
+- [ ] Tooltip shows correct LP information
+- [ ] Mobile layout readable
+
+---
+
+### G5b6. [Frontend] Implement Champion Matchups table component
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** G5b1, F3 (new endpoint needed)
+**Labels:** `frontend`, `solo`, `dashboard`, `component`, `table`, `epic-g`
+
+#### Description
+
+Create a Champion Matchups table showing the user's top 5 most-played champions with expandable rows. Each row displays opponents faced with that champion. Sorted by winrate, expandable to show all opponents (default shows top 3). Inspired by v1 ChampionMatchups component but adapted for new data structure.
+
+#### Backend Requirements
+
+- [ ] Create new endpoint: `GET /api/v2/solo/matchups/{userId}?queueType=...`
+- [ ] Returns `matchups` array, each with:
+  - `championName`, `championId`, `role`
+  - `totalGames`, `wins`, `winRate`
+  - `opponents`: Array of `{ opponentChampionName, wins, losses, gamesPlayed, winRate }`
+  - Sorted by winrate descending
+
+#### Frontend Requirements
+
+- [ ] ChampionMatchupsTable component created
+- [ ] Table structure:
+  - Header row: Champion | Record | Winrate | [Expand]
+  - For each champion: name, role badge, W-L, winrate %
+  - Expandable row showing top 3 opponents (default)
+  - "Show All" button to expand full opponent list
+  - Opponent rows: icon, name, W-L vs that opponent, winrate
+- [ ] Sorting: champions sorted by winrate (descending)
+- [ ] Opponent sorting: by games played (most played first)
+- [ ] Responsive: table scrolls horizontally on mobile, or collapses columns
+- [ ] Icons load from Riot CDN
+
+#### Acceptance Criteria
+
+- [ ] Table displays all top 5 champions
+- [ ] Winrate colors (green ≥50%, red <50%)
+- [ ] Expand/collapse works smoothly
+- [ ] Opponent list shows correctly
+- [ ] All icons load
+- [ ] Table is sortable or shows correct default sort
+- [ ] Mobile layout is functional (not cramped)
+- [ ] Updates when queue filter changes
+
+---
+
+### G5b7. [Frontend] Implement Goals Panel (basic display)
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** G5b1, F2 (goals data in response)
+**Labels:** `frontend`, `solo`, `dashboard`, `component`, `epic-g`
+
+#### Description
+
+Create a Goals Panel that displays active goals (if Pro tier) or shows an upgrade CTA (if Free tier). Goals show progress bar, current value, target value, and an estimated completion date. "Set New Goal" button opens a modal (future task). No create/edit/delete logic yet, just display.
+
+#### Backend Requirements
+
+- [ ] Solo dashboard endpoint (F2) should return `activeGoals` array (empty if Free tier):
+  - `goalId`, `title`, `description`, `metric`, `currentValue`, `targetValue`, `baselineValue`
+  - `progress` (percentage), `estimatedCompletionDate`
+
+#### Frontend Requirements
+
+- [ ] GoalsPanel component created
+- [ ] If Free tier: show "Upgrade to Pro to set personal improvement goals" CTA button
+- [ ] If Pro tier with goals: show list of active goals, each with:
+  - Goal title, description
+  - Progress bar (0-100%)
+  - Current value / target value stats
+  - Estimated completion date
+  - "Expand" button to see full details (future task)
+- [ ] If Pro tier but no goals: show "No active goals. Start improving by setting one!" with "Set Goal" CTA button
+- [ ] Collapsible panel (collapsed by default if user has many goals)
+- [ ] Responsive: progress bars stack on mobile
+
+#### Acceptance Criteria
+
+- [ ] Correct tier-based content displayed (Free vs. Pro)
+- [ ] If tier is Free, upgrade CTA visible and clickable (navigates to pricing or settings)
+- [ ] If Pro with goals, each goal shows progress bar and stats
+- [ ] Progress bar accuracy verified against backend data
+- [ ] "Set Goal" CTA button present (opens modal in future task)
+- [ ] Panel collapses/expands correctly
+- [ ] Mobile layout verified
+- [ ] No errors when goals array is empty
+
+---
+
+### G5b8. [Backend] Add profile_icon_id and summoner_level to riot_accounts table
+
+**Priority:** P0 - Critical
+**Type:** Database Migration
+**Estimate:** 1 point
+**Depends on:** None
+**Labels:** `database`, `migration`, `epic-g`
+
+#### Description
+
+Add two columns to the `riot_accounts` table: `profile_icon_id` (string) and `summoner_level` (integer). These are fetched from the Riot API during account linking and displayed on the Solo dashboard Profile Header.
+
+#### Acceptance Criteria
+
+- [ ] SQL migration created and tested: `ALTER TABLE riot_accounts ADD COLUMN profile_icon_id VARCHAR(255), ADD COLUMN summoner_level INT`
+- [ ] Migration is idempotent (safe to run multiple times)
+- [ ] Entity class updated to include these fields
+- [ ] No data loss or errors on existing records
+
+---
+
+### G5b9. [Backend] Fetch and store profile data during account linking
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** G5b8
+**Labels:** `backend`, `riot-api`, `epic-g`
+
+#### Description
+
+Update the account linking flow to fetch summoner profile data (icon ID, level) from Riot API and store it in the `riot_accounts` table.
+
+#### Acceptance Criteria
+
+- [ ] Account linking endpoint calls `GetSummonerByPuuIdAsync` (Riot API)
+- [ ] Extracts `profileIconId` and `summonerLevel` from response
+- [ ] Stores both in `riot_accounts` table
+- [ ] If API call fails, gracefully falls back (stores NULL and logs error)
+- [ ] Profile data is updated on re-sync or account refresh
+- [ ] Unit tests verify data is stored correctly
+
+---
+
+### G5b10. [Backend] Update Solo dashboard v2 endpoint to include profile data
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 1 point
+**Depends on:** G5b8, G5b9, F2
+**Labels:** `backend`, `api`, `epic-g`
+
+#### Description
+
+Update the F2 Solo dashboard v2 endpoint to include `profileIconId` and `summonerLevel` in the response. These are pulled from the `riot_accounts` table for the user's primary account.
+
+#### Acceptance Criteria
+
+- [ ] Endpoint response includes `profileIconId` (string) and `summonerLevel` (integer)
+- [ ] Data fetched from `riot_accounts` table
+- [ ] If no primary account, returns null or empty string (no error)
+- [ ] Tested with sample data
+
+---
+
+### G5b11. [Backend] Create champion matchups v2 endpoint
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** E3 (v2 repositories)
+**Labels:** `backend`, `api`, `endpoints`, `epic-g`
+
+#### Description
+
+Create a new endpoint `GET /api/v2/solo/matchups/{userId}?queueType=...` that returns champion matchup statistics based on v2 database. Returns top 5 champions by winrate, with opponent details for each.
+
+#### Acceptance Criteria
+
+- [ ] Endpoint created and routable at `/api/v2/solo/matchups/{userId}`
+- [ ] `queueType` query parameter filters by queue (All Ranked, Solo/Duo, Flex, Normal, ARAM)
+- [ ] Returns JSON structure:
+  ```json
+  {
+    "matchups": [
+      {
+        "championName": "Caitlyn",
+        "championId": 51,
+        "role": "BOTTOM",
+        "totalGames": 45,
+        "wins": 27,
+        "winRate": 60.0,
+        "opponents": [
+          {
+            "opponentChampionName": "Ashe",
+            "wins": 5,
+            "losses": 1,
+            "gamesPlayed": 6,
+            "winRate": 83.3
+          }
+          // ... more opponents
+        ]
+      }
+      // ... up to 5 champions
+    ]
+  }
+  ```
+- [ ] Data sourced from v2 repositories (`ParticipantRepository`, `MatchRepository`)
+- [ ] Sorted by champion winrate (descending)
+- [ ] Opponents sorted by games played (descending)
+- [ ] Authenticated users only (401 if not logged in)
+- [ ] Unit tests verify correct sorting and filtering
+
+---
+
+### G5b12. [Backend] Fetch main champions by role for Solo dashboard
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** E3, F2
+**Labels:** `backend`, `statistics`, `epic-g`
+
+#### Description
+
+Update the Solo dashboard v2 endpoint (F2) to include `mainChampions` array. Groups user's champions by role and returns top 3 champions per role sorted by winrate.
+
+#### Acceptance Criteria
+
+- [ ] Endpoint response includes `mainChampions`:
+  ```json
+  {
+    "mainChampions": [
+      {
+        "role": "BOTTOM",
+        "champions": [
+          {
+            "championName": "Caitlyn",
+            "championId": 51,
+            "winRate": 62.5,
+            "gamesPlayed": 16,
+            "wins": 10,
+            "losses": 6
+          }
+          // ... top 3 for this role
+        ]
+      }
+      // ... one entry per role user has played
+    ]
+  }
+  ```
+- [ ] Top 3 champions per role by winrate (minimum 2 games to qualify)
+- [ ] Only includes roles where user has played games
+- [ ] Respects queue filter
+- [ ] Tested with sample data
+
+---
+
+### G5b13. [Backend] Fetch winrate trend data for Solo dashboard
+
+**Priority:** P0 - High
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** E3, F2
+**Labels:** `backend`, `statistics`, `epic-g`
+
+#### Description
+
+Update Solo dashboard endpoint (F2) to include `winrateTrend` array. Calculates rolling average winrate (20-game window) for each game in the result set, respecting queue and time range filters.
+
+#### Acceptance Criteria
+
+- [ ] Endpoint response includes `winrateTrend`:
+  ```json
+  {
+    "winrateTrend": [
+      {
+        "gameIndex": 1,
+        "winRate": 50.0,
+        "timestamp": "2026-01-10T14:32:00Z"
+      }
+      // ... one per game
+    ]
+  }
+  ```
+- [ ] Rolling average calculated over 20-game window
+- [ ] Respects time range filter (Last Week, Last Month, etc.)
+- [ ] Respects queue filter
+- [ ] Sorted chronologically
+- [ ] First few games may have < 20-game average (partial window)
+- [ ] Tested with sample data
+
+---
+
+### G5b14. [Backend] Fetch LP trend data for Solo dashboard
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** E3, F2
+**Labels:** `backend`, `statistics`, `epic-g`
+
+#### Description
+
+Update Solo dashboard endpoint (F2) to include `lpTrend` array. Returns LP change per game for ranked matches, including rank info at each point.
+
+#### Acceptance Criteria
+
+- [ ] Endpoint response includes `lpTrend` (empty array if no ranked games):
+  ```json
+  {
+    "lpTrend": [
+      {
+        "gameIndex": 1,
+        "lpGain": 25,
+        "currentLp": 25,
+        "rank": "Silver IV",
+        "timestamp": "2026-01-10T14:32:00Z"
+      }
+      // ... one per ranked game
+    ]
+  }
+  ```
+- [ ] Only included if queue filter includes ranked modes
+- [ ] Calculates LP gain/loss from match result
+- [ ] Tracks rank at each game
+- [ ] Marks promotions/demotions
+- [ ] Tested with sample data
+
+---
+
+### G5b15. [Backend] Update Solo dashboard endpoint to return goals array
+
+**Priority:** P1 - High
+**Type:** Feature
+**Estimate:** 2 points
+**Depends on:** F2, B4 (Goal table exists)
+**Labels:** `backend`, `api`, `epic-g`
+
+#### Description
+
+Update Solo dashboard endpoint (F2) to include `activeGoals` array if user is Pro tier. Returns active goals with progress information.
+
+#### Acceptance Criteria
+
+- [ ] Endpoint response includes `activeGoals`:
+  ```json
+  {
+    "activeGoals": [
+      {
+        "goalId": "uuid",
+        "title": "Improve CS",
+        "description": "Get to 7 CS/min",
+        "metric": "cs_per_min",
+        "currentValue": 6.2,
+        "targetValue": 7.0,
+        "baselineValue": 5.8,
+        "progress": 70,
+        "estimatedCompletionDate": "2026-02-15"
+      }
+      // ... more goals
+    ]
+  }
+  ```
+- [ ] Empty array if user is Free tier
+- [ ] Only active goals (not completed/cancelled)
+- [ ] Progress calculated as percentage toward target
+- [ ] Estimated completion date calculated from trend
+- [ ] Tested with sample data and tier scenarios
 
 ---
 
@@ -1790,3 +2431,111 @@ Introduce a first-pass friends/social area in the app UI that defines the layout
 | Vue Views | `client/src/views/` |
 | Composables | `client/src/composables/` |
 | API Client | `client/src/api/` |
+
+---
+
+## G5 Epic: Task Dependency Graph & Implementation Timeline
+
+Below is a visual guide to dependencies and recommended implementation order for G5:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ PHASE 0: DESIGN (No code, enables all other tasks)      │
+├─────────────────────────────────────────────────────────┤
+│ G5a: Dashboard Hub Design ──┐                           │
+│ G5b0: Solo Dashboard Design │                           │
+└──────────────┬──────────────┴──────────────┬────────────┘
+               │                             │
+┌──────────────▼──────────────────┐ ┌────────▼─────────────┐
+│ PHASE 1: INFRASTRUCTURE         │ │ PHASE 1B: DATABASE   │
+├──────────────────────────────────┤ ├─────────────────────┤
+│ G5b1: Empty Solo Dashboard View  │ │ G5b8: Add Columns   │
+│     └─ Depends on: G2, G5b0      │ │    to riot_accounts │
+│                                  │ │                     │
+│ G5b2: Profile Header Card        │ │ G5b9: Fetch Profile │
+│     ├─ Depends on: G5b1, F2      │ │    Data at Linking  │
+│     └─ Blocks: UI visible        │ │     Depends on: G5b8│
+│                                  │ │                     │
+│ G5b3: Main Champion Card (roles) │ │ G5b10: Update F2    │
+│     ├─ Depends on: G5b1, F2      │ │   Endpoint with     │
+│     └─ Blocks: UI visible        │ │   Profile Fields    │
+│                                  │ │  Depends on: G5b9   │
+│ G5b4: Winrate Over Time Chart    │ │                     │
+│     ├─ Depends on: G5b1, F2      │ └─────────────────────┘
+│     ├─ Reusable for Duo/Team     │
+│     └─ Blocks: Chart visible     │
+│                                  │
+│ G5b5: LP Over Time Chart         │
+│     ├─ Depends on: G5b1, F2      │
+│     └─ Blocks: Chart visible     │
+│                                  │
+│ G5b6: Champion Matchups Table    │
+│     ├─ Depends on: G5b1, G5b11   │
+│     └─ Blocks: Table visible     │
+│                                  │
+│ G5b7: Goals Panel (display)      │
+│     ├─ Depends on: G5b1, F2      │
+│     └─ Blocks: Goals visible     │
+└──────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│ PHASE 2: BACKEND ENDPOINTS           │
+├──────────────────────────────────────┤
+│ G5b11: Champion Matchups Endpoint    │
+│     ├─ Depends on: E3               │
+│     └─ Enables: G5b6                │
+│                                      │
+│ G5b12: Main Champions by Role       │
+│     ├─ Depends on: E3, F2           │
+│     └─ Enables: G5b3 to show data   │
+│                                      │
+│ G5b13: Winrate Trend Data           │
+│     ├─ Depends on: E3, F2           │
+│     └─ Enables: G5b4 to show data   │
+│                                      │
+│ G5b14: LP Trend Data                │
+│     ├─ Depends on: E3, F2           │
+│     └─ Enables: G5b5 to show data   │
+│                                      │
+│ G5b15: Goals Array in Solo Endpoint │
+│     ├─ Depends on: F2, B4           │
+│     └─ Enables: G5b7 to show data   │
+└──────────────────────────────────────┘
+
+PARALLEL WORK STREAMS:
+─────────────────────
+Frontend & Backend can work in parallel:
+  • Design team → G5a, G5b0 (blocking all others)
+  • Backend team → G5b8, G5b9, G5b10, G5b11-b15 (can start immediately)
+  • Frontend team → G5b1 (needs G5b0), then G5b2-b7 (can start once backend endpoints ready)
+
+CRITICAL PATH (for fastest delivery):
+────────────────────────────────────
+G5a → G5b0 → G5b1 → G5b2 → [parallel: G5b3-b7] + [parallel: G5b8-b15]
+```
+
+### Recommended Implementation Timeline
+
+**Week 1: Design Phase**
+- G5a & G5b0: Design specifications created, reviewed, and approved
+- Output: Component breakdown, data shapes, responsive mockups
+
+**Week 2: Infrastructure & Setup**
+- Backend: G5b8, G5b9, G5b10 (database columns, profile data fetching, endpoint updates)
+- Frontend: G5b1 (empty Solo dashboard view + routing)
+- Output: Foundation for data display
+
+**Week 3: Core Components**
+- Frontend: G5b2 (profile header), G5b3 (main champions card)
+- Backend: G5b11, G5b12 (matchups endpoint, main champions aggregation)
+- Output: User profile data and champion performance visible
+
+**Week 4: Charts & Analytics**
+- Frontend: G5b4 (winrate chart), G5b5 (LP chart)
+- Backend: G5b13, G5b14 (winrate and LP trend data endpoints)
+- Output: Trend analysis visible on dashboard
+
+**Week 5: Tables & Features**
+- Frontend: G5b6 (matchups table), G5b7 (goals panel)
+- Backend: G5b15 (goals data in endpoint)
+- Output: Complete solo dashboard ready for testing

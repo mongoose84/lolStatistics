@@ -495,6 +495,45 @@ Provide real-time progress feedback when matches are being synced for a linked R
 
 ---
 
+### G5a. [Design] Dashboard Hub (/app/user) - Context switcher & account management ✅ COMPLETE
+
+**Priority:** P0 - Critical
+**Type:** Design
+**Estimate:** 2 points
+**Depends on:** G2, G9
+**Labels:** `design`, `frontend`, `ux`, `epic-g`
+
+#### Description
+
+Design the `/app/user` (Dashboard Hub) page: summarize Solo + Duos + Teams and enable quick context switching. The final design selects Option A (unified Duo/Team grid) with a single Grid/Table toggle for both collections.
+
+#### Key Decisions
+
+- Unified Duo/Team grid with one global Grid/Table toggle.
+- Notifications badge + dropdown preview (shows up to 3 items, then "View All").
+- Users without a linked Riot account cannot be in Duos/Teams; show a blocking CTA to link accounts.
+- Near real-time updates via polling + WebSocket (Riot API has no push webhooks); also check for new data on reload/login.
+
+#### Acceptance Criteria
+
+- [x] Complete UX specification document created describing:
+  - [x] Card layouts (solo, duo, team) with sketches or wireframes
+  - [x] Empty states (no account, no duos, no teams)
+  - [x] Notification badge + dropdown interaction flow
+  - [x] Mobile responsiveness strategy
+  - [x] Accessibility considerations
+- [x] Design decisions documented (grid vs. table toggle, card size, data density)
+- [x] Component breakdown identified (DuoCard, TeamCard, SoloCard, NotificationBadge, etc.)
+- [x] Data shapes defined (what fields each card needs from the backend)
+- [x] Spec saved at: `docs/design/g5a_dashboard_hub_spec.md`
+
+#### Completion Notes
+
+- Spec file: [docs/design/g5a_dashboard_hub_spec.md](../design/g5a_dashboard_hub_spec.md)
+- This completion unlocks G5b1 and downstream frontend tasks for the hub and solo views.
+
+---
+
 ## Summary of Completed Work
 
 | Epic | Task | Points | Completed |
