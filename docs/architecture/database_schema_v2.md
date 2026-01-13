@@ -70,6 +70,8 @@ Stores Riot account identity information linked to user accounts.
 | `region` | VARCHAR(10) | NOT NULL | Region code (e.g., 'na1', 'euw1') |
 | `is_primary` | BOOLEAN | DEFAULT FALSE | Whether this is the user's primary account |
 | `sync_status` | ENUM('pending', 'syncing', 'completed', 'failed') | DEFAULT 'pending' | Match sync status |
+| `sync_progress` | INT | NOT NULL DEFAULT 0 | Number of matches synced in current operation |
+| `sync_total` | INT | NOT NULL DEFAULT 0 | Total number of matches to sync in current operation |
 | `last_sync_at` | TIMESTAMP | NULL | Last successful match sync time |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Record creation time |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Last update time |
@@ -82,6 +84,7 @@ Stores Riot account identity information linked to user accounts.
 - INDEX: `idx_region` ON (`region`)
 - INDEX: `idx_user_primary_created` ON (`user_id`, `is_primary`, `created_at`) -- covers ORDER BY is_primary DESC, created_at ASC
 - INDEX: `idx_sync_status` ON (`sync_status`)
+- INDEX: `idx_sync_status_updated` ON (`sync_status`, `updated_at`)
 
 **Foreign Keys:**
 - `user_id` → `users(user_id)` ON DELETE CASCADE
@@ -91,6 +94,7 @@ Stores Riot account identity information linked to user accounts.
 - One Riot account (puuid) belongs to one user
 - `is_primary` flag identifies the main account for the user
 - `sync_status` tracks match history synchronization state
+- `sync_progress` and `sync_total` track the progress of match history sync jobs
 - `game_name` and `tag_line` reflect new Riot ID format (gameName#tagLine)
 
 **Source:** Riot summoner-v4 / account-v1 API

@@ -280,3 +280,4 @@ CREATE TABLE IF NOT EXISTS ai_snapshots (
     KEY idx_puuid_context (puuid, context_type, snapshot_date),
     CONSTRAINT fk_ai_snapshots_riot_account FOREIGN KEY (puuid) REFERENCES riot_accounts(puuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- END OF SCHEMA
