@@ -195,6 +195,25 @@ public class RiotAccountsRepository : RepositoryBase
             ("@now", DateTime.UtcNow));
     }
 
+    /// <summary>
+    /// Updates profile data (icon, level) for an account.
+    /// </summary>
+    public virtual Task UpdateProfileDataAsync(string puuid, int? profileIconId, int? summonerLevel)
+    {
+        const string sql = @"
+            UPDATE riot_accounts
+            SET profile_icon_id = @profile_icon_id,
+                summoner_level = @summoner_level,
+                updated_at = @now
+            WHERE puuid = @puuid";
+
+        return ExecuteNonQueryAsync(sql,
+            ("@puuid", puuid),
+            ("@profile_icon_id", (object?)profileIconId ?? DBNull.Value),
+            ("@summoner_level", (object?)summonerLevel ?? DBNull.Value),
+            ("@now", DateTime.UtcNow));
+    }
+
     private static RiotAccount Map(MySqlDataReader r) => new()
     {
         Puuid = r.GetString(0),

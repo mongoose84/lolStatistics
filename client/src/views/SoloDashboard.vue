@@ -74,9 +74,11 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { getSoloDashboard } from '../services/authApi'
+import { useSyncWebSocket } from '../composables/useSyncWebSocket'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
 
 const authStore = useAuthStore()
+const { syncProgress, subscribe, resetProgress } = useSyncWebSocket()
 
 // Get the primary Riot account for the profile header
 const primaryAccount = computed(() => authStore.primaryRiotAccount)
@@ -107,9 +109,31 @@ async function fetchDashboardData() {
   }
 }
 
-// Fetch on mount and when queue filter changes
-onMounted(fetchDashboardData)
+// Subscribe to sync updates for primary account
+onMounted(() => {
+  fetchDashboardData()
+  if (primaryAccount.value?.puuid) {
+    subscribe(primaryAccount.value.puuid)
+  }
+})
+
+// Fetch when queue filter changes
 watch(queueFilter, fetchDashboardData)
+
+// Watch for sync completion to refresh data
+watch(syncProgress, (progress) => {
+  for (const [puuid, data] of progress.entries()) {
+    if (data.status === 'completed') {
+      // Refresh user data to get updated profile icon/level
+      authStore.refreshUser()
+      // Refresh dashboard data to get updated stats
+      fetchDashboardData()
+      // Reset the status after refresh
+      resetProgress(puuid)
+      break
+    }
+  }
+}, { deep: true })
 </script>
 
 <style scoped>

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using RiotProxy.Application.Services;
 using RiotProxy.Infrastructure.External.Database.Repositories;
 using static RiotProxy.Application.DTOs.LoginDto;
 
@@ -27,6 +28,7 @@ public sealed class LoginEndpoint : IEndpoint
             [FromBody] LoginRequest request,
             HttpContext httpContext,
             [FromServices] UsersRepository usersRepo,
+            [FromServices] LoginSyncService loginSyncService,
             [FromServices] ILogger<LoginEndpoint> logger,
             [FromServices] IConfiguration config
         ) =>
@@ -111,6 +113,20 @@ public sealed class LoginEndpoint : IEndpoint
                 await usersRepo.UpsertAsync(user);
 
                 logger.LogInformation("User {Username} (ID: {UserId}) logged in successfully", user.Username, user.UserId);
+
+                // Check linked Riot accounts for new matches and update profile data
+                // Run in background (fire-and-forget) to avoid slowing down login response
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await loginSyncService.CheckAccountsOnLoginAsync(user.UserId);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Background sync check failed for user {UserId}", user.UserId);
+                    }
+                });
 
                 return Results.Ok(new LoginResponse(
                     user.UserId,

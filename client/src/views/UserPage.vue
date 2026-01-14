@@ -201,6 +201,22 @@ watch(riotAccounts, (newAccounts) => {
   }
 }, { deep: true });
 
+// Watch for sync completion to refresh data
+watch(syncProgress, (progress) => {
+  // Check if any account just completed sync
+  for (const [puuid, data] of progress.entries()) {
+    if (data.status === 'completed') {
+      // Refresh user data to get updated profile icon/level
+      authStore.refreshUser();
+      // Refresh dashboard data to get updated stats
+      fetchDashboardData();
+      // Reset the status after refresh to avoid repeated refreshes
+      resetProgress(puuid);
+      break;
+    }
+  }
+}, { deep: true });
+
 /**
  * Get the effective sync status for an account (WebSocket or API)
  */

@@ -53,6 +53,9 @@ builder.Services.AddScoped<DuoMetricsRepository>();
 builder.Services.AddScoped<SoloStatsRepository>();
 builder.Services.AddScoped<SeasonsRepository>();
 
+// Application services
+builder.Services.AddScoped<RiotProxy.Application.Services.LoginSyncService>();
+
 // Named HttpClient for Riot API
 builder.Services.AddHttpClient("RiotApi", client =>
 {
