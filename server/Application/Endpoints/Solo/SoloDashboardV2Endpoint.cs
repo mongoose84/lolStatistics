@@ -3,11 +3,12 @@ using RiotProxy.Infrastructure.External.Database.Repositories;
 
 namespace RiotProxy.Application.Endpoints.Solo;
 
-/// <summary>
-/// Solo Dashboard Endpoint
-/// Returns comprehensive solo player statistics optimized for dashboard rendering.
-/// Supports optional queue filtering (ranked_solo, ranked_flex, normal, aram, all).
-/// </summary>
+	/// <summary>
+	/// Solo Dashboard Endpoint
+	/// Returns comprehensive solo player statistics optimized for dashboard rendering.
+	/// Supports optional queue filtering (ranked_solo, ranked_flex, normal, aram, all)
+	/// and optional time range filtering (1w, 1m, 3m, 6m).
+	/// </summary>
 public sealed class SoloDashboardEndpoint : IEndpoint
 {
     public string Route { get; }
@@ -17,16 +18,17 @@ public sealed class SoloDashboardEndpoint : IEndpoint
         Route = basePath + "/solo/dashboard/{userId}";
     }
 
-    public void Configure(WebApplication app)
-    {
-        var endpoint = app.MapGet(Route, async (
-            HttpContext httpContext,
-            [FromRoute] string userId,
-            [FromQuery] string? queueType,
-            [FromServices] RiotAccountsRepository riotAccountRepo,
-            [FromServices] SoloStatsRepository soloStatsRepo,
-            [FromServices] ILogger<SoloDashboardEndpoint> logger
-        ) =>
+	    public void Configure(WebApplication app)
+	    {
+	        var endpoint = app.MapGet(Route, async (
+	            HttpContext httpContext,
+	            [FromRoute] string userId,
+	            [FromQuery] string? queueType,
+	            [FromQuery] string? timeRange,
+	            [FromServices] RiotAccountsRepository riotAccountRepo,
+	            [FromServices] SoloStatsRepository soloStatsRepo,
+	            [FromServices] ILogger<SoloDashboardEndpoint> logger
+	        ) =>
         {
             try
             {
@@ -53,15 +55,15 @@ public sealed class SoloDashboardEndpoint : IEndpoint
                 var primaryAccount = riotAccounts.FirstOrDefault(a => a.IsPrimary) ?? riotAccounts[0];
                 var primaryPuuid = primaryAccount.Puuid;
 
-                // Fetch dashboard data
-                logger.LogInformation("Solo dashboard request: userId={UserId}, puuid={Puuid}, queueType={Queue}", userIdInt, primaryPuuid, queueType ?? "all");
-                var dashboard = await soloStatsRepo.GetSoloDashboardAsync(primaryPuuid, queueType);
+	                // Fetch dashboard data
+	                logger.LogInformation("Solo dashboard request: userId={UserId}, puuid={Puuid}, queueType={Queue}, timeRange={TimeRange}", userIdInt, primaryPuuid, queueType ?? "all", timeRange ?? "all");
+	                var dashboard = await soloStatsRepo.GetSoloDashboardAsync(primaryPuuid, queueType, timeRange);
 
-                if (dashboard == null)
-                {
-                    logger.LogInformation("Solo dashboard: no match data for puuid {Puuid} with queueType {Queue}", primaryPuuid, queueType ?? "all");
-                    return Results.NotFound(new { error = "No match data found for this player" });
-                }
+	                if (dashboard == null)
+	                {
+	                    logger.LogInformation("Solo dashboard: no match data for puuid {Puuid} with queueType {Queue} and timeRange {TimeRange}", primaryPuuid, queueType ?? "all", timeRange ?? "all");
+	                    return Results.NotFound(new { error = "No match data found for this player" });
+	                }
 
                 return Results.Ok(dashboard);
             }

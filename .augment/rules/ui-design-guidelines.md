@@ -1,3 +1,7 @@
+---
+type: "manual"
+---
+
 # Pulse.gg UI Design Guidelines
 
 This document defines the visual design system for the Pulse.gg client application. Include this file when developing any new UI components to ensure consistency.

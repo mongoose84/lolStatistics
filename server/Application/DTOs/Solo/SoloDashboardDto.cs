@@ -19,7 +19,8 @@ public static class SoloSummaryDto
         
         // Champion pool summary
         [property: JsonPropertyName("uniqueChampsPlayedCount")] int UniqueChampsPlayedCount,
-        [property: JsonPropertyName("mainChampion")] ChampionSummary? MainChampion,
+	        [property: JsonPropertyName("mainChampion")] ChampionSummary? MainChampion,
+	        [property: JsonPropertyName("mainChampions")] MainChampionRoleGroup[] MainChampions,
         
         // Recent trend
         [property: JsonPropertyName("last10Games")] TrendMetric? Last10Games,
@@ -55,6 +56,22 @@ public static class SoloSummaryDto
         [property: JsonPropertyName("winRate")] double WinRate,
         [property: JsonPropertyName("pickRate")] double PickRate
     );
+
+	    public record MainChampionRoleGroup(
+	        [property: JsonPropertyName("role")] string Role,
+	        [property: JsonPropertyName("champions")] MainChampionEntry[] Champions
+	    );
+
+	    public record MainChampionEntry(
+	        [property: JsonPropertyName("championName")] string ChampionName,
+	        [property: JsonPropertyName("championId")] int ChampionId,
+	        [property: JsonPropertyName("role")] string Role,
+	        [property: JsonPropertyName("winRate")] double WinRate,
+	        [property: JsonPropertyName("gamesPlayed")] int GamesPlayed,
+	        [property: JsonPropertyName("wins")] int Wins,
+	        [property: JsonPropertyName("losses")] int Losses,
+	        [property: JsonPropertyName("lpPerGame")] double LpPerGame
+	    );
 
     public record TrendMetric(
         [property: JsonPropertyName("games")] int Games,

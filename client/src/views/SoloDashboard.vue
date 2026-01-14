@@ -20,6 +20,7 @@
             <option value="1m">Last Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
+            <option value="current_season">Current Season</option>
           </select>
         </div>
       </div>
@@ -104,19 +105,19 @@ const dashboardData = ref(null)
 const isLoading = ref(false)
 const error = ref(null)
 
-// UI state for filters
-const queueFilter = ref('all')
-const timeRange = ref('3m')
+  // UI state for filters
+	const queueFilter = ref('all')
+	const timeRange = ref('current_season')
 
-// Fetch dashboard data
-async function fetchDashboardData() {
+  // Fetch dashboard data
+  async function fetchDashboardData() {
   if (!authStore.userId) return
 
   isLoading.value = true
   error.value = null
 
-  try {
-    dashboardData.value = await getSoloDashboard(authStore.userId, queueFilter.value)
+    try {
+      dashboardData.value = await getSoloDashboard(authStore.userId, queueFilter.value, timeRange.value)
   } catch (err) {
     console.error('Failed to fetch solo dashboard:', err)
     error.value = err.message
@@ -133,8 +134,9 @@ onMounted(() => {
   }
 })
 
-// Fetch when queue filter changes
-watch(queueFilter, fetchDashboardData)
+  // Fetch when filters change
+  watch(queueFilter, fetchDashboardData)
+  watch(timeRange, fetchDashboardData)
 
 // Watch for sync completion to refresh data
 watch(syncProgress, (progress) => {

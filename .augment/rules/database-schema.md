@@ -1,3 +1,7 @@
+---
+type: "manual"
+---
+
 # Database Schema - LoL Improvement Tracker
 
 ## Overview

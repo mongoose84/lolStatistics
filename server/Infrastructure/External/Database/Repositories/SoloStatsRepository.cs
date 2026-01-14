@@ -1,4 +1,6 @@
+using System;
 using MySqlConnector;
+using RiotProxy.Application.Services;
 using static RiotProxy.Application.DTOs.SoloSummaryDto;
 
 namespace RiotProxy.Infrastructure.External.Database.Repositories;
@@ -15,84 +17,89 @@ public class SoloStatsRepository : RepositoryBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Get comprehensive solo dashboard data for a player.
-    /// Includes: overall stats, champion pool, performance by phase, role breakdown, death efficiency.
-    /// Supports optional queue filtering.
-    /// </summary>
-    public async Task<SoloDashboardResponse?> GetSoloDashboardAsync(string puuid, string? queueType = null)
-    {
-        // Validate queueType
-        queueType = ValidateQueueType(queueType);
-        _logger.LogInformation("GetSoloDashboardAsync start: puuid={Puuid}, queueType={Queue}", puuid, queueType);
-        
-        // Build base query with optional queue filter
-        var queueFilter = BuildQueueFilter(queueType);
-        
-        // Fetch all necessary data
-        try
-        {
-            var overallStats = await GetOverallStatsAsync(puuid, queueFilter);
-        if (overallStats == null)
-            return null;
+		/// <summary>
+		/// Get comprehensive solo dashboard data for a player.
+		/// Includes: overall stats, champion pool, performance by phase, role breakdown, death efficiency.
+		/// Supports optional queue filtering and time range filtering.
+		/// </summary>
+		public async Task<SoloDashboardResponse?> GetSoloDashboardAsync(string puuid, string? queueType = null, string? timeRange = null)
+		{
+		    // Validate queueType and time range
+		    queueType = ValidateQueueType(queueType);
+		    var (timeRangeStart, seasonCode, normalizedTimeRange) = await ResolveTimeRangeAsync(timeRange);
+		    var effectiveTimeRangeForLog = string.IsNullOrWhiteSpace(normalizedTimeRange) ? "all" : normalizedTimeRange;
+		    _logger.LogInformation("GetSoloDashboardAsync start: puuid={Puuid}, queueType={Queue}, timeRange={TimeRange}", puuid, queueType, effectiveTimeRangeForLog);
+		    
+		    // Build base query with optional queue and time/season filters
+		    var queueFilter = BuildQueueFilter(queueType);
+		    var timeFilter = BuildTimeRangeFilter(normalizedTimeRange, timeRangeStart, seasonCode);
+		    
+		        // Fetch all necessary data
+		        try
+		        {
+		            var overallStats = await GetOverallStatsAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+	            if (overallStats == null)
+	                return null;
 
-        var sideStats = await GetSideStatsAsync(puuid, queueFilter);
-        var champions = await GetChampionStatsAsync(puuid, queueFilter);
-        var roleBreakdown = await GetRoleBreakdownAsync(puuid, queueFilter);
-        var deathStats = await GetDeathEfficiencyAsync(puuid, queueFilter);
-        var matchDurations = await GetMatchDurationsAsync(puuid, queueFilter);
+		            var sideStats = await GetSideStatsAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+		            var champions = await GetChampionStatsAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+		            var mainChampionsByRole = await GetMainChampionsByRoleAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+		            var roleBreakdown = await GetRoleBreakdownAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+		            var deathStats = await GetDeathEfficiencyAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+		            var matchDurations = await GetMatchDurationsAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
 
-        var totalGames = overallStats.Value.Games;
-        
-        // Calculate main champion
-        ChampionSummary? mainChamp = null;
-        if (champions.Count > 0)
-        {
-            var topChamp = champions[0];
-            mainChamp = new ChampionSummary(
-                topChamp.ChampionId,
-                topChamp.ChampionName,
-                topChamp.Picks,
-                topChamp.WinRate,
-                totalGames > 0 ? Math.Round((double)topChamp.Picks / totalGames * 100, 1) : 0
-            );
-        }
+	            var totalGames = overallStats.Value.Games;
+	            
+	            // Calculate main champion (overall, not per role)
+	            ChampionSummary? mainChamp = null;
+	            if (champions.Count > 0)
+	            {
+	                var topChamp = champions[0];
+	                mainChamp = new ChampionSummary(
+	                    topChamp.ChampionId,
+	                    topChamp.ChampionName,
+	                    topChamp.Picks,
+	                    topChamp.WinRate,
+	                    totalGames > 0 ? Math.Round((double)topChamp.Picks / totalGames * 100, 1) : 0
+	                );
+	            }
 
-        // Calculate performance by phase (early/mid/late based on match duration)
-        var performancePhases = CalculatePerformancePhases(overallStats.Value, matchDurations);
+	            // Calculate performance by phase (early/mid/late based on match duration)
+	            var performancePhases = CalculatePerformancePhases(overallStats.Value, matchDurations);
 
-        // Prepare response
-            var last10 = await GetRecentTrendAsync(puuid, queueFilter, Math.Min(10, totalGames));
-            var last20 = await GetRecentTrendAsync(puuid, queueFilter, Math.Min(20, totalGames));
+		            // Prepare response
+			            var last10 = await GetRecentTrendAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode, Math.Min(10, totalGames));
+			            var last20 = await GetRecentTrendAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode, Math.Min(20, totalGames));
 
-            var response = new SoloDashboardResponse(
-            GamesPlayed: totalGames,
-            Wins: overallStats.Value.Wins,
-            WinRate: overallStats.Value.WinRate,
-            AvgKda: overallStats.Value.AvgKda,
-            AvgGameDurationMinutes: overallStats.Value.AvgGameDurationMinutes,
-            SideStats: sideStats,
-            UniqueChampsPlayedCount: champions.Count,
-            MainChampion: mainChamp,
-            Last10Games: last10,
-            Last20Games: last20,
-            PerformanceByPhase: performancePhases.ToArray(),
-            RoleBreakdown: roleBreakdown.ToArray(),
-            DeathEfficiency: deathStats,
-            QueueType: queueType
-        );
-            _logger.LogInformation("GetSoloDashboardAsync success: puuid={Puuid}, games={Games}", puuid, totalGames);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "GetSoloDashboardAsync error: puuid={Puuid}, queueType={Queue}", puuid, queueType);
-            throw;
-        }
+	            var response = new SoloDashboardResponse(
+	                GamesPlayed: totalGames,
+	                Wins: overallStats.Value.Wins,
+	                WinRate: overallStats.Value.WinRate,
+	                AvgKda: overallStats.Value.AvgKda,
+	                AvgGameDurationMinutes: overallStats.Value.AvgGameDurationMinutes,
+	                SideStats: sideStats,
+	                UniqueChampsPlayedCount: champions.Count,
+	                MainChampion: mainChamp,
+	                MainChampions: mainChampionsByRole.ToArray(),
+	                Last10Games: last10,
+	                Last20Games: last20,
+	                PerformanceByPhase: performancePhases.ToArray(),
+	                RoleBreakdown: roleBreakdown.ToArray(),
+		                DeathEfficiency: deathStats,
+		                QueueType: queueType
+	            );
+	            _logger.LogInformation("GetSoloDashboardAsync success: puuid={Puuid}, games={Games}", puuid, totalGames);
+	            return response;
+	        }
+	        catch (Exception ex)
+	        {
+	            _logger.LogError(ex, "GetSoloDashboardAsync error: puuid={Puuid}, queueType={Queue}", puuid, queueType);
+	            throw;
+	        }
     }
 
-    private async Task<(int Games, int Wins, double WinRate, double AvgKda, double AvgGameDurationMinutes)?> GetOverallStatsAsync(
-        string puuid, string queueFilter)
+		private async Task<(int Games, int Wins, double WinRate, double AvgKda, double AvgGameDurationMinutes)?> GetOverallStatsAsync(
+		    string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
     {
         var sql = $@"
             SELECT
@@ -100,15 +107,23 @@ public class SoloStatsRepository : RepositoryBase
                 SUM(CASE WHEN p.win = 1 THEN 1 ELSE 0 END) as Wins,
                 AVG(CASE WHEN p.deaths > 0 THEN (p.kills + p.assists) / p.deaths ELSE (p.kills + p.assists) END) as AvgKda,
                 AVG(m.game_duration_sec / 60.0) as AvgGameDurationMinutes
-            FROM participants p
-            INNER JOIN matches m ON m.match_id = p.match_id
-            WHERE p.puuid = @puuid {queueFilter}";
+	            FROM participants p
+	            INNER JOIN matches m ON m.match_id = p.match_id
+	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}";
 
-        var result = await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		        var result = await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            cmd.Parameters.AddWithValue("@puuid", puuid);
+		            if (timeRangeStart.HasValue)
+		            {
+		                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		            }
+		            if (!string.IsNullOrEmpty(seasonCode))
+		            {
+		                cmd.Parameters.AddWithValue("@season", seasonCode);
+		            }
+		        await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync() && !reader.IsDBNull(0))
             {
                 var games = reader.GetInt32(0);
@@ -125,7 +140,7 @@ public class SoloStatsRepository : RepositoryBase
         return result;
     }
 
-    private async Task<SideWinDistribution> GetSideStatsAsync(string puuid, string queueFilter)
+		    private async Task<SideWinDistribution> GetSideStatsAsync(string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
     {
         var sql = $@"
             SELECT
@@ -133,15 +148,23 @@ public class SoloStatsRepository : RepositoryBase
                 SUM(CASE WHEN p.team_id = 100 AND p.win = 1 THEN 1 ELSE 0 END) as BlueWins,
                 SUM(CASE WHEN p.team_id = 200 THEN 1 ELSE 0 END) as RedGames,
                 SUM(CASE WHEN p.team_id = 200 AND p.win = 1 THEN 1 ELSE 0 END) as RedWins
-            FROM participants p
-            INNER JOIN matches m ON m.match_id = p.match_id
-            WHERE p.puuid = @puuid {queueFilter}";
+	            FROM participants p
+	            INNER JOIN matches m ON m.match_id = p.match_id
+	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}";
 
-        return await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		        return await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            cmd.Parameters.AddWithValue("@puuid", puuid);
+		            if (timeRangeStart.HasValue)
+		            {
+		                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		            }
+		            if (!string.IsNullOrEmpty(seasonCode))
+		            {
+		                cmd.Parameters.AddWithValue("@season", seasonCode);
+		            }
+		        await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
                 var blueGames = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
@@ -165,8 +188,8 @@ public class SoloStatsRepository : RepositoryBase
         });
     }
 
-    private async Task<List<(int ChampionId, string ChampionName, int Picks, double WinRate)>> GetChampionStatsAsync(
-        string puuid, string queueFilter)
+		    private async Task<List<(int ChampionId, string ChampionName, int Picks, double WinRate)>> GetChampionStatsAsync(
+		        string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
     {
         var sql = $@"
             SELECT
@@ -174,19 +197,27 @@ public class SoloStatsRepository : RepositoryBase
                 p.champion_name,
                 COUNT(DISTINCT p.match_id) as Picks,
                 SUM(CASE WHEN p.win = 1 THEN 1 ELSE 0 END) as Wins
-            FROM participants p
-            INNER JOIN matches m ON m.match_id = p.match_id
-            WHERE p.puuid = @puuid {queueFilter}
+	            FROM participants p
+	            INNER JOIN matches m ON m.match_id = p.match_id
+	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}
             GROUP BY p.champion_id, p.champion_name
             ORDER BY Picks DESC
             LIMIT 20";
 
-        var champs = new List<(int, string, int, double)>();
-        await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		        var champs = new List<(int, string, int, double)>();
+		        await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            cmd.Parameters.AddWithValue("@puuid", puuid);
+		            if (timeRangeStart.HasValue)
+		            {
+		                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		            }
+		            if (!string.IsNullOrEmpty(seasonCode))
+		            {
+		                cmd.Parameters.AddWithValue("@season", seasonCode);
+		            }
+		            await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 var champId = reader.GetInt32(0);
@@ -201,7 +232,54 @@ public class SoloStatsRepository : RepositoryBase
         return champs;
     }
 
-    private async Task<List<RolePerformance>> GetRoleBreakdownAsync(string puuid, string queueFilter)
+			    private async Task<IReadOnlyList<MainChampionRoleGroup>> GetMainChampionsByRoleAsync(string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
+			    {
+	        var sql = $@"
+	            SELECT
+	                COALESCE(NULLIF(p.role, ''), 'UNKNOWN') as Role,
+	                p.champion_id,
+	                p.champion_name,
+	                COUNT(DISTINCT p.match_id) as Games,
+	                SUM(CASE WHEN p.win = 1 THEN 1 ELSE 0 END) as Wins
+	            FROM participants p
+	            INNER JOIN matches m ON m.match_id = p.match_id
+	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}
+	            GROUP BY Role, p.champion_id, p.champion_name";
+
+		        var rows = new List<MainChampionRecommender.ChampionRoleStats>();
+		        await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            cmd.Parameters.AddWithValue("@puuid", puuid);
+		            if (timeRangeStart.HasValue)
+		            {
+		                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		            }
+		            if (!string.IsNullOrEmpty(seasonCode))
+		            {
+		                cmd.Parameters.AddWithValue("@season", seasonCode);
+		            }
+		            await using var reader = await cmd.ExecuteReaderAsync();
+	            while (await reader.ReadAsync())
+	            {
+	                var role = reader.IsDBNull(0) ? "UNKNOWN" : reader.GetString(0);
+	                var champId = reader.GetInt32(1);
+	                var champName = reader.GetString(2);
+	                var games = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+	                var wins = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+
+	                rows.Add(new MainChampionRecommender.ChampionRoleStats(role, champId, champName, games, wins));
+	            }
+	            return 0;
+	        });
+
+	        if (rows.Count == 0)
+	            return Array.Empty<MainChampionRoleGroup>();
+
+	        return MainChampionRecommender.BuildMainChampionsByRole(rows);
+	    }
+
+		    private async Task<List<RolePerformance>> GetRoleBreakdownAsync(string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
     {
         var sql = $@"
             SELECT
@@ -209,18 +287,26 @@ public class SoloStatsRepository : RepositoryBase
                 COUNT(DISTINCT p.match_id) as Games,
                 SUM(CASE WHEN p.win = 1 THEN 1 ELSE 0 END) as Wins,
                 AVG(CASE WHEN p.deaths > 0 THEN (p.kills + p.assists) / p.deaths ELSE (p.kills + p.assists) END) as AvgKda
-            FROM participants p
-            INNER JOIN matches m ON m.match_id = p.match_id
-            WHERE p.puuid = @puuid {queueFilter}
+		            FROM participants p
+		            INNER JOIN matches m ON m.match_id = p.match_id
+		            WHERE p.puuid = @puuid {queueFilter} {timeFilter}
             GROUP BY Role
             ORDER BY Games DESC";
 
-        var roles = new List<RolePerformance>();
-        await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		    var roles = new List<RolePerformance>();
+		            await ExecuteWithConnectionAsync(async conn =>
+		            {
+		                await using var cmd = new MySqlCommand(sql, conn);
+		                cmd.Parameters.AddWithValue("@puuid", puuid);
+		                if (timeRangeStart.HasValue)
+		                {
+		                    cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		                }
+		                if (!string.IsNullOrEmpty(seasonCode))
+		                {
+		                    cmd.Parameters.AddWithValue("@season", seasonCode);
+		                }
+		            await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 var role = reader.GetString(0);
@@ -235,7 +321,7 @@ public class SoloStatsRepository : RepositoryBase
         return roles;
     }
 
-    private async Task<DeathEfficiency> GetDeathEfficiencyAsync(string puuid, string queueFilter)
+		    private async Task<DeathEfficiency> GetDeathEfficiencyAsync(string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
     {
         var sql = $@"
             SELECT
@@ -245,16 +331,24 @@ public class SoloStatsRepository : RepositoryBase
                 SUM(pm.deaths_30_plus) as Deaths30Plus,
                 AVG(pm.first_death_minute) as AvgFirstDeathMinute,
                 AVG(pm.first_kill_participation_minute) as AvgFirstKillParticipationMinute
-            FROM participants p
-            INNER JOIN participant_metrics pm ON pm.participant_id = p.id
-            INNER JOIN matches m ON m.match_id = p.match_id
-            WHERE p.puuid = @puuid {queueFilter}";
+	            FROM participants p
+	            INNER JOIN participant_metrics pm ON pm.participant_id = p.id
+	            INNER JOIN matches m ON m.match_id = p.match_id
+	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}";
 
-        return await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		        return await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            cmd.Parameters.AddWithValue("@puuid", puuid);
+		            if (timeRangeStart.HasValue)
+		            {
+		                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		            }
+		            if (!string.IsNullOrEmpty(seasonCode))
+		            {
+		                cmd.Parameters.AddWithValue("@season", seasonCode);
+		            }
+		            await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
                 var pre10 = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
@@ -277,8 +371,8 @@ public class SoloStatsRepository : RepositoryBase
         });
     }
 
-    private async Task<List<(int Minutes, int Games, int Wins, double AvgKda)>> GetMatchDurationsAsync(
-        string puuid, string queueFilter)
+		    private async Task<List<(int Minutes, int Games, int Wins, double AvgKda)>> GetMatchDurationsAsync(
+		        string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
     {
         var sql = $@"
             SELECT
@@ -286,18 +380,26 @@ public class SoloStatsRepository : RepositoryBase
                 COUNT(DISTINCT p.match_id) as Games,
                 SUM(CASE WHEN p.win = 1 THEN 1 ELSE 0 END) as Wins,
                 AVG(CASE WHEN p.deaths > 0 THEN (p.kills + p.assists) / p.deaths ELSE (p.kills + p.assists) END) as AvgKda
-            FROM participants p
-            INNER JOIN matches m ON m.match_id = p.match_id
-            WHERE p.puuid = @puuid {queueFilter}
+	            FROM participants p
+	            INNER JOIN matches m ON m.match_id = p.match_id
+	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}
             GROUP BY FLOOR(m.game_duration_sec / 60)
             ORDER BY Minutes";
 
-        var durations = new List<(int, int, int, double)>();
-        await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		    var durations = new List<(int, int, int, double)>();
+		            await ExecuteWithConnectionAsync(async conn =>
+		            {
+		                await using var cmd = new MySqlCommand(sql, conn);
+		                cmd.Parameters.AddWithValue("@puuid", puuid);
+		                if (timeRangeStart.HasValue)
+		                {
+		                    cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		                }
+		                if (!string.IsNullOrEmpty(seasonCode))
+		                {
+		                    cmd.Parameters.AddWithValue("@season", seasonCode);
+		                }
+		            await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 var minutes = reader.GetInt32(0);
@@ -311,7 +413,7 @@ public class SoloStatsRepository : RepositoryBase
         return durations;
     }
 
-    private string BuildQueueFilter(string queueType)
+	    private string BuildQueueFilter(string queueType)
     {
         return queueType switch
         {
@@ -319,11 +421,11 @@ public class SoloStatsRepository : RepositoryBase
             "ranked_flex" => "AND m.queue_id = 440",
             "normal" => "AND m.queue_id IN (430, 400)",
             "aram" => "AND m.queue_id = 450",
-            _ => ""  // all
-        };
-    }
-
-    private string ValidateQueueType(string? queueType)
+	            _ => ""  // all
+	        };
+	    }
+	
+	    private string ValidateQueueType(string? queueType)
     {
         var normalized = queueType?.ToLowerInvariant() ?? "all";
         return normalized switch
@@ -332,6 +434,98 @@ public class SoloStatsRepository : RepositoryBase
             _ => "all"
         };
     }
+
+		    private async Task<(DateTime? TimeRangeStart, string? SeasonCode, string NormalizedTimeRange)> ResolveTimeRangeAsync(string? timeRange)
+		    {
+		        if (string.IsNullOrWhiteSpace(timeRange))
+		            return (null, null, "all");
+
+		        var normalized = timeRange.Trim().ToLowerInvariant();
+
+		        if (normalized is "current_season" or "current-season")
+		        {
+		            var seasonCode = await GetCurrentSeasonCodeAsync();
+		            return (null, seasonCode, "current_season");
+		        }
+
+		        if (normalized is "last_season" or "last-season" or "previous_season" or "previous-season")
+		        {
+		            var seasonCode = await GetPreviousSeasonCodeAsync();
+		            return (null, seasonCode, "last_season");
+		        }
+
+		        var timeRangeStart = GetTimeRangeStartUtc(normalized);
+		        if (timeRangeStart.HasValue)
+		            return (timeRangeStart, null, normalized);
+
+		        // Unknown or unsupported range => treat as "all"
+		        return (null, null, "all");
+		    }
+
+		    private async Task<string?> GetCurrentSeasonCodeAsync()
+		    {
+		        const string sql = @"SELECT season_code FROM seasons WHERE end_date IS NULL ORDER BY start_date DESC LIMIT 1";
+
+		        return await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            var result = await cmd.ExecuteScalarAsync();
+		            return result == null || result == DBNull.Value ? null : Convert.ToString(result);
+		        });
+		    }
+
+		    private async Task<string?> GetPreviousSeasonCodeAsync()
+		    {
+		        const string sql = @"SELECT season_code FROM seasons WHERE end_date IS NOT NULL ORDER BY end_date DESC LIMIT 1";
+
+		        return await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            var result = await cmd.ExecuteScalarAsync();
+		            return result == null || result == DBNull.Value ? null : Convert.ToString(result);
+		        });
+		    }
+
+		    private static DateTime? GetTimeRangeStartUtc(string? timeRange)
+		    {
+		        if (string.IsNullOrWhiteSpace(timeRange))
+		            return null;
+
+		        var normalized = timeRange.Trim().ToLowerInvariant();
+		        var now = DateTime.UtcNow;
+
+		        return normalized switch
+		        {
+		            "1w" => now.AddDays(-7),
+		            "1m" => now.AddMonths(-1),
+		            "3m" => now.AddMonths(-3),
+		            "6m" => now.AddMonths(-6),
+		            _ => null
+		        };
+		    }
+		
+		    private static string BuildTimeRangeFilter(string? normalizedTimeRange, DateTime? timeRangeStart, string? seasonCode)
+		    {
+		        if (!string.IsNullOrWhiteSpace(normalizedTimeRange))
+		        {
+		            switch (normalizedTimeRange)
+		            {
+		                case "current_season":
+		                case "current-season":
+		                case "last_season":
+		                case "last-season":
+		                case "previous_season":
+		                case "previous-season":
+		                    return !string.IsNullOrEmpty(seasonCode)
+		                        ? "AND m.season_code = @season"
+		                        : string.Empty;
+		            }
+		        }
+
+		        return timeRangeStart.HasValue
+		            ? "AND m.game_start_time >= @startTime"
+		            : string.Empty;
+		    }
 
     private List<PerformancePhase> CalculatePerformancePhases(
         (int Games, int Wins, double WinRate, double AvgKda, double AvgGameDurationMinutes) overallStats,
@@ -396,7 +590,7 @@ public class SoloStatsRepository : RepositoryBase
         return phases;
     }
 
-    private async Task<TrendMetric?> GetRecentTrendAsync(string puuid, string queueFilter, int limit)
+		    private async Task<TrendMetric?> GetRecentTrendAsync(string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode, int limit)
     {
         if (limit <= 0)
             return null;
@@ -406,21 +600,29 @@ public class SoloStatsRepository : RepositoryBase
                 COUNT(*) as Games,
                 SUM(CASE WHEN r.win = 1 THEN 1 ELSE 0 END) as Wins,
                 AVG(CASE WHEN r.deaths > 0 THEN (r.kills + r.assists) / r.deaths ELSE (r.kills + r.assists) END) as AvgKda
-            FROM (
+	            FROM (
                 SELECT p.win, p.kills, p.deaths, p.assists
                 FROM participants p
                 INNER JOIN matches m ON m.match_id = p.match_id
-                WHERE p.puuid = @puuid {queueFilter}
+	                WHERE p.puuid = @puuid {queueFilter} {timeFilter}
                 ORDER BY m.game_start_time DESC
                 LIMIT @limit
             ) r";
 
-        return await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            cmd.Parameters.AddWithValue("@limit", limit);
-            await using var reader = await cmd.ExecuteReaderAsync();
+		        return await ExecuteWithConnectionAsync(async conn =>
+		        {
+		            await using var cmd = new MySqlCommand(sql, conn);
+		            cmd.Parameters.AddWithValue("@puuid", puuid);
+		            if (timeRangeStart.HasValue)
+		            {
+		                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+		            }
+		            if (!string.IsNullOrEmpty(seasonCode))
+		            {
+		                cmd.Parameters.AddWithValue("@season", seasonCode);
+		            }
+		            cmd.Parameters.AddWithValue("@limit", limit);
+		            await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
                 var games = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
