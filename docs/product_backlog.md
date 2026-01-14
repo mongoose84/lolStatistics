@@ -1556,7 +1556,7 @@ Create the Profile Header Card that replaces the button navigating to the solo d
 - [ ] No placeholder text visible (all data shown)
 - [ ] G5b2, G5b9 and G5b10 are marked as completed, moved from product_backlog.md to product_backlog_completed.md and the product_plan.md is updated with the estimates
 
----G5b2
+---
 
 ### G5b3. [Frontend] Implement Main Champion Card (role-based)
 

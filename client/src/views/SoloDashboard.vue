@@ -26,9 +26,18 @@
     </header>
 
     <div class="sections">
-      <div class="section placeholder-card">
+      <!-- Profile Header Card -->
+      <ProfileHeaderCard
+        v-if="primaryAccount"
+        :game-name="primaryAccount.gameName"
+        :tag-line="primaryAccount.tagLine"
+        :region="primaryAccount.region"
+        :profile-icon-id="primaryAccount.profileIconId"
+        :summoner-level="primaryAccount.summonerLevel"
+      />
+      <div v-else class="section placeholder-card">
         <h2>Profile Header</h2>
-        <p>Profile icon, Riot ID, level, ranks, overall winrate.</p>
+        <p>No linked Riot account found.</p>
       </div>
 
       <div class="section placeholder-card">
@@ -60,7 +69,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useAuthStore } from '../stores/authStore'
+import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
+
+const authStore = useAuthStore()
+
+// Get the primary Riot account for the profile header
+const primaryAccount = computed(() => authStore.primaryRiotAccount)
 
 // UI-only state for filters (no functionality yet)
 const queueFilter = ref('all')
