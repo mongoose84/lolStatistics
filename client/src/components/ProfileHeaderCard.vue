@@ -46,7 +46,7 @@
       <!-- Stats Row -->
       <div class="stats-row">
         <div class="stat">
-          <span class="stat-value">{{ winRateDisplay }}</span>
+	          <span :class="['stat-value', winRateColorClass]">{{ winRateDisplay }}</span>
           <span class="stat-label">Win Rate</span>
         </div>
         <div class="stat-divider"></div>
@@ -182,10 +182,25 @@ const winRateDisplay = computed(() => {
   return `${props.winRate.toFixed(1)}%`
 })
 
-const gamesPlayedDisplay = computed(() => {
-  if (props.gamesPlayed === null || props.gamesPlayed === undefined) return '--'
-  return props.gamesPlayed.toString()
-})
+	const gamesPlayedDisplay = computed(() => {
+	  if (props.gamesPlayed === null || props.gamesPlayed === undefined) return '--'
+	  return props.gamesPlayed.toString()
+	})
+
+	// Color the win rate value with a gradient from red -> green
+	// red < 47, green > 53, with intermediate warm colors in between
+	const winRateColorClass = computed(() => {
+	  const value = props.winRate
+	  if (value === null || value === undefined || Number.isNaN(value)) {
+	    return 'stat-winrate-neutral'
+	  }
+	  if (value < 47) return 'stat-winrate-red'
+	  if (value < 49) return 'stat-winrate-redorange'
+	  if (value < 51) return 'stat-winrate-orange'
+	  if (value < 52) return 'stat-winrate-yellow'
+	  if (value < 53) return 'stat-winrate-yellowgreen'
+	  return 'stat-winrate-green'
+	})
 
 function handleIconError() {
   iconError.value = true
@@ -337,9 +352,38 @@ function handleIconError() {
 
 .stat-value {
   font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
+	  font-weight: var(--font-weight-bold);
+	  color: var(--color-text);
+	}
+
+	/* Win rate coloring gradient */
+	.stat-value.stat-winrate-red {
+	  color: #ef4444; /* red */
+	}
+
+	.stat-value.stat-winrate-redorange {
+	  color: #f97316; /* red-orange */
+	}
+
+	.stat-value.stat-winrate-orange {
+	  color: #fdba74; /* orange */
+	}
+
+	.stat-value.stat-winrate-yellow {
+	  color: #eab308; /* yellow */
+	}
+
+	.stat-value.stat-winrate-yellowgreen {
+	  color: #84cc16; /* yellow-green */
+	}
+
+	.stat-value.stat-winrate-green {
+	  color: #22c55e; /* green */
+	}
+
+	.stat-value.stat-winrate-neutral {
+	  color: var(--color-text);
+	}
 
 .stat-label {
   font-size: var(--font-size-xs);

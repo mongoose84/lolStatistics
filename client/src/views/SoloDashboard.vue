@@ -178,7 +178,8 @@ watch(syncProgress, (progress) => {
 }
 .filter-group select {
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface);
+	  /* Use a solid background so the dropdown isn't see-through over the hero bg */
+	  background-color: #020617;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
