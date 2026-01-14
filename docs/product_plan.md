@@ -83,7 +83,7 @@ For full task details, see:
 | G5a | Dashboard Hub design (/app/user) | Frontend v2 | 2 | ✅ |
 | G5b0 | Solo Dashboard design | Frontend v2 | 2 | ✅ |
 | G5b1 | Create empty Solo dashboard view & routing | Frontend v2 | 1 | ✅ |
-| G5b2 | Profile header button + profile data (FE+BE, Solo dashboard) | Frontend v2 / API v2 | 5 | |
+| G5b2 | Profile header button + profile data (FE+BE, User dashboard) | Frontend v2 / API v2 | 5 | ✅ |
 | G5b3 | Main champion card + main champions data (FE+BE) | Frontend v2 / API v2 | 5 | |
 | G5b4 | Winrate Over Time chart + trend data (FE+BE) | Frontend v2 / API v2 | 5 | |
 | G5b5 | LP Over Time chart (frontend UI) | Frontend v2 | 2 | |
@@ -182,7 +182,7 @@ For full task details, see:
 
 ### Sprint 0: Platform v2 Foundation ✅ IN PROGRESS
 **Focus:** Database v2 + API v2 + Solo dashboard v2 + Auth + Account Linking + Real-time Sync
-**Points:** ~96 (73 completed, 23 remaining)
+**Points:** ~96 (79 completed, 17 remaining)
 
 - ✅ E1, E2, E3 (Database v2 schema & repositories)
 - ✅ E4, E5 (v2 ingestion: matches, participants, timeline & metrics)
@@ -194,12 +194,14 @@ For full task details, see:
 - ✅ G1, G2 (App v2 IA & shell)
 - ✅ G5a, G5b0 (Dashboard Hub & Solo Dashboard design)
 - ✅ G5b1 (Empty Solo dashboard view & routing)
+- ✅ G5b2 (Profile header card + profile data FE+BE)
 - ✅ G5b8 (Add profile_icon_id and summoner_level columns)
+- ✅ G5b9, G5b10 (Fetch & expose profile data on backend)
 - ✅ G9 (User login, signup, verification & `/app/user` shell)
 - ✅ G12 (Riot account linking UI)
 - ✅ G13 (Real-time sync progress UI)
-- ⬜ G5b2-b6 (User dashboard frontend components)
-- ⬜ G5b9-b13 (User dashboard backend endpoints)
+- ⬜ G5b3-b6 (User dashboard frontend components)
+- ⬜ G5b11-b13 (User dashboard backend endpoints)
 
 ### Sprint 1: Foundation (P0 Core)
 **Focus:** Database + Stripe + Basic AI

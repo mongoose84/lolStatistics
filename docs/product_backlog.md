@@ -51,11 +51,14 @@ The original G5 (5 points) has been split into **11 focused tasks** (35 points t
 - **G5a:** Dashboard Hub design (2 pts) ✅
 - **G5b0:** Solo Dashboard design (2 pts) ✅
 - **G5b1:** Empty Solo dashboard view & routing (1 pt) ✅
-- **G5b2–G5b7:** Dashboard components **plus their backing data** (27 pts total; profile header, main champions, winrate chart, LP chart UI, matchups table, goals panel)
+- **G5b2:** Profile header card + profile data (5 pts, FE+BE) ✅
+- **G5b3–G5b7:** Dashboard components **plus their backing data** (22 pts total; main champions, winrate chart, LP chart UI, matchups table, goals panel)
 - **G5b8:** Database support for profile data (1 pt) ✅
+- **G5b9:** Fetch and store profile data during account linking (2 pts) ✅
+- **G5b10:** Update User dashboard endpoint with profile data (1 pt) ✅
 - **G5b14:** Backend LP trend data for Solo dashboard (2 pts)
 
-Backend tasks **G5b9–G5b13** and **G5b15** are treated as backend **subtasks** of the corresponding vertical slices (G5b2–G5b7). In `docs/product_plan.md` their effort is rolled up into the main G5b2–G5b7 items; in this backlog they remain as separate subsections to spell out backend behaviour and acceptance criteria.
+Backend tasks **G5b11–G5b13** and **G5b15** are treated as backend **subtasks** of the corresponding vertical slices (G5b3–G5b7). In `docs/product_plan.md` their effort is rolled up into the main G5b3–G5b7 items; in this backlog they remain as separate subsections to spell out backend behaviour and acceptance criteria.
 
 Each vertical slice has clear acceptance criteria, enabling parallel frontend/backend work and incremental value delivery.
 
@@ -1515,49 +1518,6 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ## G5 Epic: Frontend Solo Dashboard v2
 
-### G5b2. [FE+BE] Profile header button + profile data (User dashboard)
-
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 5 points (2 FE + 3 BE; rolls up backend work from G5b9 & G5b10)
-**Depends on:** G5b1, F2 (user endpoint needs icon/level/rank data)
-**Labels:** `frontend`, `user`, `dashboard`, `component`, `epic-g`
-
-#### Description
-
-Create the Profile Header Card that replaces the button navigating to the solo dashboard. It must contain the  user's overall stats at the top of the user dashboard (/app/user): profile icon, summoner name + tag, level, solo/duo rank, flex rank, overall winrate (respects queue filter). When clicked it should navigate to the solo dasboard
-
-#### Backend Requirements
-
-- [ ] Backend subtasks **G5b9** (fetch & store profile data on account linking) and **G5b10** (expose profile data on User  dashboard endpoint) are complete.
-- [ ] User dashboard v2 endpoint (F2) must return:
-  - `profileIconId`, `summonerLevel`
-  - `rankedSoloDuoRank`, `rankedFlexRank` (or tiers/divisions)
-  - `overallWinRate`, `totalGamesPlayed`
-
-#### Frontend Requirements
-
-- [ ] ProfileHeaderCard component created
-- [ ] Shows: icon (72px circle), name#tagline, level badge, rank badges (solo/duo, flex)
-- [ ] Displays overall winrate % and total games played
-- [ ] Styled consistently with app theme (/docs/design/ui-design-guidelines.md)
-- [ ] Responsive: stacks vertically on mobile
-- [ ] Data fetched from F2 endpoint and passed via props
-- [ ] Updates when queue filter changes (re-fetches data)
-
-#### Acceptance Criteria
-
-- [ ] Component displays all required fields without errors
-- [ ] Styling matches UI design guidelines (/docs/design/ui-design-guidelines.md)
-- [ ] Icon loads correctly from Riot CDN
-- [ ] Rank badges show appropriate icons/colors
-- [ ] Component updates when queue filter changes
-- [ ] Mobile layout verified on small screens
-- [ ] No placeholder text visible (all data shown)
-- [ ] G5b2, G5b9 and G5b10 are marked as completed, moved from product_backlog.md to product_backlog_completed.md and the product_plan.md is updated with the estimates
-
----
-
 ### G5b3. [Frontend] Implement Main Champion Card (role-based)
 
 **Priority:** P0 - Critical
@@ -1774,50 +1734,6 @@ Create a Goals Panel that displays active goals (if Pro tier) or shows an upgrad
 - [ ] Panel collapses/expands correctly
 - [ ] Mobile layout verified
 - [ ] No errors when goals array is empty
-
----
-
-### G5b9. [Backend] Fetch and store profile data during account linking
-
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 2 points
-**Depends on:** None (G5b8 complete)
-**Labels:** `backend`, `riot-api`, `epic-g`
-
-#### Description
-
-Update the account linking flow to fetch summoner profile data (icon ID, level) from Riot API and store it in the `riot_accounts` table.
-
-#### Acceptance Criteria
-
-- [ ] Account linking endpoint calls `GetSummonerByPuuIdAsync` (Riot API)
-- [ ] Extracts `profileIconId` and `summonerLevel` from response
-- [ ] Stores both in `riot_accounts` table
-- [ ] If API call fails, gracefully falls back (stores NULL and logs error)
-- [ ] Profile data is updated on re-sync or account refresh
-- [ ] Unit tests verify data is stored correctly
-
----
-
-### G5b10. [Backend] Update Solo dashboard v2 endpoint to include profile data
-
-**Priority:** P0 - Critical
-**Type:** Feature
-**Estimate:** 1 point
-**Depends on:** G5b9, F2
-**Labels:** `backend`, `api`, `epic-g`
-
-#### Description
-
-Update the User dashboard endpoint to include `profileIconId` and `summonerLevel` in the response. These are pulled from the `riot_accounts` table for the user's primary account.
-
-#### Acceptance Criteria
-
-- [ ] Endpoint response includes `profileIconId` (string) and `summonerLevel` (integer)
-- [ ] Data fetched from `riot_accounts` table
-- [ ] If no primary account, returns null or empty string (no error)
-- [ ] Tested with sample data
 
 ---
 

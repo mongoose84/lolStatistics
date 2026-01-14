@@ -1,5 +1,12 @@
 <template>
-  <div class="profile-header-card">
+  <div
+    :class="['profile-header-card', { clickable }]"
+    :role="clickable ? 'button' : undefined"
+    :tabindex="clickable ? 0 : undefined"
+    @click="handleClick"
+    @keydown.enter="handleClick"
+    @keydown.space.prevent="handleClick"
+  >
     <!-- Profile Icon -->
     <div class="profile-icon-container">
       <img
@@ -20,8 +27,8 @@
     <!-- Identity & Stats -->
     <div class="profile-info">
       <div class="identity">
-        <h2 class="riot-id">{{ riotId }}</h2>
         <span class="region-badge">{{ regionLabel }}</span>
+        <h2 class="riot-id">{{ riotId }}</h2>
       </div>
 
       <!-- Rank Badges (placeholder until rank data is available) -->
@@ -75,10 +82,22 @@ const props = defineProps({
   summonerLevel: {
     type: Number,
     default: null
+  },
+  clickable: {
+    type: Boolean,
+    default: false
   }
 })
 
+const emit = defineEmits(['click'])
+
 const iconError = ref(false)
+
+function handleClick() {
+  if (props.clickable) {
+    emit('click')
+  }
+}
 
 // Data Dragon version - could be fetched dynamically in the future
 const ddVersion = '14.24.1'
@@ -125,6 +144,22 @@ function handleIconError() {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+}
+
+/* Clickable variant (button styling per ui-design-guidelines) */
+.profile-header-card.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-header-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-header-card.clickable:active {
+  transform: translateY(0);
 }
 
 .profile-icon-container {
@@ -180,8 +215,9 @@ function handleIconError() {
 
 .identity {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
 }
 
 .riot-id {
