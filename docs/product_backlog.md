@@ -51,7 +51,7 @@ The original G5 (5 points) has been split into **11 focused tasks** (35 points t
 - **G5a:** Dashboard Hub design (2 pts) ✅
 - **G5b0:** Solo Dashboard design (2 pts) ✅
 - **G5b1:** Empty Solo dashboard view & routing (1 pt) ✅
-- **G5b2–G5b7:** Solo dashboard components **plus their backing data** (27 pts total; profile header, main champions, winrate chart, LP chart UI, matchups table, goals panel)
+- **G5b2–G5b7:** Dashboard components **plus their backing data** (27 pts total; profile header, main champions, winrate chart, LP chart UI, matchups table, goals panel)
 - **G5b8:** Database support for profile data (1 pt) ✅
 - **G5b14:** Backend LP trend data for Solo dashboard (2 pts)
 
@@ -1515,22 +1515,22 @@ Create a `/pricing` view that presents the Free, Pro, and Team plans and integra
 
 ## G5 Epic: Frontend Solo Dashboard v2
 
-### G5b2. [FE+BE] Profile header + profile data (Solo dashboard)
+### G5b2. [FE+BE] Profile header button + profile data (User dashboard)
 
 **Priority:** P0 - Critical
 **Type:** Feature
 **Estimate:** 5 points (2 FE + 3 BE; rolls up backend work from G5b9 & G5b10)
-**Depends on:** G5b1, F2 (solo endpoint needs icon/level/rank data)
-**Labels:** `frontend`, `solo`, `dashboard`, `component`, `epic-g`
+**Depends on:** G5b1, F2 (user endpoint needs icon/level/rank data)
+**Labels:** `frontend`, `user`, `dashboard`, `component`, `epic-g`
 
 #### Description
 
-Create the Profile Header Card that displays user's overall stats at the top of the solo dashboard: profile icon, summoner name + tag, level, solo/duo rank, flex rank, overall winrate (respects queue filter).
+Create the Profile Header Card that replaces the button navigating to the solo dashboard. It must contain the  user's overall stats at the top of the user dashboard (/app/user): profile icon, summoner name + tag, level, solo/duo rank, flex rank, overall winrate (respects queue filter). When clicked it should navigate to the solo dasboard
 
 #### Backend Requirements
 
-- [ ] Backend subtasks **G5b9** (fetch & store profile data on account linking) and **G5b10** (expose profile data on Solo dashboard endpoint) are complete.
-- [ ] Solo dashboard v2 endpoint (F2) must return:
+- [ ] Backend subtasks **G5b9** (fetch & store profile data on account linking) and **G5b10** (expose profile data on User  dashboard endpoint) are complete.
+- [ ] User dashboard v2 endpoint (F2) must return:
   - `profileIconId`, `summonerLevel`
   - `rankedSoloDuoRank`, `rankedFlexRank` (or tiers/divisions)
   - `overallWinRate`, `totalGamesPlayed`
@@ -1540,7 +1540,7 @@ Create the Profile Header Card that displays user's overall stats at the top of 
 - [ ] ProfileHeaderCard component created
 - [ ] Shows: icon (72px circle), name#tagline, level badge, rank badges (solo/duo, flex)
 - [ ] Displays overall winrate % and total games played
-- [ ] Styled consistently with app theme (dark, purple accent)
+- [ ] Styled consistently with app theme (/docs/design/ui-design-guidelines.md)
 - [ ] Responsive: stacks vertically on mobile
 - [ ] Data fetched from F2 endpoint and passed via props
 - [ ] Updates when queue filter changes (re-fetches data)
@@ -1548,14 +1548,15 @@ Create the Profile Header Card that displays user's overall stats at the top of 
 #### Acceptance Criteria
 
 - [ ] Component displays all required fields without errors
-- [ ] Styling matches UI design guidelines
+- [ ] Styling matches UI design guidelines (/docs/design/ui-design-guidelines.md)
 - [ ] Icon loads correctly from Riot CDN
 - [ ] Rank badges show appropriate icons/colors
 - [ ] Component updates when queue filter changes
 - [ ] Mobile layout verified on small screens
 - [ ] No placeholder text visible (all data shown)
+- [ ] G5b2, G5b9 and G5b10 are marked as completed, moved from product_backlog.md to product_backlog_completed.md and the product_plan.md is updated with the estimates
 
----
+---G5b2
 
 ### G5b3. [Frontend] Implement Main Champion Card (role-based)
 
@@ -1809,7 +1810,7 @@ Update the account linking flow to fetch summoner profile data (icon ID, level) 
 
 #### Description
 
-Update the F2 Solo dashboard v2 endpoint to include `profileIconId` and `summonerLevel` in the response. These are pulled from the `riot_accounts` table for the user's primary account.
+Update the User dashboard endpoint to include `profileIconId` and `summonerLevel` in the response. These are pulled from the `riot_accounts` table for the user's primary account.
 
 #### Acceptance Criteria
 
