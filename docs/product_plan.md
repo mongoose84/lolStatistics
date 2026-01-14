@@ -89,11 +89,12 @@ For full task details, see:
 | G5b5 | LP Over Time chart (frontend UI) | Frontend v2 | 2 | |
 | G5b6 | Champion matchups table + v2 endpoint (FE+BE) | Frontend v2 / API v2 | 6 | |
 | G5b8 | Add profile_icon_id and summoner_level to riot_accounts | Database v2 | 1 | ✅ |
+| G5b16 | Update database on login (FE+BE) | Frontend v2 / API v2 | 2 | |
 | G9 | Implement user login, signup, verification & `/app/user` shell | Frontend v2 | 5 | ✅ |
 | G12 | Implement Riot account linking on `/app/user` | Frontend v2 | 5 | ✅ |
 | G13 | Implement real-time match sync progress via WebSocket | Frontend v2 | 5 | ✅ |
 
-**P0 Remaining:** 61 points | **P0 Completed:** 73 points | **P0 Total:** 134 points
+**P0 Remaining:** 63 points | **P0 Completed:** 73 points | **P0 Total:** 136 points
 
 ### P1 - High
 
@@ -182,7 +183,7 @@ For full task details, see:
 
 ### Sprint 0: Platform v2 Foundation ✅ IN PROGRESS
 **Focus:** Database v2 + API v2 + Solo dashboard v2 + Auth + Account Linking + Real-time Sync
-**Points:** ~96 (79 completed, 17 remaining)
+**Points:** ~98 (79 completed, 19 remaining)
 
 - ✅ E1, E2, E3 (Database v2 schema & repositories)
 - ✅ E4, E5 (v2 ingestion: matches, participants, timeline & metrics)
@@ -202,6 +203,7 @@ For full task details, see:
 - ✅ G13 (Real-time sync progress UI)
 - ⬜ G5b3-b6 (User dashboard frontend components)
 - ⬜ G5b11-b13 (User dashboard backend endpoints)
+- ⬜ G5b16 (Update database on login)
 
 ### Sprint 1: Foundation (P0 Core)
 **Focus:** Database + Stripe + Basic AI

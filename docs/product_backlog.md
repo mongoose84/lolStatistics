@@ -1137,24 +1137,26 @@ Framework for A/B testing features and pricing.
 
 ---
 
-### D9. [Frontend] Show login activity heatmap on user page
+### D9. [Frontend] Show match activity heatmap on user page
 
-**Priority:** P2 - Medium  
-**Type:** Feature  
-**Estimate:** 3 points  
-**Depends on:** D1, D2, G9  
+**Priority:** P2 - Medium
+**Type:** Feature
+**Estimate:** 3 points
+**Depends on:** G9, E4
 **Labels:** `frontend`, `analytics`, `epic-d`
 
 #### Description
 
-Give users a GitHub-style contribution view of how often they log in over time.
+Give users a GitHub-style contribution view of how many matches they played over time. The heatmap color intensity increases with the number of games played on each day.
 
 #### Acceptance Criteria
 
-- [ ] Use existing `user_logged_in` tracking (or add it) to store daily login counts per user  
-- [ ] Implement a heatmap component that renders a 12-month day-by-day matrix similar to GitHub's contribution graph  
-- [ ] Surface the heatmap on the user account page (Epic G9)  
-- [ ] Provide basic tooltips (date + number of logins) and a legend for intensity levels
+- [ ] Query daily match counts per user from the `matches` table (using match timestamps)
+- [ ] Implement a heatmap component that renders a 12-month day-by-day matrix similar to GitHub's contribution graph
+- [ ] Color intensity scales with number of matches played (e.g., 0 = empty, 1-2 = light, 3-5 = medium, 6+ = intense)
+- [ ] Surface the heatmap on the user account page (Epic G9)
+- [ ] Provide tooltips showing date and number of matches played
+- [ ] Include a legend explaining the intensity levels
 
 ---
 
@@ -1941,6 +1943,35 @@ Update Solo dashboard endpoint (F2) to include `activeGoals` array if user is Pr
 - [ ] Progress calculated as percentage toward target
 - [ ] Estimated completion date calculated from trend
 - [ ] Tested with sample data and tier scenarios
+
+---
+
+### G5b16. [FE+BE] Update database on login
+
+**Priority:** P0 - Critical
+**Type:** Feature
+**Estiate:** 2 points
+**Depends on:** G5b1, F2 (user endpoint needs icon/level/rank data)
+**Labels:** `frontend`, `user`, `dashboard`, `component`, `epic-g`
+
+#### Description
+
+When the user logs in, we should fetch the newest data from RiotApi, and check if there are new matches. If so, it should add the new matches to the database. It should also check the riot account and set the current profileIconId, summonerLevel, rankedSoloRank, rankedFlexRank. 
+
+#### Backend Requirements
+
+- [ ] Backend subtasks F14, G13 completed
+- [ ] Let frontend know if there is new data so that it can query the new data. This could be done through the websocket
+- [ ] Gracefully handle errors when getting data from the riot api.
+
+#### Frontend Requirements
+
+- [ ] When notified, fetch the new profileIconId, summonerLevel, rankedSoloRank, rankedFlexRank, matches, wins, and recalculate winrate
+
+#### Acceptance Criteria
+
+- [ ] Component displays all required fields without errors
+
 
 ---
 
