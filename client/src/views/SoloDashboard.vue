@@ -66,22 +66,29 @@
 	  	    </div>
 	  	  </div>
 	  	</div>
-	
-	  	<div class="section placeholder-card">
-	  	  <h2>Winrate Over Time</h2>
-	  	  <p>Rolling average line chart (shared component).</p>
+
+	  	<!-- Second row: Stats charts + Champion Matchups -->
+	  	<div class="top-row">
+	  	  <div class="top-row-item">
+	  	    <div class="stacked-cards">
+	  	      <div class="section placeholder-card">
+	  	        <h2>Winrate Over Time</h2>
+	  	        <p>Rolling average line chart (shared component).</p>
+	  	      </div>
+	  	      <div class="section placeholder-card">
+	  	        <h2>LP Over Time</h2>
+	  	        <p>Per-game LP changes with rank annotations (ranked only).</p>
+	  	      </div>
+	  	    </div>
+	  	  </div>
+	  	  <div class="top-row-item">
+	  	    <div class="section placeholder-card matchups-card">
+	  	      <h2>Champion Matchups</h2>
+	  	      <p>Top 5 champions with expandable opponent details.</p>
+	  	    </div>
+	  	  </div>
 	  	</div>
-	
-	  	<div class="section placeholder-card">
-	  	  <h2>LP Over Time</h2>
-	  	  <p>Per-game LP changes with rank annotations (ranked only).</p>
-	  	</div>
-	
-	  	<div class="section placeholder-card">
-	  	  <h2>Champion Matchups</h2>
-	  	  <p>Top 5 champions with expandable opponent details.</p>
-	  	</div>
-	
+
 	  	<div class="section placeholder-card">
 	  	  <h2>Goals Panel</h2>
 	  	  <p>Active goals and progress (upgrade CTA for Free).</p>
@@ -277,11 +284,28 @@ watch(syncProgress, (progress) => {
 	  min-width: 0;
 	}
 
+	.stacked-cards {
+	  display: flex;
+	  flex-direction: column;
+	  gap: var(--spacing-lg);
+	  height: 100%;
+	}
+
+	.stacked-cards .placeholder-card {
+	  flex: 1;
+	}
+
+	.matchups-card {
+	  height: 100%;
+	  box-sizing: border-box;
+	}
+
 	@media (max-width: 1024px) {
 	  .top-row {
 	    grid-template-columns: 1fr;
 	  }
-}
+	}
+
 .placeholder-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
