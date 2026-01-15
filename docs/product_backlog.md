@@ -1060,11 +1060,10 @@ Give users a GitHub-style contribution view of how many matches they played over
 #### Acceptance Criteria
 
 - [ ] Query daily match counts per user from the `matches` table (using match timestamps)
-- [ ] Implement a heatmap component that renders a 12-month day-by-day matrix similar to GitHub's contribution graph
+- [ ] Implement a heatmap component that renders a 3-month day-by-day matrix similar to GitHub's contribution graph
 - [ ] Color intensity scales with number of matches played (e.g., 0 = empty, 1-2 = light, 3-5 = medium, 6+ = intense)
 - [ ] Surface the heatmap on the user account page (Epic G9)
 - [ ] Provide tooltips showing date and number of matches played
-- [ ] Include a legend explaining the intensity levels
 
 ---
 
@@ -1827,7 +1826,7 @@ Introduce a first-pass friends/social area in the app UI that defines the layout
 | D5 | Create key dashboards | Analytics | 2 |
 | D6 | Create internal metrics endpoint | Analytics | 2 |
 | D7 | Set up error tracking | Analytics | 2 |
-| D9 | Show login activity heatmap on user page | Analytics | 3 |
+| D9 | Show match activity heatmap on user page | Analytics | 3 |
 | D10 | Implement cookie consent & preferences | Analytics | 2 |
 | F10 | Audit async methods for CancellationToken usage | API | 3 |
 | G8 | Remove legacy dashboard views & routes | Frontend | 1 |
