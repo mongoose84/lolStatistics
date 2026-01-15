@@ -210,12 +210,16 @@ function handleIconError() {
 <style scoped>
 .profile-header-card {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* Clickable variant (button styling per ui-design-guidelines) */
@@ -279,16 +283,17 @@ function handleIconError() {
 }
 
 .profile-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  align-items: center;
+  gap: var(--spacing-md);
+  text-align: center;
 }
 
 .identity {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-xs);
 }
 
@@ -312,6 +317,7 @@ function handleIconError() {
 
 .rank-badges {
   display: flex;
+  justify-content: center;
   gap: var(--spacing-sm);
 }
 
@@ -340,9 +346,10 @@ function handleIconError() {
 
 .stats-row {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-xs);
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
 }
 
 .stat {
