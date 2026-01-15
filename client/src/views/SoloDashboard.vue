@@ -1,7 +1,7 @@
 <template>
   <section class="solo-dashboard">
     <header class="dashboard-header">
-      <h1>Solo Dashboard</h1>
+      <h1></h1><!-- Empty header so that the togle bar is centralized -->
 
       <!-- Queue Toggle Bar -->
       <div class="queue-toggle" role="group" aria-label="Filter by queue type">
@@ -19,14 +19,13 @@
 
       <!-- Time Range Filter -->
       <div class="filter-group">
-        <label for="time-range-filter">Time Range</label>
         <select id="time-range-filter" v-model="timeRange" aria-label="Filter matches by time range">
-          <option value="all">All Time</option>
+          <option value="current_season">Current Season</option>
           <option value="1w">Last Week</option>
           <option value="1m">Last Month</option>
           <option value="3m">Last 3 Months</option>
           <option value="6m">Last 6 Months</option>
-          <option value="current_season">Current Season</option>
+          <option value="all">All Time</option>
         </select>
       </div>
     </header>

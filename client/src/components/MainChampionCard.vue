@@ -22,7 +22,7 @@
     </header>
 
     <div v-if="hasData" class="content">
-      <Transition name="fade-slide">
+      <Transition name="fade-slide" mode="out-in">
         <div
           v-if="selectedRole"
           :key="selectedRole"
