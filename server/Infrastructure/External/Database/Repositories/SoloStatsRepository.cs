@@ -29,11 +29,15 @@ public class SoloStatsRepository : RepositoryBase
 		    var (timeRangeStart, seasonCode, normalizedTimeRange) = await ResolveTimeRangeAsync(timeRange);
 		    var effectiveTimeRangeForLog = string.IsNullOrWhiteSpace(normalizedTimeRange) ? "all" : normalizedTimeRange;
 		    _logger.LogInformation("GetSoloDashboardAsync start: puuid={Puuid}, queueType={Queue}, timeRange={TimeRange}", puuid, queueType, effectiveTimeRangeForLog);
-		    
+
+		    // Debug: Log total participant count for this puuid (no filters)
+		    var totalParticipantCount = await GetTotalParticipantCountAsync(puuid);
+		    _logger.LogInformation("GetSoloDashboardAsync debug: puuid={Puuid}, totalParticipantRecords={Count} (no filters)", puuid, totalParticipantCount);
+
 		    // Build base query with optional queue and time/season filters
 		    var queueFilter = BuildQueueFilter(queueType);
 		    var timeFilter = BuildTimeRangeFilter(normalizedTimeRange, timeRangeStart, seasonCode);
-		    
+
 		        // Fetch all necessary data
 		        try
 		        {
@@ -110,6 +114,9 @@ public class SoloStatsRepository : RepositoryBase
 	            FROM participants p
 	            INNER JOIN matches m ON m.match_id = p.match_id
 	            WHERE p.puuid = @puuid {queueFilter} {timeFilter}";
+
+        _logger.LogDebug("GetOverallStatsAsync SQL: {Sql} | puuid={Puuid}, queueFilter={QueueFilter}, timeFilter={TimeFilter}, seasonCode={SeasonCode}",
+            sql, puuid, queueFilter, timeFilter, seasonCode);
 
 		        var result = await ExecuteWithConnectionAsync(async conn =>
 		        {
@@ -647,6 +654,22 @@ public class SoloStatsRepository : RepositoryBase
                 );
             }
             return null;
+        });
+    }
+
+    /// <summary>
+    /// Diagnostic helper: Get total participant count for a puuid with no filters.
+    /// This helps debug whether matches are being synced correctly across accounts.
+    /// </summary>
+    private async Task<int> GetTotalParticipantCountAsync(string puuid)
+    {
+        const string sql = "SELECT COUNT(*) FROM participants WHERE puuid = @puuid";
+        return await ExecuteWithConnectionAsync(async conn =>
+        {
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuid);
+            var result = await cmd.ExecuteScalarAsync();
+            return Convert.ToInt32(result);
         });
     }
 }
