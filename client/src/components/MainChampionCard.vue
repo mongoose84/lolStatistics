@@ -52,7 +52,7 @@
             </div>
             <div class="champion-stats">
               <div class="stat">
-                <span class="stat-value">{{ formatWinRate(champion.winRate) }}</span>
+                <span :class="['stat-value', getWinRateColorClass(champion.winRate)]">{{ formatWinRate(champion.winRate) }}</span>
                 <span class="stat-label">Win Rate</span>
               </div>
               <div class="stat">
@@ -77,6 +77,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { getWinRateColorClass } from '../composables/useWinRateColor'
 
 const props = defineProps({
   mainChampions: {
@@ -347,6 +348,29 @@ function formatLpPerGame(value) {
 .stat-value {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+/* Win rate coloring gradient */
+.stat-value.winrate-red {
+  color: #ef4444;
+}
+.stat-value.winrate-redorange {
+  color: #f97316;
+}
+.stat-value.winrate-orange {
+  color: #fdba74;
+}
+.stat-value.winrate-yellow {
+  color: #eab308;
+}
+.stat-value.winrate-yellowgreen {
+  color: #84cc16;
+}
+.stat-value.winrate-green {
+  color: #22c55e;
+}
+.stat-value.winrate-neutral {
   color: var(--color-text);
 }
 
