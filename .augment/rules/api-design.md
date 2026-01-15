@@ -1,3 +1,7 @@
+---
+type: "manual"
+---
+
 # API Design - Pulse (pulse.gg)
 
 **Status:** Production

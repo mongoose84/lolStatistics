@@ -20,59 +20,69 @@
             <option value="1m">Last Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
+            <option value="current_season">Current Season</option>
           </select>
         </div>
       </div>
     </header>
 
-    <div class="sections">
-      <!-- Profile Header Card -->
-      <ProfileHeaderCard
-        v-if="primaryAccount"
-        :game-name="primaryAccount.gameName"
-        :tag-line="primaryAccount.tagLine"
-        :region="primaryAccount.region"
-        :profile-icon-id="primaryAccount.profileIconId"
-        :summoner-level="primaryAccount.summonerLevel"
-        :solo-tier="primaryAccount.soloTier"
-        :solo-rank="primaryAccount.soloRank"
-        :solo-lp="primaryAccount.soloLp"
-        :flex-tier="primaryAccount.flexTier"
-        :flex-rank="primaryAccount.flexRank"
-        :flex-lp="primaryAccount.flexLp"
-        :win-rate="dashboardData?.winRate"
-        :games-played="dashboardData?.gamesPlayed"
-      />
-      <div v-else class="section placeholder-card">
-        <h2>Profile Header</h2>
-        <p>No linked Riot account found.</p>
-      </div>
-
-      <div class="section placeholder-card">
-        <h2>Main Champion Card</h2>
-        <p>Role tabs with top 3 champions per role.</p>
-      </div>
-
-      <div class="section placeholder-card">
-        <h2>Winrate Over Time</h2>
-        <p>Rolling average line chart (shared component).</p>
-      </div>
-
-      <div class="section placeholder-card">
-        <h2>LP Over Time</h2>
-        <p>Per-game LP changes with rank annotations (ranked only).</p>
-      </div>
-
-      <div class="section placeholder-card">
-        <h2>Champion Matchups</h2>
-        <p>Top 5 champions with expandable opponent details.</p>
-      </div>
-
-      <div class="section placeholder-card">
-        <h2>Goals Panel</h2>
-        <p>Active goals and progress (upgrade CTA for Free).</p>
-      </div>
-    </div>
+	<div class="sections">
+	  	<div class="top-row">
+	  	  <div class="top-row-item">
+	  	    <!-- Profile Header Card -->
+	  	    <ProfileHeaderCard
+	  	      v-if="primaryAccount"
+	  	      :game-name="primaryAccount.gameName"
+	  	      :tag-line="primaryAccount.tagLine"
+	  	      :region="primaryAccount.region"
+	  	      :profile-icon-id="primaryAccount.profileIconId"
+	  	      :summoner-level="primaryAccount.summonerLevel"
+	  	      :solo-tier="primaryAccount.soloTier"
+	  	      :solo-rank="primaryAccount.soloRank"
+	  	      :solo-lp="primaryAccount.soloLp"
+	  	      :flex-tier="primaryAccount.flexTier"
+	  	      :flex-rank="primaryAccount.flexRank"
+	  	      :flex-lp="primaryAccount.flexLp"
+	  	      :win-rate="dashboardData?.winRate"
+	  	      :games-played="dashboardData?.gamesPlayed"
+	  	    />
+	  	    <div v-else class="section placeholder-card">
+	  	      <h2>Profile Header</h2>
+	  	      <p>No linked Riot account found.</p>
+	  	    </div>
+	  	  </div>
+	  	  <div class="top-row-item">
+	  	    <MainChampionCard
+	  	      v-if="dashboardData?.mainChampions && dashboardData.mainChampions.length"
+	  	      :main-champions="dashboardData.mainChampions"
+	  	    />
+	  	    <div v-else class="section placeholder-card">
+	  	      <h2>Main Champions</h2>
+	  	      <p>No champion data yet for this filter.</p>
+	  	    </div>
+	  	  </div>
+	  	</div>
+	
+	  	<div class="section placeholder-card">
+	  	  <h2>Winrate Over Time</h2>
+	  	  <p>Rolling average line chart (shared component).</p>
+	  	</div>
+	
+	  	<div class="section placeholder-card">
+	  	  <h2>LP Over Time</h2>
+	  	  <p>Per-game LP changes with rank annotations (ranked only).</p>
+	  	</div>
+	
+	  	<div class="section placeholder-card">
+	  	  <h2>Champion Matchups</h2>
+	  	  <p>Top 5 champions with expandable opponent details.</p>
+	  	</div>
+	
+	  	<div class="section placeholder-card">
+	  	  <h2>Goals Panel</h2>
+	  	  <p>Active goals and progress (upgrade CTA for Free).</p>
+	  	</div>
+	  </div>
   </section>
 </template>
 
@@ -82,6 +92,7 @@ import { useAuthStore } from '../stores/authStore'
 import { getSoloDashboard } from '../services/authApi'
 import { useSyncWebSocket } from '../composables/useSyncWebSocket'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
+import MainChampionCard from '../components/MainChampionCard.vue'
 
 const authStore = useAuthStore()
 const { syncProgress, subscribe, resetProgress } = useSyncWebSocket()
@@ -94,19 +105,19 @@ const dashboardData = ref(null)
 const isLoading = ref(false)
 const error = ref(null)
 
-// UI state for filters
-const queueFilter = ref('all')
-const timeRange = ref('3m')
+  // UI state for filters
+	const queueFilter = ref('all')
+	const timeRange = ref('current_season')
 
-// Fetch dashboard data
-async function fetchDashboardData() {
+  // Fetch dashboard data
+  async function fetchDashboardData() {
   if (!authStore.userId) return
 
   isLoading.value = true
   error.value = null
 
-  try {
-    dashboardData.value = await getSoloDashboard(authStore.userId, queueFilter.value)
+    try {
+      dashboardData.value = await getSoloDashboard(authStore.userId, queueFilter.value, timeRange.value)
   } catch (err) {
     console.error('Failed to fetch solo dashboard:', err)
     error.value = err.message
@@ -123,8 +134,9 @@ onMounted(() => {
   }
 })
 
-// Fetch when queue filter changes
-watch(queueFilter, fetchDashboardData)
+  // Fetch when filters change
+  watch(queueFilter, fetchDashboardData)
+  watch(timeRange, fetchDashboardData)
 
 // Watch for sync completion to refresh data
 watch(syncProgress, (progress) => {
@@ -168,7 +180,8 @@ watch(syncProgress, (progress) => {
 }
 .filter-group select {
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface);
+	  /* Use a solid background so the dropdown isn't see-through over the hero bg */
+	  background-color: #020617;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
@@ -185,9 +198,26 @@ watch(syncProgress, (progress) => {
   box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
 }
 .sections {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--spacing-lg);
+	  display: flex;
+	  flex-direction: column;
+	  gap: var(--spacing-lg);
+	}
+
+	.top-row {
+	  display: grid;
+	  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+	  gap: var(--spacing-lg);
+	  align-items: stretch;
+	}
+
+	.top-row-item {
+	  min-width: 0;
+	}
+
+	@media (max-width: 1024px) {
+	  .top-row {
+	    grid-template-columns: 1fr;
+	  }
 }
 .placeholder-card {
   border: 1px solid var(--color-border);

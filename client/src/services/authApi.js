@@ -228,12 +228,16 @@ export async function getRiotAccountSyncStatus(puuid) {
  * Get solo dashboard data for a user
  * @param {number} userId - User ID
  * @param {string} queueType - Optional queue filter (all, ranked_solo, ranked_flex, normal, aram)
+ * @param {string} [timeRange] - Optional time range (1w, 1m, 3m, 6m, current_season, last_season)
  * @returns {Promise<Object>} Solo dashboard data
  */
-export async function getSoloDashboard(userId, queueType = 'all') {
+export async function getSoloDashboard(userId, queueType = 'all', timeRange) {
   const params = new URLSearchParams()
   if (queueType && queueType !== 'all') {
     params.append('queueType', queueType)
+  }
+  if (timeRange) {
+    params.append('timeRange', timeRange)
   }
 
   const url = `${API_BASE}/solo/dashboard/${userId}${params.toString() ? '?' + params.toString() : ''}`
