@@ -504,7 +504,7 @@ public class SoloStatsRepository : RepositoryBase
 		        };
 		    }
 		
-		    private static string BuildTimeRangeFilter(string? normalizedTimeRange, DateTime? timeRangeStart, string? seasonCode)
+		    private string BuildTimeRangeFilter(string? normalizedTimeRange, DateTime? timeRangeStart, string? seasonCode)
 		    {
 		        if (!string.IsNullOrWhiteSpace(normalizedTimeRange))
 		        {
@@ -516,9 +516,16 @@ public class SoloStatsRepository : RepositoryBase
 		                case "last-season":
 		                case "previous_season":
 		                case "previous-season":
-		                    return !string.IsNullOrEmpty(seasonCode)
-		                        ? "AND m.season_code = @season"
-		                        : string.Empty;
+		                    if (!string.IsNullOrEmpty(seasonCode))
+		                    {
+		                        return "AND m.season_code = @season";
+		                    }
+		                    // Season requested but seasons table not populated - return impossible filter
+		                    // to avoid silently returning "all time" data when seasonal data was expected
+		                    _logger.LogWarning(
+		                        "Seasonal time range '{TimeRange}' requested but no season data found. Returning empty result set.",
+		                        normalizedTimeRange);
+		                    return "AND 1=0"; // No matches - explicit empty result
 		            }
 		        }
 

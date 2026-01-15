@@ -1,3 +1,6 @@
+---
+type: "always_apply"
+---
 
 # Augment Instructions for lol-app
 
@@ -185,10 +188,10 @@ lol/
 - Main server logic: `server/Program.cs`, `server/Application/`, `server/Application/Endpoints/`, `server/RiotProxy.Tests/`
 - Main client logic: `client/src/`, `client/src/services/`, `client/src/composables/`
 - Riot API Documentation: https://developer.riotgames.com/
-- API Design: [docs/architecture/api_design.md]
-- Database schema: [docs/architecture/database_schema.md], [server/schema.sql]
+- API Design: [.augment/api-design.md]
+- Database schema: [.augment/database-schema.md], [server/schema.sql]
 - Information architecture: [docs/architecture/information_architecture.md]
-- UI design guidelines: [docs/design/ui-design-guidelines.md]
+- UI design guidelines: [.augment/ui-design-guidelines.md]
 
 For new patterns or changes, update this file to keep AI agents productive and aligned with project conventions.
 

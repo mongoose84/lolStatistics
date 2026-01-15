@@ -7,7 +7,7 @@ namespace RiotProxy.Application.Endpoints.Solo;
 	/// Solo Dashboard Endpoint
 	/// Returns comprehensive solo player statistics optimized for dashboard rendering.
 	/// Supports optional queue filtering (ranked_solo, ranked_flex, normal, aram, all)
-	/// and optional time range filtering (1w, 1m, 3m, 6m).
+	/// and optional time range filtering (current_season, last_season, 1w, 1m, 3m, 6m).
 	/// </summary>
 public sealed class SoloDashboardEndpoint : IEndpoint
 {
