@@ -34,7 +34,7 @@ public static class SoloSummaryDto
         
         // Death efficiency
         [property: JsonPropertyName("deathEfficiency")] DeathEfficiency DeathEfficiency,
-        
+
         // Queue type
         [property: JsonPropertyName("queueType")] string QueueType
     );
@@ -105,5 +105,15 @@ public static class SoloSummaryDto
         [property: JsonPropertyName("deaths30Plus")] int Deaths30Plus,
         [property: JsonPropertyName("avgFirstDeathMinute")] double? AvgFirstDeathMinute,
         [property: JsonPropertyName("avgFirstKillParticipationMinute")] double? AvgFirstKillParticipationMinute
+    );
+
+    /// <summary>
+    /// A single data point for the winrate trend chart.
+    /// Represents the rolling average winrate at a specific game in the timeline.
+    /// </summary>
+    public record WinrateTrendPoint(
+        [property: JsonPropertyName("gameIndex")] int GameIndex,
+        [property: JsonPropertyName("winRate")] double WinRate,
+        [property: JsonPropertyName("timestamp")] DateTime Timestamp
     );
 }

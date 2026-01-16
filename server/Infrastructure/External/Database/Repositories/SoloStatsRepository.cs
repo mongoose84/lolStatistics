@@ -654,6 +654,118 @@ public class SoloStatsRepository : RepositoryBase
     }
 
     /// <summary>
+    /// Get winrate trend data as a rolling 20-game average for chart display.
+    /// Public method that accepts raw query parameters.
+    /// Returns an array of data points with gameIndex, winRate, and timestamp.
+    /// Maximum 100 data points with downsampling for larger datasets.
+    /// </summary>
+    public async Task<WinrateTrendPoint[]> GetWinrateTrendAsync(string puuid, string? queueType = null, string? timeRange = null)
+    {
+        // Validate and process filters (same as GetSoloDashboardAsync)
+        queueType = ValidateQueueType(queueType);
+        var (timeRangeStart, seasonCode, normalizedTimeRange) = await ResolveTimeRangeAsync(timeRange);
+        var queueFilter = BuildQueueFilter(queueType);
+        var timeFilter = BuildTimeRangeFilter(normalizedTimeRange, timeRangeStart, seasonCode);
+
+        return await GetWinrateTrendInternalAsync(puuid, queueFilter, timeFilter, timeRangeStart, seasonCode);
+    }
+
+    /// <summary>
+    /// Internal method for winrate trend calculation with pre-processed filters.
+    /// </summary>
+    private async Task<WinrateTrendPoint[]> GetWinrateTrendInternalAsync(
+        string puuid, string queueFilter, string timeFilter, DateTime? timeRangeStart, string? seasonCode)
+    {
+        // Fetch all games in chronological order (oldest first)
+        var sql = $@"
+            SELECT
+                p.win,
+                m.game_start_time
+            FROM participants p
+            INNER JOIN matches m ON m.match_id = p.match_id
+            WHERE p.puuid = @puuid {queueFilter} {timeFilter}
+            ORDER BY m.game_start_time ASC";
+
+        var games = new List<(bool Win, long Timestamp)>();
+
+        await ExecuteWithConnectionAsync(async conn =>
+        {
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuid);
+            if (timeRangeStart.HasValue)
+            {
+                cmd.Parameters.AddWithValue("@startTime", new DateTimeOffset(timeRangeStart.Value).ToUnixTimeMilliseconds());
+            }
+            if (!string.IsNullOrEmpty(seasonCode))
+            {
+                cmd.Parameters.AddWithValue("@season", seasonCode);
+            }
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var win = reader.GetInt32(0) == 1;
+                var timestamp = reader.GetInt64(1);
+                games.Add((win, timestamp));
+            }
+            return 0;
+        });
+
+        if (games.Count == 0)
+            return Array.Empty<WinrateTrendPoint>();
+
+        // Calculate rolling 20-game average for each game
+        const int windowSize = 20;
+        var trendPoints = new List<WinrateTrendPoint>();
+
+        for (int i = 0; i < games.Count; i++)
+        {
+            // Calculate rolling average using last 'windowSize' games (or fewer for early games)
+            var windowStart = Math.Max(0, i - windowSize + 1);
+            var windowGames = games.Skip(windowStart).Take(i - windowStart + 1).ToList();
+
+            var wins = windowGames.Count(g => g.Win);
+            var total = windowGames.Count;
+            var winRate = total > 0 ? Math.Round((double)wins / total * 100, 1) : 0;
+
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(games[i].Timestamp).UtcDateTime;
+
+            trendPoints.Add(new WinrateTrendPoint(
+                GameIndex: i + 1,
+                WinRate: winRate,
+                Timestamp: timestamp
+            ));
+        }
+
+        // Downsample if more than 100 data points
+        const int maxDataPoints = 100;
+        if (trendPoints.Count > maxDataPoints)
+        {
+            var step = (double)trendPoints.Count / maxDataPoints;
+            var downsampled = new List<WinrateTrendPoint>();
+
+            for (int i = 0; i < maxDataPoints; i++)
+            {
+                var index = (int)(i * step);
+                if (index < trendPoints.Count)
+                {
+                    downsampled.Add(trendPoints[index]);
+                }
+            }
+
+            // Always include the last data point
+            if (downsampled.Count > 0 && downsampled[^1].GameIndex != trendPoints[^1].GameIndex)
+            {
+                downsampled[^1] = trendPoints[^1];
+            }
+
+            return downsampled.ToArray();
+        }
+
+        return trendPoints.ToArray();
+    }
+
+    /// <summary>
     /// Get daily match counts for the past 6 months for heatmap display.
     /// Returns a dictionary keyed by date (YYYY-MM-DD) with match count values.
     /// </summary>

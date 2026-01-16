@@ -2,6 +2,7 @@ using RiotProxy.Application.Endpoints;
 using RiotProxy.Application.Endpoints.Auth;
 using RiotProxy.Application.Endpoints.Diagnostics;
 using RiotProxy.Application.Endpoints.Solo;
+using RiotProxy.Application.Endpoints.Trends;
 
 namespace RiotProxy.Application
 {
@@ -51,6 +52,10 @@ namespace RiotProxy.Application
             // Match Activity Heatmap (auth required)
             var matchActivityEndpoint = new MatchActivityEndpoint(basePath);
             _endpoints.Add(matchActivityEndpoint);
+
+            // Trends endpoints (shared, auth required)
+            var winrateTrendEndpoint = new WinrateTrendEndpoint(basePath);
+            _endpoints.Add(winrateTrendEndpoint);
         }
 
         public void ConfigureEndpoints()
