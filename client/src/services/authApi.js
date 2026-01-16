@@ -332,3 +332,45 @@ export async function getWinrateTrend(userId, queueType = 'all', timeRange) {
 
   return data
 }
+
+// ============ Champion Matchups API ============
+
+/**
+ * Get champion matchups data for a user
+ * Returns top 5 champions with opponent matchup details
+ * @param {number} userId - User ID
+ * @param {string} [queueType] - Optional queue filter (all, ranked_solo, ranked_flex, normal, aram)
+ * @param {string} [timeRange] - Optional time range (1w, 1m, 3m, 6m, current_season, last_season)
+ * @returns {Promise<Object>} Champion matchups data with matchups array
+ */
+export async function getChampionMatchups(userId, queueType = 'all', timeRange) {
+  const params = new URLSearchParams()
+  if (queueType && queueType !== 'all') {
+    params.append('queueType', queueType)
+  }
+  if (timeRange) {
+    params.append('timeRange', timeRange)
+  }
+
+  const url = `${API_BASE}/solo/matchups/${userId}${params.toString() ? '?' + params.toString() : ''}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include'
+  })
+
+  if (response.status === 404) {
+    return null // No data found
+  }
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to get champion matchups')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+
+  return data
+}

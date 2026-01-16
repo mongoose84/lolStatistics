@@ -49,6 +49,10 @@ namespace RiotProxy.Application
             var soloDashboardEndpoint = new SoloDashboardEndpoint(basePath);
             _endpoints.Add(soloDashboardEndpoint);
 
+            // Solo Matchups (auth required)
+            var soloMatchupsEndpoint = new SoloMatchupsEndpoint(basePath);
+            _endpoints.Add(soloMatchupsEndpoint);
+
             // Match Activity Heatmap (auth required)
             var matchActivityEndpoint = new MatchActivityEndpoint(basePath);
             _endpoints.Add(matchActivityEndpoint);
