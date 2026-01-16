@@ -1588,11 +1588,13 @@ Update Solo dashboard endpoint (F2) to include `lpTrend` array. Returns LP chang
     ]
   }
   ```
+- [ ] Only called for ranked queues (solo/duo, flex)
 - [ ] Only included if queue filter includes ranked modes
 - [ ] Calculates LP gain/loss from match result
 - [ ] Tracks rank at each game
 - [ ] Marks promotions/demotions
-- [ ] Tested with sample data
+- [ ] Update the database to store lp and rank at each game. Use/update the .augment/rules/database-schema.md and /server/schema.sql files to document the changes.
+- [ ] Update the MatchHistorySyncJob to fill in the new columns when processing matches.
 
 ---
 
