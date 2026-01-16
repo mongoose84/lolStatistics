@@ -1440,7 +1440,7 @@ Create an LP Over Time chart that displays LP change per game (only for Ranked q
 
 #### Description
 
-Create a Champion Matchups table showing the user's top 5 most-played champions with expandable rows. Each row displays opponents faced with that champion. Sorted by winrate, expandable to show all opponents (default shows top 3). Inspired by v1 ChampionMatchups component but adapted for new data structure.
+Create a Champion Matchups table showing the user's top 5 most-played champions with expandable rows. Each row displays opponents faced with that champion. Sorted by winrate, expandable to show all opponents (default shows top 3). 
 
 #### Backend Requirements
 
@@ -1450,6 +1450,15 @@ Create a Champion Matchups table showing the user's top 5 most-played champions 
   - `totalGames`, `wins`, `winRate`
   - `opponents`: Array of `{ opponentChampionName, wins, losses, gamesPlayed, winRate }`
   - Sorted by winrate descending
+- [ ] Use the .augment/rules/api-design.md to guide the API design
+- [ ]Reactive to the time range filter:
+      - Current season
+      - Last week
+      - Last month
+      - Last 3 months
+      - Last 6 months
+      - All time
+- [ ]Reactive to the queue filter: Ranked Solo, Ranked Flex, Normal, ARAM, All
 
 #### Frontend Requirements
 
@@ -1464,16 +1473,25 @@ Create a Champion Matchups table showing the user's top 5 most-played champions 
 - [ ] Opponent sorting: by games played (most played first)
 - [ ] Responsive: table scrolls horizontally on mobile, or collapses columns
 - [ ] Icons load from Riot CDN
+- [ ] Use the .augment/rules/ui-design-guidelines.md to guide the UI design
+- [ ] Replaces the Champion Matchups placeholder in SoloDashboard.vue
+- [ ]Reactive to the time range filter:
+      - Current season
+      - Last week
+      - Last month
+      - Last 3 months
+      - Last 6 months
+      - All time
+- [ ]Reactive to the queue filter: Ranked Solo, Ranked Flex, Normal, ARAM, All
 
 #### Acceptance Criteria
 
 - [ ] Table displays all top 5 champions
-- [ ] Winrate colors (green ≥50%, red <50%)
+- [ ] Winrate colors  - use the /client/src/composables/useWinRateColor.js composable
 - [ ] Expand/collapse works smoothly
 - [ ] Opponent list shows correctly
 - [ ] All icons load
 - [ ] Table is sortable or shows correct default sort
-- [ ] Mobile layout is functional (not cramped)
 - [ ] Updates when queue filter changes
 
 ---

@@ -55,6 +55,38 @@ const props = defineProps({
 
 const hasData = computed(() => props.lpTrend && props.lpTrend.length > 0)
 
+// Check if any data point is from Master+ tiers (LP can exceed 100)
+const isMasterPlus = computed(() => {
+  if (!hasData.value) return false
+  const masterPlusTiers = ['master', 'grandmaster', 'challenger']
+  return props.lpTrend.some(point =>
+    masterPlusTiers.includes(point.rank?.split(' ')[0]?.toLowerCase())
+  )
+})
+
+// Calculate dynamic Y-axis max based on data
+const yAxisMax = computed(() => {
+  if (!hasData.value) return 100
+  const maxLp = Math.max(...props.lpTrend.map(point => point.currentLp))
+
+  // For Master+ or if any LP exceeds 100, calculate a nice round max
+  if (isMasterPlus.value || maxLp > 100) {
+    // Round up to nearest 100, with minimum of 100
+    return Math.max(100, Math.ceil(maxLp / 100) * 100)
+  }
+
+  // For regular tiers, cap at 100
+  return 100
+})
+
+// Calculate appropriate step size for Y-axis ticks
+const yAxisStepSize = computed(() => {
+  const max = yAxisMax.value
+  if (max <= 100) return 25
+  if (max <= 500) return 100
+  return 200
+})
+
 // Format date for display
 function formatDate(timestamp) {
   const date = new Date(timestamp)
@@ -161,12 +193,12 @@ const chartOptions = computed(() => ({
     y: {
       display: true,
       min: 0,
-      max: 100,
+      max: yAxisMax.value,
       grid: { color: 'rgba(255, 255, 255, 0.05)' },
       ticks: {
         color: '#888888',
         callback: (value) => `${value} LP`,
-        stepSize: 25,
+        stepSize: yAxisStepSize.value,
         font: { size: 11 }
       }
     }

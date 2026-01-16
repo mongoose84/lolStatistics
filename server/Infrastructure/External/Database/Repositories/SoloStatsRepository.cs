@@ -875,23 +875,21 @@ public class SoloStatsRepository : RepositoryBase
                 var win = reader.GetBoolean(3);
                 var gameStartTime = reader.GetInt64(4);
 
-                // Calculate LP gain/loss (null for first game)
-                int? lpGain = null;
-                if (previousLp.HasValue)
-                {
-                    lpGain = lpAfter - previousLp.Value;
-
-                    // Account for rank changes (promotion/demotion LP resets)
-                    // If tier or rank changed, LP gain calculation isn't straightforward
-                    // For simplicity, we still calculate the difference but mark promotion/demotion
-                }
-
                 // Format rank string (e.g., "Silver IV")
                 var rankString = FormatRankString(tierAfter, rankAfter);
 
-                // Detect promotion/demotion
+                // Detect promotion/demotion first (needed for LP gain calculation)
                 var isPromotion = DetectPromotion(previousTier, previousRank, tierAfter, rankAfter);
                 var isDemotion = DetectDemotion(previousTier, previousRank, tierAfter, rankAfter);
+
+                // Calculate LP gain/loss
+                // - null for first game (no previous data)
+                // - null for promotions/demotions (LP resets make the raw diff misleading)
+                int? lpGain = null;
+                if (previousLp.HasValue && !isPromotion && !isDemotion)
+                {
+                    lpGain = lpAfter - previousLp.Value;
+                }
 
                 // Convert game_start_time (milliseconds) to DateTime
                 var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(gameStartTime).UtcDateTime;
