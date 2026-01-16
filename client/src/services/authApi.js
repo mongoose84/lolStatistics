@@ -291,3 +291,44 @@ export async function getMatchActivity(userId) {
 
   return data
 }
+
+// ============ Trends API ============
+
+/**
+ * Get winrate trend data for chart display
+ * @param {number} userId - User ID
+ * @param {string} [queueType] - Optional queue filter (all, ranked_solo, ranked_flex, normal, aram)
+ * @param {string} [timeRange] - Optional time range (1w, 1m, 3m, 6m, current_season, last_season)
+ * @returns {Promise<Object>} Winrate trend data with winrateTrend array
+ */
+export async function getWinrateTrend(userId, queueType = 'all', timeRange) {
+  const params = new URLSearchParams()
+  if (queueType && queueType !== 'all') {
+    params.append('queueType', queueType)
+  }
+  if (timeRange) {
+    params.append('timeRange', timeRange)
+  }
+
+  const url = `${API_BASE}/trends/winrate/${userId}${params.toString() ? '?' + params.toString() : ''}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include'
+  })
+
+  if (response.status === 404) {
+    return null // No data found
+  }
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to get winrate trend')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+
+  return data
+}

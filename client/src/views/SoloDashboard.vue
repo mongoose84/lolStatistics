@@ -71,9 +71,13 @@
 	  	<div class="top-row">
 	  	  <div class="top-row-item">
 	  	    <div class="stacked-cards">
-	  	      <div class="section placeholder-card">
+	  	      <WinrateChart
+	  	        v-if="winrateTrendData && winrateTrendData.length > 0"
+	  	        :winrate-trend="winrateTrendData"
+	  	      />
+	  	      <div v-else class="section placeholder-card">
 	  	        <h2>Winrate Over Time</h2>
-	  	        <p>Rolling average line chart (shared component).</p>
+	  	        <p>No data for selected time range.</p>
 	  	      </div>
 	  	      <div class="section placeholder-card">
 	  	        <h2>LP Over Time</h2>
@@ -100,10 +104,11 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
-import { getSoloDashboard } from '../services/authApi'
+import { getSoloDashboard, getWinrateTrend } from '../services/authApi'
 import { useSyncWebSocket } from '../composables/useSyncWebSocket'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
 import MainChampionCard from '../components/MainChampionCard.vue'
+import WinrateChart from '../components/WinrateChart.vue'
 
 const authStore = useAuthStore()
 const { syncProgress, subscribe, resetProgress } = useSyncWebSocket()
@@ -113,6 +118,7 @@ const primaryAccount = computed(() => authStore.primaryRiotAccount)
 
 // Dashboard data from API
 const dashboardData = ref(null)
+const winrateTrendData = ref(null)
 const isLoading = ref(false)
 const error = ref(null)
 
@@ -129,21 +135,36 @@ const queueOptions = [
   { value: 'aram', label: 'ARAM' }
 ]
 
-  // Fetch dashboard data
+  // Fetch dashboard data and winrate trend in parallel (isolated failures)
   async function fetchDashboardData() {
   if (!authStore.userId) return
 
   isLoading.value = true
   error.value = null
 
-    try {
-      dashboardData.value = await getSoloDashboard(authStore.userId, queueFilter.value, timeRange.value)
-  } catch (err) {
-    console.error('Failed to fetch solo dashboard:', err)
-    error.value = err.message
-  } finally {
-    isLoading.value = false
-  }
+    // Fetch in parallel but handle errors independently
+    const [dashboardResult, trendResult] = await Promise.allSettled([
+      getSoloDashboard(authStore.userId, queueFilter.value, timeRange.value),
+      getWinrateTrend(authStore.userId, queueFilter.value, timeRange.value)
+    ])
+
+    // Handle dashboard result
+    if (dashboardResult.status === 'fulfilled') {
+      dashboardData.value = dashboardResult.value
+    } else {
+      console.error('Failed to fetch solo dashboard:', dashboardResult.reason)
+      error.value = dashboardResult.reason?.message || 'Failed to load dashboard'
+    }
+
+    // Handle trend result independently
+    if (trendResult.status === 'fulfilled') {
+      winrateTrendData.value = trendResult.value?.winrateTrend || null
+    } else {
+      console.warn('Failed to fetch winrate trend:', trendResult.reason)
+      winrateTrendData.value = null
+    }
+
+  isLoading.value = false
 }
 
 // Subscribe to sync updates for primary account
