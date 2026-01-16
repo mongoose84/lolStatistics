@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using RiotProxy.Application.DTOs.Solo;
 using RiotProxy.Infrastructure.External.Database.Repositories;
@@ -6,7 +7,7 @@ namespace RiotProxy.Application.Endpoints.Solo;
 
 /// <summary>
 /// Match Activity Endpoint
-/// Returns daily match counts for the past 3 months for heatmap visualization.
+/// Returns daily match counts for the past 6 months for heatmap visualization.
 /// Used to render a GitHub-style contribution graph.
 /// </summary>
 public sealed class MatchActivityEndpoint : IEndpoint
@@ -38,6 +39,15 @@ public sealed class MatchActivityEndpoint : IEndpoint
                 {
                     logger.LogWarning("Match activity: invalid userId format {UserId}", userId);
                     return Results.BadRequest(new { error = "Invalid userId format" });
+                }
+
+                // Verify authenticated user matches route userId
+                var authenticatedUserId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(authenticatedUserId) || authenticatedUserId != userIdInt.ToString())
+                {
+                    logger.LogWarning("Match activity: user {AuthUserId} attempted to access data for user {RouteUserId}",
+                        authenticatedUserId, userIdInt);
+                    return Results.Forbid();
                 }
 
                 // Get riot accounts for this user

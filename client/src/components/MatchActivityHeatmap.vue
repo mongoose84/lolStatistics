@@ -103,6 +103,28 @@ const tooltipX = ref(0)
 const tooltipY = ref(0)
 const tooltipData = ref(null)
 
+// UTC date helpers to avoid timezone issues
+function parseUTCDate(dateStr) {
+  // Parse 'YYYY-MM-DD' as UTC midnight
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day))
+}
+
+function formatUTCDate(date) {
+  // Format as 'YYYY-MM-DD' from UTC components
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function formatDisplayDate(date) {
+  // Format for user display using UTC components
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  return `${days[date.getUTCDay()]}, ${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`
+}
+
 const hasData = computed(() => {
   return props.startDate && props.endDate
 })
@@ -110,29 +132,29 @@ const hasData = computed(() => {
 // Generate weeks array for the heatmap grid (GitHub-style: columns are weeks, rows are days)
 const weeks = computed(() => {
   if (!props.startDate || !props.endDate) return []
-  
+
   const result = []
-  const start = new Date(props.startDate)
-  const end = new Date(props.endDate)
-  
-  // Align to start of week (Sunday)
-  const current = new Date(start)
-  current.setDate(current.getDate() - current.getDay())
-  
+  const start = parseUTCDate(props.startDate)
+  const end = parseUTCDate(props.endDate)
+
+  // Align to start of week (Sunday) using UTC
+  const current = new Date(start.getTime())
+  current.setUTCDate(current.getUTCDate() - current.getUTCDay())
+
   let weekIndex = 0
   while (current <= end) {
     const weekDays = []
     for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-      const dateStr = current.toISOString().split('T')[0]
+      const dateStr = formatUTCDate(current)
       const count = props.dailyMatchCounts[dateStr] || 0
       const isInRange = current >= start && current <= end
-      
+
       weekDays.push({
         date: dateStr,
         count: isInRange ? count : -1, // -1 means outside range
         dayOfWeek
       })
-      current.setDate(current.getDate() + 1)
+      current.setUTCDate(current.getUTCDate() + 1)
     }
     result.push({ weekIndex: weekIndex++, days: weekDays })
   }
@@ -147,20 +169,21 @@ const monthLabels = computed(() => {
   const labels = []
   const monthsSeen = new Set()
   const cellSize = 12 // cell width + gap
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
   weeks.value.forEach((week, weekIdx) => {
     // Check the first day of each week
     const firstValidDay = week.days.find(d => d.count >= 0)
     if (!firstValidDay) return
 
-    const date = new Date(firstValidDay.date)
-    const monthKey = `${date.getFullYear()}-${date.getMonth()}`
+    const date = parseUTCDate(firstValidDay.date)
+    const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`
 
     if (!monthsSeen.has(monthKey)) {
       monthsSeen.add(monthKey)
       labels.push({
         key: monthKey,
-        name: date.toLocaleDateString('en-US', { month: 'short' }),
+        name: months[date.getUTCMonth()],
         offset: weekIdx * cellSize + 24 // 24px for day labels
       })
     }
@@ -179,13 +202,8 @@ function getCellClass(count) {
 
 function getTooltip(day) {
   if (day.count < 0) return ''
-  const date = new Date(day.date)
-  const formatted = date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
+  const date = parseUTCDate(day.date)
+  const formatted = formatDisplayDate(date)
   return `${day.count} ${day.count === 1 ? 'match' : 'matches'} on ${formatted}`
 }
 
@@ -196,16 +214,11 @@ function showTooltip(day, event) {
   tooltipX.value = rect.left + rect.width / 2
   tooltipY.value = rect.top - 8
 
-  const date = new Date(day.date)
+  const date = parseUTCDate(day.date)
   tooltipData.value = {
     date: day.date,
     count: day.count,
-    formattedDate: date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    formattedDate: formatDisplayDate(date)
   }
   tooltipVisible.value = true
 }

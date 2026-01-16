@@ -1,7 +1,7 @@
 <template>
   <section class="solo-dashboard">
     <header class="dashboard-header">
-      <h1></h1><!-- Empty header so that the togle bar is centralized -->
+      <h1 class="visually-hidden">Solo Dashboard</h1>
 
       <!-- Queue Toggle Bar -->
       <div class="queue-toggle" role="group" aria-label="Filter by queue type">

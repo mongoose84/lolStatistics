@@ -348,9 +348,14 @@ public class MatchHistorySyncJob : BackgroundService
                     break;
                 }
 
-                // For initial sync: also limit total fetched to prevent infinite loops
-                if (isInitialSync && totalFetched >= maxMatches * 2)
+                // For initial sync: use a generous safety cap to prevent infinite loops
+                // while still allowing completeness within the 6-month window.
+                // With 6 months and ~10 games/day max, theoretical max is ~1800 matches.
+                // Use 1500 as a reasonable safety cap that allows completeness for most players.
+                const int initialSyncSafetyCap = 1500;
+                if (isInitialSync && totalFetched >= initialSyncSafetyCap)
                 {
+                    _logger.LogWarning("Initial sync hit safety cap ({Cap}) for puuid, stopping fetch", initialSyncSafetyCap);
                     keepFetching = false;
                     break;
                 }

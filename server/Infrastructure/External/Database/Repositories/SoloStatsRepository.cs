@@ -30,10 +30,6 @@ public class SoloStatsRepository : RepositoryBase
 		    var effectiveTimeRangeForLog = string.IsNullOrWhiteSpace(normalizedTimeRange) ? "all" : normalizedTimeRange;
 		    _logger.LogInformation("GetSoloDashboardAsync start: puuid={Puuid}, queueType={Queue}, timeRange={TimeRange}", puuid, queueType, effectiveTimeRangeForLog);
 
-		    // Debug: Log total participant count for this puuid (no filters)
-		    var totalParticipantCount = await GetTotalParticipantCountAsync(puuid);
-		    _logger.LogInformation("GetSoloDashboardAsync debug: puuid={Puuid}, totalParticipantRecords={Count} (no filters)", puuid, totalParticipantCount);
-
 		    // Build base query with optional queue and time/season filters
 		    var queueFilter = BuildQueueFilter(queueType);
 		    var timeFilter = BuildTimeRangeFilter(normalizedTimeRange, timeRangeStart, seasonCode);
@@ -658,23 +654,7 @@ public class SoloStatsRepository : RepositoryBase
     }
 
     /// <summary>
-    /// Diagnostic helper: Get total participant count for a puuid with no filters.
-    /// This helps debug whether matches are being synced correctly across accounts.
-    /// </summary>
-    private async Task<int> GetTotalParticipantCountAsync(string puuid)
-    {
-        const string sql = "SELECT COUNT(*) FROM participants WHERE puuid = @puuid";
-        return await ExecuteWithConnectionAsync(async conn =>
-        {
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@puuid", puuid);
-            var result = await cmd.ExecuteScalarAsync();
-            return Convert.ToInt32(result);
-        });
-    }
-
-    /// <summary>
-    /// Get daily match counts for the past 3 months for heatmap display.
+    /// Get daily match counts for the past 6 months for heatmap display.
     /// Returns a dictionary keyed by date (YYYY-MM-DD) with match count values.
     /// </summary>
     public async Task<Dictionary<string, int>> GetDailyMatchCountsAsync(string puuid, int daysBack = 91)

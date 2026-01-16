@@ -29,11 +29,11 @@
 
         <!-- Match Activity Heatmap -->
         <MatchActivityHeatmap
-          v-if="hasLinkedAccount && activityData"
-          :daily-match-counts="activityData.dailyMatchCounts"
-          :start-date="activityData.startDate"
-          :end-date="activityData.endDate"
-          :total-matches="activityData.totalMatches"
+          v-if="hasLinkedAccount"
+          :daily-match-counts="activityData?.dailyMatchCounts ?? {}"
+          :start-date="activityData?.startDate ?? ''"
+          :end-date="activityData?.endDate ?? ''"
+          :total-matches="activityData?.totalMatches ?? 0"
         />
 
         <!-- Riot Accounts Card -->

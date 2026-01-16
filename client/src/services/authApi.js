@@ -264,7 +264,7 @@ export async function getSoloDashboard(userId, queueType = 'all', timeRange) {
 }
 
 /**
- * Get match activity data for heatmap (daily match counts for past 3 months)
+ * Get match activity data for heatmap (daily match counts for past 6 months)
  * @param {number} userId - User ID
  * @returns {Promise<Object>} Match activity data with dailyMatchCounts, startDate, endDate, totalMatches
  */
