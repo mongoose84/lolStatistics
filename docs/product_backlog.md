@@ -1328,7 +1328,17 @@ Create a professional user experience with a landing page, pricing, and app shel
 
 #### Description
 
-Create a reusable Winrate Over Time chart component that displays a rolling average winrate line chart. This chart is used on solo, duo, and team dashboards, so design for reusability. Data point is per game, rolling average is calculated over a window (e.g., 20-game rolling avg).
+Create a reusable Winrate Over Time chart component that displays a rolling average winrate line chart. This chart is used on solo, duo, and team dashboards, so design for reusability. Data point is per game, rolling average is calculated over a window based on the time range selected at the top of the page. The window size is as follows:
+- Current season
+- Last week
+- Last month
+- Last 3 months
+- Last 6 months
+- All time
+
+Define how many data points we show as a max, and how we downsample if we have more than that. How do we handle 300 games in the graph over a 6 month period? Please ask questions in the thread, to give the best answer.
+
+When done, add it to the SoloDashboard.vue page. It already has a placeholder for the winrate chart.
 
 #### Backend Requirements
 
@@ -1336,6 +1346,15 @@ Create a reusable Winrate Over Time chart component that displays a rolling aver
   - Array of: `{ gameIndex: number, winRate: number, timestamp: timestamp }`
   - Pre-calculated rolling average (20-game window) to reduce client computation
   - Respects queue filter and time range filter
+  - The window size is as follows:
+    - Current season
+    - Last week
+    - Last month
+    - Last 3 months
+    - Last 6 months
+    - All time
+    - The window size is dynamic based on the time range selected at the top of the page.
+-[ ] Use the .augment/rules/api-design.md to guide the API design
 
 #### Frontend Requirements
 
@@ -1347,7 +1366,7 @@ Create a reusable Winrate Over Time chart component that displays a rolling aver
 - [ ] Hover tooltip shows exact winrate, game number, date
 - [ ] Responsive: chart resizes on mobile, readable at all sizes
 - [ ] Empty state: "No data for selected time range" message
-- [ ] Light animation on load (optional)
+- [ ] Use the .augment/rules/ui-design-guidelines.md to guide the UI design
 
 #### Acceptance Criteria
 
