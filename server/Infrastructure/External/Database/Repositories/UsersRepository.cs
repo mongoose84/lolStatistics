@@ -29,15 +29,16 @@ public class UsersRepository : RepositoryBase
                 updated_at = new.updated_at,
                 last_login_at = new.last_login_at;";
 
-        // Encrypt email before storing
+        // Encrypt email and username before storing
         var encryptedEmail = _emailEncryptor.Encrypt(user.Email);
+        var encryptedUsername = _emailEncryptor.Encrypt(user.Username);
 
         return await ExecuteWithConnectionAsync(async conn =>
         {
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@user_id", user.UserId == 0 ? DBNull.Value : user.UserId);
             cmd.Parameters.AddWithValue("@email", encryptedEmail);
-            cmd.Parameters.AddWithValue("@username", user.Username);
+            cmd.Parameters.AddWithValue("@username", encryptedUsername);
             cmd.Parameters.AddWithValue("@password_hash", user.PasswordHash);
             cmd.Parameters.AddWithValue("@email_verified", user.EmailVerified);
             cmd.Parameters.AddWithValue("@is_active", user.IsActive);
@@ -68,16 +69,20 @@ public class UsersRepository : RepositoryBase
     public virtual Task<User?> GetByUsernameAsync(string username)
     {
         const string sql = "SELECT * FROM users WHERE username = @username LIMIT 1";
-        return ExecuteSingleAsync(sql, MapWithDecryption, ("@username", username));
+        // Encrypt the search username to match stored encrypted value
+        var encryptedUsername = _emailEncryptor.Encrypt(username);
+        return ExecuteSingleAsync(sql, MapWithDecryption, ("@username", encryptedUsername));
     }
 
     public async Task<bool> UsernameExistsAsync(string username)
     {
+        // Encrypt the search username to match stored encrypted value
+        var encryptedUsername = _emailEncryptor.Encrypt(username);
         const string sql = "SELECT COUNT(*) FROM users WHERE username = @username";
         return await ExecuteWithConnectionAsync(async conn =>
         {
             await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@username", username);
+            cmd.Parameters.AddWithValue("@username", encryptedUsername);
             var result = await cmd.ExecuteScalarAsync();
             return Convert.ToInt64(result) > 0;
         });
@@ -123,14 +128,16 @@ public class UsersRepository : RepositoryBase
     }
 
     /// <summary>
-    /// Maps a database row to V2User, decrypting the email.
+    /// Maps a database row to User, decrypting the email and username.
     /// </summary>
     private User MapWithDecryption(MySqlDataReader r)
     {
         var userId = r.GetInt64(0);
         var encryptedEmail = r.GetString(1);
+        var encryptedUsername = r.GetString(2);
 
         string decryptedEmail;
+        string decryptedUsername;
         try
         {
             decryptedEmail = _emailEncryptor.Decrypt(encryptedEmail);
@@ -153,11 +160,33 @@ public class UsersRepository : RepositoryBase
                 $"Email decryption failed for user {userId}: {ex.Message}", ex);
         }
 
+        try
+        {
+            decryptedUsername = _emailEncryptor.Decrypt(encryptedUsername);
+        }
+        catch (FormatException ex)
+        {
+            throw new InvalidOperationException(
+                $"Username decryption failed for user {userId}: Invalid base64 format. " +
+                "This may indicate corrupted data in the database.", ex);
+        }
+        catch (System.Security.Cryptography.CryptographicException ex)
+        {
+            throw new InvalidOperationException(
+                $"Username decryption failed for user {userId}: Cryptographic error. " +
+                "This may indicate a wrong encryption key or corrupted ciphertext.", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Username decryption failed for user {userId}: {ex.Message}", ex);
+        }
+
         return new User
         {
             UserId = userId,
             Email = decryptedEmail,
-            Username = r.GetString(2),
+            Username = decryptedUsername,
             PasswordHash = r.GetString(3),
             EmailVerified = r.GetBoolean(4),
             IsActive = r.GetBoolean(5),

@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Read secrets from configuration/environment (no local secret files required)
 Secrets.Initialize(builder.Configuration);
 
+
 builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 
