@@ -110,6 +110,8 @@ jobs:
 
       - name: Start backend server
         working-directory: server
+        env:
+          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
         run: |
           dotnet run -c Release --no-build &
           echo "Backend PID: $!"

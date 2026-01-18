@@ -25,7 +25,7 @@ namespace RiotProxy.Application.Endpoints.Diagnostics
 
                 var isApiKeyConfigured = !string.IsNullOrWhiteSpace(Secrets.ApiKey);
                 var isDbV2Configured = !string.IsNullOrWhiteSpace(Secrets.DatabaseConnectionStringV2);
-                var isEncryptionKeyConfigured = !string.IsNullOrWhiteSpace(Secrets.EmailEncryptionKey);
+                var isEncryptionKeyConfigured = !string.IsNullOrWhiteSpace(Secrets.EncryptionSecret);
 
                 var diagnostics = new
                 {
