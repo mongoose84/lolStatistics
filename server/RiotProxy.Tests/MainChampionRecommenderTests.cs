@@ -12,8 +12,8 @@ public class MainChampionRecommenderTests
     {
         var stats = new[]
         {
-            new MainChampionRecommender.ChampionRoleStats("TOP", 1, "Garen", 1, 1, 300, 150, 5, 5, 5),
-            new MainChampionRecommender.ChampionRoleStats("TOP", 2, "Darius", 3, 2, 320, 160, 6, 4, 7)
+            new MainChampionRecommender.ChampionRoleStats("TOP", 1, "Garen", 1, 1, 350.0, 150.0, 5.0, 3.0, 4.0),
+            new MainChampionRecommender.ChampionRoleStats("TOP", 2, "Darius", 3, 2, 380.0, 160.0, 6.0, 4.0, 5.0)
         };
 
         var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
@@ -30,10 +30,10 @@ public class MainChampionRecommenderTests
     {
         var stats = new[]
         {
-            // Strong performer: high win rate, decent sample
-            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 1, "CarryJg", 10, 9, 350, 140, 7, 3, 8),
-            // Weaker performer: mediocre win rate, smaller sample
-            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 2, "OtherJg", 4, 2, 280, 120, 3, 6, 2)
+            // Strong performer: high win rate, decent sample, good stats
+            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 1, "CarryJg", 10, 9, 400.0, 120.0, 8.0, 2.0, 10.0),
+            // Weaker performer: mediocre win rate, smaller sample, worse stats
+            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 2, "OtherJg", 4, 2, 320.0, 100.0, 4.0, 5.0, 6.0)
         };
 
         var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
@@ -48,7 +48,7 @@ public class MainChampionRecommenderTests
     {
         var stats = new[]
         {
-            new MainChampionRecommender.ChampionRoleStats("MID", 10, "Ahri", 4, 3, 310, 155, 6, 2, 7)
+            new MainChampionRecommender.ChampionRoleStats("MID", 10, "Ahri", 4, 3, 360.0, 180.0, 7.0, 3.0, 8.0)
         };
 
         var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
@@ -67,19 +67,19 @@ public class MainChampionRecommenderTests
         champ.LpPerGame.Should().BeApproximately(expected, 1e-9);
     }
 
-	    [Fact]
-	    public void BuildMainChampionsByRole_IgnoresUnknownRole()
-	    {
-            var stats = new[]
-            {
-                new MainChampionRecommender.ChampionRoleStats("UNKNOWN", 1, "SomeChamp", 20, 10, 290, 110, 2, 8, 3),
-                new MainChampionRecommender.ChampionRoleStats("TOP", 2, "Garen", 15, 12, 330, 170, 8, 2, 9)
-            };
+    [Fact]
+    public void BuildMainChampionsByRole_IgnoresUnknownRole()
+    {
+        var stats = new[]
+        {
+            new MainChampionRecommender.ChampionRoleStats("UNKNOWN", ChampionId: 1, ChampionName: "SomeChamp", GamesPlayed: 20, Wins: 10, AvgGoldPerMin: 350.0, AvgCs: 150.0, AvgKills: 5.0, AvgDeaths: 3.0, AvgAssists: 4.0),
+            new MainChampionRecommender.ChampionRoleStats("TOP", ChampionId: 2, ChampionName: "Garen", GamesPlayed: 15, Wins: 12, AvgGoldPerMin: 380.0, AvgCs: 160.0, AvgKills: 6.0, AvgDeaths: 2.0, AvgAssists: 5.0)
+        };
 
-	        var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
+        var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
 
-	        result.Should().HaveCount(1);
-	        result[0].Role.Should().Be("TOP");
-	    }
+        result.Should().HaveCount(1);
+        result[0].Role.Should().Be("TOP");
+    }
 }
 
