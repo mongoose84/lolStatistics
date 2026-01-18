@@ -12,8 +12,8 @@ public class MainChampionRecommenderTests
     {
         var stats = new[]
         {
-            new MainChampionRecommender.ChampionRoleStats("TOP", 1, "Garen", 1, 1),
-            new MainChampionRecommender.ChampionRoleStats("TOP", 2, "Darius", 3, 2)
+            new MainChampionRecommender.ChampionRoleStats("TOP", 1, "Garen", 1, 1, 300, 150, 5, 5, 5),
+            new MainChampionRecommender.ChampionRoleStats("TOP", 2, "Darius", 3, 2, 320, 160, 6, 4, 7)
         };
 
         var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
@@ -31,9 +31,9 @@ public class MainChampionRecommenderTests
         var stats = new[]
         {
             // Strong performer: high win rate, decent sample
-            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 1, "CarryJg", 10, 9),
+            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 1, "CarryJg", 10, 9, 350, 140, 7, 3, 8),
             // Weaker performer: mediocre win rate, smaller sample
-            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 2, "OtherJg", 4, 2)
+            new MainChampionRecommender.ChampionRoleStats("JUNGLE", 2, "OtherJg", 4, 2, 280, 120, 3, 6, 2)
         };
 
         var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
@@ -48,7 +48,7 @@ public class MainChampionRecommenderTests
     {
         var stats = new[]
         {
-            new MainChampionRecommender.ChampionRoleStats("MID", 10, "Ahri", 4, 3)
+            new MainChampionRecommender.ChampionRoleStats("MID", 10, "Ahri", 4, 3, 310, 155, 6, 2, 7)
         };
 
         var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
@@ -70,11 +70,11 @@ public class MainChampionRecommenderTests
 	    [Fact]
 	    public void BuildMainChampionsByRole_IgnoresUnknownRole()
 	    {
-	        var stats = new[]
-	        {
-		            new MainChampionRecommender.ChampionRoleStats("UNKNOWN", ChampionId: 1, ChampionName: "SomeChamp", GamesPlayed: 20, Wins: 10),
-		            new MainChampionRecommender.ChampionRoleStats("TOP", ChampionId: 2, ChampionName: "Garen", GamesPlayed: 15, Wins: 12)
-	        };
+            var stats = new[]
+            {
+                new MainChampionRecommender.ChampionRoleStats("UNKNOWN", 1, "SomeChamp", 20, 10, 290, 110, 2, 8, 3),
+                new MainChampionRecommender.ChampionRoleStats("TOP", 2, "Garen", 15, 12, 330, 170, 8, 2, 9)
+            };
 
 	        var result = MainChampionRecommender.BuildMainChampionsByRole(stats);
 
