@@ -19,7 +19,7 @@ builder.Services.AddSingleton<IRiotApiClient, RiotApiClient>();
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 
 // Email encryption for secure storage - registered via factory to allow test override
-builder.Services.AddSingleton<IEmailEncryptor>(sp =>
+builder.Services.AddSingleton<IEncryptor>(sp =>
 {
     // Re-read from configuration in case tests have overridden it
     var config = sp.GetRequiredService<IConfiguration>();
@@ -36,7 +36,7 @@ builder.Services.AddSingleton<IEmailEncryptor>(sp =>
             "EMAIL_ENCRYPTION_KEY environment variable, " +
             "Generate a key using: AesEmailEncryptor.GenerateKey()");
     }
-    return new AesEmailEncryptor(encryptionKey);
+    return new AesEncryptor(encryptionKey);
 });
 
 // repositories

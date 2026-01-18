@@ -8,7 +8,7 @@ namespace RiotProxy.Infrastructure.Security;
 /// Uses HMAC-SHA256 to derive a consistent IV from the email, ensuring the same
 /// email always produces the same ciphertext while maintaining security.
 /// </summary>
-public sealed class AesEmailEncryptor : IEmailEncryptor
+public sealed class AesEncryptor : IEncryptor
 {
     private readonly byte[] _encryptionKey;
     private readonly byte[] _ivKey;
@@ -18,7 +18,7 @@ public sealed class AesEmailEncryptor : IEmailEncryptor
     /// </summary>
     /// <param name="encryptionKey">Base64-encoded 256-bit (32 byte) encryption key</param>
     /// <param name="ivKey">Base64-encoded key for IV derivation (can be same as encryption key or different)</param>
-    public AesEmailEncryptor(string encryptionKey, string? ivKey = null)
+    public AesEncryptor(string encryptionKey, string? ivKey = null)
     {
         if (string.IsNullOrWhiteSpace(encryptionKey))
             throw new ArgumentException("Encryption key is required", nameof(encryptionKey));

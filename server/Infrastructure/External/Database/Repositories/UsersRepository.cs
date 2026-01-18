@@ -6,11 +6,11 @@ namespace RiotProxy.Infrastructure.External.Database.Repositories;
 
 public class UsersRepository : RepositoryBase
 {
-    private readonly IEmailEncryptor _emailEncryptor;
+    private readonly IEncryptor _encryptor;
 
-    public UsersRepository(IDbConnectionFactory factory, IEmailEncryptor emailEncryptor) : base(factory)
+    public UsersRepository(IDbConnectionFactory factory, IEncryptor encryptor) : base(factory)
     {
-        _emailEncryptor = emailEncryptor;
+        _encryptor = encryptor;
     }
 
     public virtual async Task<long> UpsertAsync(User user)
@@ -30,8 +30,8 @@ public class UsersRepository : RepositoryBase
                 last_login_at = new.last_login_at;";
 
         // Encrypt email and username before storing
-        var encryptedEmail = _emailEncryptor.Encrypt(user.Email);
-        var encryptedUsername = _emailEncryptor.Encrypt(user.Username);
+        var encryptedEmail = _encryptor.Encrypt(user.Email);
+        var encryptedUsername = _encryptor.Encrypt(user.Username);
 
         return await ExecuteWithConnectionAsync(async conn =>
         {
@@ -56,7 +56,7 @@ public class UsersRepository : RepositoryBase
     {
         const string sql = "SELECT * FROM users WHERE email = @email LIMIT 1";
         // Encrypt the search email to match stored encrypted value
-        var encryptedEmail = _emailEncryptor.Encrypt(email);
+        var encryptedEmail = _encryptor.Encrypt(email);
         return await ExecuteSingleAsync(sql, MapWithDecryption, ("@email", encryptedEmail));
     }
 
@@ -70,14 +70,14 @@ public class UsersRepository : RepositoryBase
     {
         const string sql = "SELECT * FROM users WHERE username = @username LIMIT 1";
         // Encrypt the search username to match stored encrypted value
-        var encryptedUsername = _emailEncryptor.Encrypt(username);
+        var encryptedUsername = _encryptor.Encrypt(username);
         return ExecuteSingleAsync(sql, MapWithDecryption, ("@username", encryptedUsername));
     }
 
     public async Task<bool> UsernameExistsAsync(string username)
     {
         // Encrypt the search username to match stored encrypted value
-        var encryptedUsername = _emailEncryptor.Encrypt(username);
+        var encryptedUsername = _encryptor.Encrypt(username);
         const string sql = "SELECT COUNT(*) FROM users WHERE username = @username";
         return await ExecuteWithConnectionAsync(async conn =>
         {
@@ -91,7 +91,7 @@ public class UsersRepository : RepositoryBase
     public async Task<bool> EmailExistsAsync(string email)
     {
         // Encrypt the search email to match stored encrypted value
-        var encryptedEmail = _emailEncryptor.Encrypt(email);
+        var encryptedEmail = _encryptor.Encrypt(email);
         const string sql = "SELECT COUNT(*) FROM users WHERE email = @email";
         return await ExecuteWithConnectionAsync(async conn =>
         {
@@ -140,7 +140,7 @@ public class UsersRepository : RepositoryBase
         string decryptedUsername;
         try
         {
-            decryptedEmail = _emailEncryptor.Decrypt(encryptedEmail);
+            decryptedEmail = _encryptor.Decrypt(encryptedEmail);
         }
         catch (FormatException ex)
         {
@@ -162,7 +162,7 @@ public class UsersRepository : RepositoryBase
 
         try
         {
-            decryptedUsername = _emailEncryptor.Decrypt(encryptedUsername);
+            decryptedUsername = _encryptor.Decrypt(encryptedUsername);
         }
         catch (FormatException ex)
         {

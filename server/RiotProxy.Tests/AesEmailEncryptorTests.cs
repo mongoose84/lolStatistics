@@ -5,13 +5,13 @@ namespace RiotProxy.Tests;
 
 public class AesEmailEncryptorTests
 {
-    private readonly string _validKey = AesEmailEncryptor.GenerateKey();
+    private readonly string _validKey = AesEncryptor.GenerateKey();
 
     [Fact]
     public void Encrypt_Decrypt_RoundTrip_ReturnsOriginalEmail()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var originalEmail = "test@example.com";
 
         // Act
@@ -26,7 +26,7 @@ public class AesEmailEncryptorTests
     public void Encrypt_SameEmail_ProducesSameCiphertext()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var email = "deterministic@example.com";
 
         // Act
@@ -41,7 +41,7 @@ public class AesEmailEncryptorTests
     public void Encrypt_DifferentEmails_ProduceDifferentCiphertexts()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var email1 = "user1@example.com";
         var email2 = "user2@example.com";
 
@@ -57,7 +57,7 @@ public class AesEmailEncryptorTests
     public void Encrypt_ProducesBase64Output()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var email = "base64test@example.com";
 
         // Act
@@ -72,9 +72,9 @@ public class AesEmailEncryptorTests
     public void Decrypt_WithWrongKey_ThrowsException()
     {
         // Arrange
-        var encryptor1 = new AesEmailEncryptor(_validKey);
-        var differentKey = AesEmailEncryptor.GenerateKey();
-        var encryptor2 = new AesEmailEncryptor(differentKey);
+        var encryptor1 = new AesEncryptor(_validKey);
+        var differentKey = AesEncryptor.GenerateKey();
+        var encryptor2 = new AesEncryptor(differentKey);
         var email = "wrongkey@example.com";
 
         // Act
@@ -88,7 +88,7 @@ public class AesEmailEncryptorTests
     public void Decrypt_InvalidCiphertext_ThrowsException()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var invalidCiphertext = "not-valid-base64-or-ciphertext!!!";
 
         // Assert
@@ -99,7 +99,7 @@ public class AesEmailEncryptorTests
     public void Decrypt_TamperedCiphertext_ReturnsGarbageOrThrows()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var email = "tampered@example.com";
         var encrypted = encryptor.Encrypt(email);
 
@@ -128,7 +128,7 @@ public class AesEmailEncryptorTests
     public void GenerateKey_ReturnsValidBase64Key()
     {
         // Act
-        var key = AesEmailEncryptor.GenerateKey();
+        var key = AesEncryptor.GenerateKey();
 
         // Assert
         var bytes = Convert.FromBase64String(key);
@@ -139,8 +139,8 @@ public class AesEmailEncryptorTests
     public void GenerateKey_ProducesUniqueKeys()
     {
         // Act
-        var key1 = AesEmailEncryptor.GenerateKey();
-        var key2 = AesEmailEncryptor.GenerateKey();
+        var key1 = AesEncryptor.GenerateKey();
+        var key2 = AesEncryptor.GenerateKey();
 
         // Assert
         Assert.NotEqual(key1, key2);
@@ -152,14 +152,14 @@ public class AesEmailEncryptorTests
     public void Constructor_InvalidKey_ThrowsArgumentException(string invalidKey)
     {
         // Assert
-        Assert.Throws<ArgumentException>(() => new AesEmailEncryptor(invalidKey));
+        Assert.Throws<ArgumentException>(() => new AesEncryptor(invalidKey));
     }
 
     [Fact]
     public void Encrypt_SpecialCharactersInEmail_RoundTripsCorrectly()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var email = "user+tag@sub.example.com";
 
         // Act
@@ -174,7 +174,7 @@ public class AesEmailEncryptorTests
     public void Encrypt_UnicodeEmail_RoundTripsCorrectly()
     {
         // Arrange
-        var encryptor = new AesEmailEncryptor(_validKey);
+        var encryptor = new AesEncryptor(_validKey);
         var email = "用户@例子.公司";
 
         // Act
