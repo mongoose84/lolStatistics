@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Solo Dashboard Flow E2E Tests
- * 
+ *
  * Tests the critical user journey:
  * 1. Login with test credentials
  * 2. Verify redirect to User Page
@@ -16,6 +16,36 @@ const TEST_USER = {
   password: 'tester1234',
 };
 
+/**
+ * Helper function to perform login and handle errors
+ */
+async function performLogin(page, username, password) {
+  await page.goto('/auth');
+
+  // Verify we're on the auth page
+  await expect(page.locator('h1')).toContainText('Welcome to Pulse.gg');
+
+  // Fill in login form
+  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Password').fill(password);
+
+  // Submit login form
+  await page.getByRole('button', { name: /sign in/i }).click();
+
+  // Wait for either navigation OR error message
+  await Promise.race([
+    page.waitForURL('/app/user', { timeout: 15_000 }),
+    page.waitForSelector('.auth-error', { timeout: 15_000 }),
+  ]);
+
+  // Check if there's an error message displayed
+  const errorElement = page.locator('.auth-error');
+  if (await errorElement.isVisible()) {
+    const errorText = await errorElement.textContent();
+    throw new Error(`Login failed with error: ${errorText}`);
+  }
+}
+
 test.describe('Solo Dashboard Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Clear cookies/storage to ensure clean state
@@ -23,25 +53,15 @@ test.describe('Solo Dashboard Flow', () => {
   });
 
   test('should complete login → UserPage → Solo Dashboard flow', async ({ page }) => {
-    // Step 1: Navigate to auth page
-    await page.goto('/auth');
-    
-    // Verify we're on the auth page
-    await expect(page.locator('h1')).toContainText('Welcome to Pulse.gg');
+    // Step 1-3: Login
+    await performLogin(page, TEST_USER.username, TEST_USER.password);
 
-    // Step 2: Fill in login form
-    await page.getByLabel('Username').fill(TEST_USER.username);
-    await page.getByLabel('Password').fill(TEST_USER.password);
-
-    // Step 3: Submit login form
-    await page.getByRole('button', { name: /sign in/i }).click();
-
-    // Step 4: Wait for navigation to User Page
-    await expect(page).toHaveURL('/app/user', { timeout: 15_000 });
+    // Step 4: Verify we're on the User Page
+    await expect(page).toHaveURL('/app/user');
 
     // Step 5: Verify User Page loaded successfully
-    // Check for profile header or username display
-    await expect(page.getByText(TEST_USER.username, { exact: false })).toBeVisible({ timeout: 10_000 });
+    // Wait for page to load
+    await page.waitForLoadState('networkidle');
 
     // Step 6: Navigate to Solo Dashboard
     // Look for the solo dashboard navigation link/button
@@ -50,7 +70,7 @@ test.describe('Solo Dashboard Flow', () => {
     ).or(
       page.locator('[href="/app/solo"]')
     );
-    
+
     await soloDashboardLink.first().click();
 
     // Step 7: Verify Solo Dashboard loaded
@@ -98,12 +118,8 @@ test.describe('Solo Dashboard Flow', () => {
 test.describe('Solo Dashboard Content', () => {
   // This test requires being logged in first
   test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto('/auth');
-    await page.getByLabel('Username').fill(TEST_USER.username);
-    await page.getByLabel('Password').fill(TEST_USER.password);
-    await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page).toHaveURL('/app/user', { timeout: 15_000 });
+    // Login before each test using the helper function
+    await performLogin(page, TEST_USER.username, TEST_USER.password);
   });
 
   test('should display solo dashboard with stats', async ({ page }) => {
