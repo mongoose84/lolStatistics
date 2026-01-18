@@ -42,7 +42,6 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["Auth:SessionTimeout"] = "30",
                 ["Jobs:EnableMatchHistorySync"] = "false",
                 ["RIOT_API_KEY"] = "test-key",
-                ["LOL_DB_CONNECTIONSTRING"] = "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;",
                 ["LOL_DB_CONNECTIONSTRING_V2"] = "Server=localhost;Port=3306;Database=test;User Id=test;Password=test;",
                 ["Security:EmailEncryptionKey"] = testEmailEncryptionKey
             };

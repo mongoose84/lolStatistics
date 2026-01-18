@@ -50,7 +50,7 @@ namespace RiotProxy.Application.Endpoints.Diagnostics
                     notes = new string[]
                     {
                         "If 'allConfigured' is false, check README.md for environment variable setup instructions.",
-                        "Required env vars: RIOT_API_KEY, LOL_DB_CONNECTIONSTRING, LOL_DB_CONNECTIONSTRING_V2",
+                        "Required env vars: RIOT_API_KEY, LOL_DB_CONNECTIONSTRING_V2, ENCRYPTION_SECRET.",
                         "Or set in appsettings.json under ConnectionStrings section."
                     }
                 };

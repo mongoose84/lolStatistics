@@ -183,7 +183,7 @@ lol/
 
 ## References
 - Setup instructions: [README.md](../README.md)
-- Sensitive config: set via env vars or user-secrets (`RIOT_API_KEY`, `LOL_DB_CONNECTIONSTRING`, `LOL_DB_CONNECTIONSTRING_V2`, Mollie API keys)
+- Sensitive config: set via env vars or user-secrets (`RIOT_API_KEY`, `LOL_DB_CONNECTIONSTRING_V2`, Mollie API keys)
 - Main server logic: `server/Program.cs`, `server/Application/`, `server/Application/Endpoints/`, `server/RiotProxy.Tests/`
 - Main client logic: `client/src/`, `client/src/services/`, `client/src/composables/`
 - Riot API Documentation: https://developer.riotgames.com/
