@@ -27,7 +27,7 @@ builder.Services.AddSingleton<IEncryptor>(sp =>
     var encryptionKey = config["Security:EncryptionSecret"]
         ?? config["ENCRYPTION_SECRET"]
         ?? Environment.GetEnvironmentVariable("ENCRYPTION_SECRET")
-        ?? Secrets.EncryptionKey;
+        ?? Secrets.EncryptionSecret;
 
     if (string.IsNullOrWhiteSpace(encryptionKey))
     {
