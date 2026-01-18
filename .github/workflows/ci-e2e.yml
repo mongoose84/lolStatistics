@@ -27,10 +27,12 @@ jobs:
 
     steps:
       # -------------------------------------------------
-      # Checkout code
+      # Checkout code (full clone for Nerdbank.GitVersioning)
       # -------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full clone required for Nerdbank.GitVersioning
 
       # -------------------------------------------------
       # Setup .NET for backend
