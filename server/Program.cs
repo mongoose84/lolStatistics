@@ -7,6 +7,7 @@ using RiotProxy.Infrastructure.External.Riot;
 using RiotProxy.Infrastructure.External;
 using RiotProxy.Infrastructure.Security;
 using RiotProxy.Infrastructure.WebSocket;
+using RiotProxy.Infrastructure.Middleware;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -160,7 +161,11 @@ if (builder.Environment.IsDevelopment())
     builder.Logging.AddDebug();
 }
 
+
 var app = builder.Build();
+
+// Use custom JSON exception middleware globally
+app.UseMiddleware<JsonExceptionMiddleware>();
 
 // Apply the CORS policy globally
 app.UseCors("VueClientPolicy");
