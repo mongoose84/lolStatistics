@@ -5,7 +5,7 @@
     <div class="verify-container">
       <div class="verify-card">
         <div class="verify-header">
-          <img src="/pulse-icon.svg" alt="Pulse.gg" class="verify-logo" />
+          <img src="/mongoose.png" alt="Mongoose" class="verify-logo" />
           <h1 class="verify-title">Verify Your Email</h1>
           <p class="verify-subtitle">
             We've sent a 6-digit code to <strong>{{ email }}</strong>

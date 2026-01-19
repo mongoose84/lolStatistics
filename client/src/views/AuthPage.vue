@@ -5,8 +5,8 @@
     <div class="auth-container">
       <div class="auth-card">
         <div class="auth-header">
-          <img src="/pulse-icon.svg" alt="Pulse.gg" class="auth-logo" />
-          <h1 class="auth-title">Welcome to Pulse.gg</h1>
+          <img src="/mongoose.png" alt="Mongoose" class="auth-logo" />
+          <h1 class="auth-title">Welcome to Mongoose</h1>
           <p class="auth-subtitle">{{ isLogin ? 'Sign in to your account' : 'Create your account' }}</p>
         </div>
 

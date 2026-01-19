@@ -140,8 +140,8 @@
         <div class="footer-container">
           <div class="footer-brand">
             <div class="footer-logo">
-              <img src="/pulse-icon.svg" alt="Pulse.gg" class="footer-logo-icon" />
-              <span class="footer-logo-text">Pulse<span class="footer-logo-tld">.gg</span></span>
+              <img src="/mongoose.png" alt="Mongoose" class="footer-logo-icon" />
+              <span class="footer-logo-text">Mongoose</span>
             </div>
             <p class="footer-tagline">Built with ❤️ in the nordics by the Agile Astronaut</p>
           </div>
@@ -162,14 +162,14 @@
             
             <div class="footer-column">
               <h4 class="footer-heading">Connect</h4>
-              <a href="mailto:hello@pulse.gg" class="footer-link">Email Us</a>
+              <a href="mailto:hello@mongoose.gg" class="footer-link">Email Us</a>
             </div>
           </div>
         </div>
         
         <div class="footer-bottom">
           <p class="footer-copyright">
-            © {{ currentYear }} Pulse.gg. All rights reserved. Not affiliated with Riot Games.
+            © {{ currentYear }} Mongoose. All rights reserved. Not affiliated with Riot Games.
           </p>
         </div>
       </footer>

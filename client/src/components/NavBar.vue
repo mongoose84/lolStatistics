@@ -3,8 +3,8 @@
     <div class="nav-container">
       <!-- Logo - navigates to /app/user if logged in, / if not -->
       <router-link :to="logoDestination" class="nav-logo-link">
-        <img src="/pulse-icon.svg" alt="Pulse.gg" class="nav-logo-icon" />
-        <span class="nav-logo-text">Pulse<span class="nav-logo-tld">.gg</span></span>
+        <img src="/mongoose.png" alt="Mongoose" class="nav-logo-icon" />
+        <span class="nav-logo-text">Mongoose</span>
       </router-link>
 
       <!-- Desktop Navigation -->

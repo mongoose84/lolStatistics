@@ -3,8 +3,8 @@
     <div class="header-content">
       <!-- Logo -->
       <router-link to="/app/user" class="header-logo">
-        <img src="/pulse-icon.svg" alt="Pulse.gg" class="logo-icon" />
-        <span class="logo-text">Pulse.gg</span>
+        <img src="/mongoose.png" alt="Mongoose" class="logo-icon" />
+        <span class="logo-text">Mongoose</span>
       </router-link>
 
       <!-- User section -->
