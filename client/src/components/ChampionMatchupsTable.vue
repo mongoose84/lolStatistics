@@ -203,8 +203,9 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch, onUnmounted } from 'vue'
 import { getWinRateColorClass } from '../composables/useWinRateColor'
+import { trackFeature } from '../services/analyticsApi'
 
 const props = defineProps({
   matchups: {
@@ -274,8 +275,30 @@ const inverseMatchups = computed(() => {
   return results.sort((a, b) => b.winRate - a.winRate)
 })
 
+// Track search when user finishes typing (debounced via watcher)
+let searchDebounceTimer = null
+
+onUnmounted(() => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = null
+  }
+})
+watch(searchQuery, (newQuery) => {
+  clearTimeout(searchDebounceTimer)
+  if (newQuery.trim().length >= 2) {
+    searchDebounceTimer = setTimeout(() => {
+      trackFeature('champion_matchup_search', {
+        query: newQuery.trim(),
+        resultsCount: inverseMatchups.value.length,
+        role: selectedRole.value
+      })
+    }, 500) // Wait 500ms after typing stops
+  }
+})
+
 function onSearchInput() {
-  // Could add debounce here if needed
+  // Search tracking handled by watcher with debounce
 }
 
 function clearSearch() {

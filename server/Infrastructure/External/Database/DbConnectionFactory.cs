@@ -11,7 +11,7 @@ namespace RiotProxy.Infrastructure.External.Database
                     "Database connection string is not configured. " +
                     "Please set one of: " +
                     "appsettings.json[ConnectionStrings:Default], " +
-                    "environment variable LOL_DB_CONNECTIONSTRING, " +
+                    "environment variable LOL_DB_CONNECTIONSTRING_V2, " +
                     "See README.md for setup instructions."
                 );
 

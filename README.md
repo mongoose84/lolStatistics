@@ -86,6 +86,17 @@ npm run dev
 npm run test:unit
 ```
 
+Playwright tests:
+Set the test environment variables in the terminal:
+```
+export E2E_TEST_USER=<your-username>
+export E2E_TEST_PASSWORD=<your-password>
+```
+Run the tests:
+```
+npx playwright test
+```
+
 #### Server part
 from root
 ```
@@ -116,7 +127,7 @@ Emails are encrypted at rest in the database. Generate a key and set it via user
 openssl rand -base64 32
 
 # Set via user-secrets (from server/)
-dotnet user-secrets set "Security:EmailEncryptionKey" "your-generated-key-here"
+dotnet user-secrets set "Security:EncryptionSecret" "your-generated-key-here"
 ```
 
 **⚠️ Important:** Store this key securely! If lost, encrypted emails cannot be recovered. If leaked, emails can be decrypted.

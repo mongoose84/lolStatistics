@@ -7,6 +7,7 @@ using RiotProxy.Infrastructure.External.Riot;
 using RiotProxy.Infrastructure.External;
 using RiotProxy.Infrastructure.Security;
 using RiotProxy.Infrastructure.WebSocket;
+using RiotProxy.Infrastructure.Middleware;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,20 +24,16 @@ builder.Services.AddSingleton<IEncryptor>(sp =>
 {
     // Re-read from configuration in case tests have overridden it
     var config = sp.GetRequiredService<IConfiguration>();
-    var encryptionKey = config["Security:EmailEncryptionKey"]
-        ?? config["EMAIL_ENCRYPTION_KEY"]
-        ?? Environment.GetEnvironmentVariable("EMAIL_ENCRYPTION_KEY")
-        ?? Secrets.EmailEncryptionKey;
+    var encryptionSecret = config["Security:EncryptionSecret"]
+        ?? config["ENCRYPTION_SECRET"]
+        ?? Environment.GetEnvironmentVariable("ENCRYPTION_SECRET")
+        ?? Secrets.EncryptionSecret;
 
-    if (string.IsNullOrWhiteSpace(encryptionKey))
+    if (string.IsNullOrWhiteSpace(encryptionSecret))
     {
-        throw new InvalidOperationException(
-            "Email encryption key is not configured. " +
-            "Set Security:EmailEncryptionKey in appsettings.json, " +
-            "EMAIL_ENCRYPTION_KEY environment variable, " +
-            "Generate a key using: AesEmailEncryptor.GenerateKey()");
+        throw new InvalidOperationException("Encryption secret is not configured. ");
     }
-    return new AesEncryptor(encryptionKey);
+    return new AesEncryptor(encryptionSecret);
 });
 
 // repositories
@@ -160,7 +157,11 @@ if (builder.Environment.IsDevelopment())
     builder.Logging.AddDebug();
 }
 
+
 var app = builder.Build();
+
+// Use custom JSON exception middleware globally
+app.UseMiddleware<JsonExceptionMiddleware>();
 
 // Apply the CORS policy globally
 app.UseCors("VueClientPolicy");
