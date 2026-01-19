@@ -101,7 +101,7 @@ jobs:
             }
             "AllowedHosts" = "*"
             "ConnectionStrings" = @{
-              "DatabaseV2" = "${{ secrets.DB_CONNECTIONSTRING }}"
+              "Database_production" = "${{ secrets.DB_CONNECTIONSTRING }}"
             }
             "Riot" = @{
               "ApiKey" = "${{ secrets.RIOT_API_KEY }}"

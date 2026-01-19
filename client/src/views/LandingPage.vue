@@ -348,7 +348,8 @@ const pricingTiers = [
   border-radius: 9999px;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
   backdrop-filter: blur(10px);
 }
 
@@ -356,7 +357,6 @@ const pricingTiers = [
   width: 210px;
   height: 100px;
   margin: auto;
-  margin-top: 50px;
 }
 
 .hero-logo-text {
@@ -365,7 +365,7 @@ const pricingTiers = [
   color: var(--color-text);
   margin-top: -35px;
   margin-left: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
 }
 
 .hero-badge-icon {

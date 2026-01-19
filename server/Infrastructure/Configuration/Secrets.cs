@@ -50,28 +50,12 @@ namespace RiotProxy.Infrastructure
             else if (isTesting)
             {
                 // Testing: prefer test-specific connection string
-                dbConnectionV2Candidate = FirstNonEmpty(
-                    config.GetConnectionString("DatabaseV2_Test"),
-                    config["ConnectionStrings:DatabaseV2_Test"],
-                    config["Database:ConnectionStringV2_Test"],
-                    config["LOL_DB_CONNECTIONSTRING_V2_TEST"],
-                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2_TEST"),
-                    // fallback to default
-                    config.GetConnectionString("DatabaseV2"),
-                    config["ConnectionStrings:DatabaseV2"],
-                    config["Database:ConnectionStringV2"],
-                    config["LOL_DB_CONNECTIONSTRING_V2"],
-                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"));
+                dbConnectionV2Candidate = GetDatabaseConnectionString(config, "Database_production");
             }
             else
             {
                 // Default (Development or other): use standard connection string
-                dbConnectionV2Candidate = FirstNonEmpty(
-                    config.GetConnectionString("DatabaseV2"),
-                    config["ConnectionStrings:DatabaseV2"],
-                    config["Database:ConnectionStringV2"],
-                    config["LOL_DB_CONNECTIONSTRING_V2"],
-                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"));
+                dbConnectionV2Candidate = GetDatabaseConnectionString(config, "Database_test");
             }
 
             var encryptionSecretCandidate = FirstNonEmpty(
@@ -131,12 +115,15 @@ namespace RiotProxy.Infrastructure
                 .FirstOrDefault() ?? string.Empty;
         }
 
-        private static string ReadIfExists(string filename)
+        private static string GetDatabaseConnectionString(IConfiguration config, string connectionString)
         {
-            string filePath = Path.Combine(SecretsFolder, filename);
-            if (!File.Exists(filePath))
-                return string.Empty;
-            return File.ReadAllText(filePath).Trim();
+            var dbConnectionString = FirstNonEmpty(
+                    config.GetConnectionString(connectionString),
+                    config["ConnectionStrings:" + connectionString],
+                    config["Database:" + connectionString],
+                    config[connectionString],
+                    Environment.GetEnvironmentVariable(connectionString));
+            return dbConnectionString;
         }
     }
 }
