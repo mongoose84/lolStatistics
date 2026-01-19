@@ -22,6 +22,7 @@ namespace RiotProxy.Infrastructure
         {
             var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
             var isTesting = string.Equals(aspnetEnv, "Testing", StringComparison.OrdinalIgnoreCase);
+            var isProduction = string.Equals(aspnetEnv, "Production", StringComparison.OrdinalIgnoreCase);
 
             // Compute candidates outside the lock to reduce lock duration
             var apiKeyCandidate = FirstNonEmpty(
@@ -29,12 +30,49 @@ namespace RiotProxy.Infrastructure
                 config["RIOT_API_KEY"],
                 Environment.GetEnvironmentVariable("RIOT_API_KEY"));
 
-            var dbConnectionV2Candidate = FirstNonEmpty(
-                config.GetConnectionString("DatabaseV2"),
-                config["ConnectionStrings:DatabaseV2"],
-                config["Database:ConnectionStringV2"],
-                config["LOL_DB_CONNECTIONSTRING_V2"],
-                Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"));
+            string dbConnectionV2Candidate;
+            if (isProduction)
+            {
+                // Production: prefer production-specific connection string
+                dbConnectionV2Candidate = FirstNonEmpty(
+                    config.GetConnectionString("DatabaseV2_Prod"),
+                    config["ConnectionStrings:DatabaseV2_Prod"],
+                    config["Database:ConnectionStringV2_Prod"],
+                    config["LOL_DB_CONNECTIONSTRING_V2_PROD"],
+                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2_PROD"),
+                    // fallback to default
+                    config.GetConnectionString("DatabaseV2"),
+                    config["ConnectionStrings:DatabaseV2"],
+                    config["Database:ConnectionStringV2"],
+                    config["LOL_DB_CONNECTIONSTRING_V2"],
+                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"));
+            }
+            else if (isTesting)
+            {
+                // Testing: prefer test-specific connection string
+                dbConnectionV2Candidate = FirstNonEmpty(
+                    config.GetConnectionString("DatabaseV2_Test"),
+                    config["ConnectionStrings:DatabaseV2_Test"],
+                    config["Database:ConnectionStringV2_Test"],
+                    config["LOL_DB_CONNECTIONSTRING_V2_TEST"],
+                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2_TEST"),
+                    // fallback to default
+                    config.GetConnectionString("DatabaseV2"),
+                    config["ConnectionStrings:DatabaseV2"],
+                    config["Database:ConnectionStringV2"],
+                    config["LOL_DB_CONNECTIONSTRING_V2"],
+                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"));
+            }
+            else
+            {
+                // Default (Development or other): use standard connection string
+                dbConnectionV2Candidate = FirstNonEmpty(
+                    config.GetConnectionString("DatabaseV2"),
+                    config["ConnectionStrings:DatabaseV2"],
+                    config["Database:ConnectionStringV2"],
+                    config["LOL_DB_CONNECTIONSTRING_V2"],
+                    Environment.GetEnvironmentVariable("LOL_DB_CONNECTIONSTRING_V2"));
+            }
 
             var encryptionSecretCandidate = FirstNonEmpty(
                 config["Security:EncryptionSecret"],

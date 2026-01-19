@@ -112,7 +112,7 @@ jobs:
               "EnableMvpLogin" = $false
             }
             "Jobs" = @{
-              "EnableMatchHistorySync" = $true
+              "EnableMatchHistorySync" = $false
             }
             "Security" = @{
               "EncryptionSecret" = "${{ secrets.ENCRYPTION_SECRET }}"
