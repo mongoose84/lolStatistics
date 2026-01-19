@@ -4,7 +4,7 @@
       <!-- Logo -->
       <router-link to="/app/user" class="header-logo">
         <img src="/mongoose.png" alt="Mongoose" class="logo-icon" />
-        <span class="logo-text">Mongoose</span>
+        <span class="logo-text">Mongoose.gg</span>
       </router-link>
 
       <!-- User section -->
@@ -135,7 +135,7 @@ onUnmounted(() => {
 }
 
 .logo-icon {
-  width: 32px;
+  width: 64px;
   height: 32px;
 }
 

@@ -9,17 +9,17 @@
         
         <section class="legal-section">
           <h2>Agreement to Terms</h2>
-          <p>By accessing and using Mongoose, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service.</p>
+          <p>By accessing and using <Mongoose class="gg"></Mongoose>, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service.</p>
         </section>
         
         <section class="legal-section">
           <h2>Use License</h2>
-          <p>We grant you a limited, non-exclusive, non-transferable license to use Mongoose for personal, non-commercial purposes, subject to these terms.</p>
+          <p>We grant you a limited, non-exclusive, non-transferable license to use Mongoose.gg for personal, non-commercial purposes, subject to these terms.</p>
         </section>
         
         <section class="legal-section">
           <h2>Riot Games Disclaimer</h2>
-          <p>Mongoose is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</p>
+          <p>Mongoose.gg is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</p>
         </section>
         
         <section class="legal-section">
@@ -34,12 +34,12 @@
         
         <section class="legal-section">
           <h2>Prohibited Uses</h2>
-          <p>You may not use Mongoose for any unlawful purpose or to violate any laws. You may not attempt to gain unauthorized access to any part of the service.</p>
+          <p>You may not use Mongoose.gg for any unlawful purpose or to violate any laws. You may not attempt to gain unauthorized access to any part of the service.</p>
         </section>
         
         <section class="legal-section">
           <h2>Limitation of Liability</h2>
-          <p>In no event shall Mongoose be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use or inability to use the service.</p>
+          <p>In no event shall Mongoose.gg be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use or inability to use the service.</p>
         </section>
         
         <section class="legal-section">

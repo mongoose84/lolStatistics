@@ -4,7 +4,7 @@
       <!-- Logo - navigates to /app/user if logged in, / if not -->
       <router-link :to="logoDestination" class="nav-logo-link">
         <img src="/mongoose.png" alt="Mongoose" class="nav-logo-icon" />
-        <span class="nav-logo-text">Mongoose</span>
+        <span class="nav-logo-text">Mongoose.gg</span>
       </router-link>
 
       <!-- Desktop Navigation -->
@@ -111,7 +111,7 @@ const closeMobile = () => {
 }
 
 .nav-logo-icon {
-  width: 32px;
+  width: 64px;
   height: 32px;
 }
 

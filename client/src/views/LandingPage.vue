@@ -141,7 +141,7 @@
           <div class="footer-brand">
             <div class="footer-logo">
               <img src="/mongoose.png" alt="Mongoose" class="footer-logo-icon" />
-              <span class="footer-logo-text">Mongoose</span>
+              <span class="footer-logo-text">Mongoose.gg</span>
             </div>
             <p class="footer-tagline">Built with ❤️ in the nordics by the Agile Astronaut</p>
           </div>
@@ -169,7 +169,7 @@
         
         <div class="footer-bottom">
           <p class="footer-copyright">
-            © {{ currentYear }} Mongoose. All rights reserved. Not affiliated with Riot Games.
+            © {{ currentYear }} Mongoose.gg. All rights reserved. Not affiliated with Riot Games.
           </p>
         </div>
       </footer>
@@ -744,7 +744,7 @@ const pricingTiers = [
 }
 
 .footer-logo-icon {
-  width: 32px;
+  width: 64px;
   height: 32px;
 }
 

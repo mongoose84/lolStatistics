@@ -141,7 +141,7 @@ const handleResend = () => {
 }
 
 .verify-logo {
-  width: 64px;
+  width: 128px;
   height: 64px;
   margin-bottom: var(--spacing-md);
 }

@@ -9,7 +9,7 @@
         
         <section class="legal-section">
           <h2>Overview</h2>
-          <p>Mongoose ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information about you when you use our service.</p>
+          <p>Mongoose.gg ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information about you when you use our service.</p>
         </section>
         
         <section class="legal-section">
