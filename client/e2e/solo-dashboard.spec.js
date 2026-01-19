@@ -63,15 +63,11 @@ test.describe('Solo Dashboard Flow', () => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
-    // Step 6: Navigate to Solo Dashboard
-    // Look for the solo dashboard navigation link/button
-    const soloDashboardLink = page.getByRole('link', { name: /solo/i }).or(
-      page.getByRole('button', { name: /solo/i })
-    ).or(
-      page.locator('[href="/app/solo"]')
-    );
-
-    await soloDashboardLink.first().click();
+    // Step 6: Navigate to Solo Dashboard by clicking the ProfileHeaderCard
+    // The ProfileHeaderCard is expected to have a class containing 'profile' or 'header'
+    const profileHeaderCard = page.locator('[class*="profile"], [class*="header"]').first();
+    await expect(profileHeaderCard).toBeVisible({ timeout: 10_000 });
+    await profileHeaderCard.click();
 
     // Step 7: Verify Solo Dashboard loaded
     await expect(page).toHaveURL('/app/solo', { timeout: 10_000 });

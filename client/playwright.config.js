@@ -41,11 +41,11 @@ export default defineConfig({
   },
 
   // Test timeout
-  timeout: 30_000,
+  timeout: 5_000,
 
   // Expect timeout
   expect: {
-    timeout: 10_000,
+    timeout: 5_000,
   },
 
   // Configure projects for Chromium and Firefox
