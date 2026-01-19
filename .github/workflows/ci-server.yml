@@ -219,7 +219,7 @@ jobs:
           exclude: |
             RiotProxy.Tests/**
             **/RiotProxy.Tests/**
-          server-dir: ${{ secrets.FTP_API_PATH }}
+          server-dir: ${{ secrets.FTP_API_PATH }}/
           # optional safety flags
           # dry-run: false
           # timeout: 30
