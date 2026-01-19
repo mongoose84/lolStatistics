@@ -63,16 +63,15 @@ test.describe('Solo Dashboard Flow', () => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
-    // Step 6: Navigate to Solo Dashboard by clicking the ProfileHeaderCard
-    // The ProfileHeaderCard is expected to have a class containing 'profile' or 'header'
-    const profileHeaderCard = page.locator('[class*="profile"], [class*="header"]').first();
+    // Step 6: Navigate to Solo Dashboard by clicking the ProfileHeaderCard (using data-testid)
+    const profileHeaderCard = page.getByTestId('profile-header-card');
     await expect(profileHeaderCard).toBeVisible({ timeout: 10_000 });
-    await profileHeaderCard.click();
+    await Promise.all([
+      page.waitForURL('/app/solo', { timeout: 10_000 }),
+      profileHeaderCard.click(),
+    ]);
 
-    // Step 7: Verify Solo Dashboard loaded
-    await expect(page).toHaveURL('/app/solo', { timeout: 10_000 });
-
-    // Step 8: Verify dashboard content is present
+    // Step 7: Verify dashboard content is present
     // Check for profile header card (should show summoner info)
     await expect(page.locator('[class*="profile"]').or(page.locator('[class*="header"]')).first()).toBeVisible({ timeout: 15_000 });
   });
