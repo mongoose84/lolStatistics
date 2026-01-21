@@ -65,7 +65,7 @@ Any known weaknesses you’ve noticed (e.g., early‑game deaths, map awareness)
     If you can run a simple SQL query on the tables you described, try something like:
 
 -- Example: average CS per minute for your last 20 games
-SELECT AVG(cs / (game_duration_sec/60.0)) AS avg_cs_per_min
+SELECT AVG(creep_score / (game_duration_sec/60.0)) AS avg_cs_per_min
 FROM Matches m
 JOIN Participants p ON m.match_id = p.match_id
 WHERE p.puuid = '<your‑puuid>'
@@ -101,7 +101,7 @@ Week	Focus	Key Actions	Success Indicator
 📈 How to Track the Metrics
 Table	Column(s) to watch	What to record after each game
 Participants	kills, deaths, assists → compute KDA; win (1/0) → win‑rate	Update a simple spreadsheet: Game #, KDA, Win?
-Participant checkpoints	deaths_pre_10, deaths_10_20, deaths_20_30	Sum these three fields → total deaths per game (goal G1).
+Participant metrics	deaths_pre_10, deaths_10_20, deaths_20_30	Sum these three fields → total deaths per game (goal G1).
 Participant metrics	vision_score (total), vision_per_min	Compare against target ≥ 55 (goal G2).
 Participant objectives	dragons_participated, heralds_participated, barons_participated, towers_participated	Compute participation rate: (sum of all objectives) ÷ (games played).
 Matches	game_duration_sec (to confirm 35‑min average)	Ensure per‑minute calculations stay accurate.
@@ -128,7 +128,7 @@ Below is a sketch of a “smart‑analysis assistant” that could ingest the ra
 🎛️ What the tool does
 Step	Input	Processing	Output / Highlight
 1️⃣ Data Ingestion	CSV/SQL dump of the five tables you listed.	Normalises IDs, merges rows into a single “match‑view” per participant (e.g., puuid + match_id).	One flat record per game for the player you care about.
-2️⃣ KPI Calculation	Raw columns (kills, deaths, vision_score, etc.).	Computes derived metrics: • KDA = (K + A) / max(1, D) • CS / min = creep_score / (game_duration_sec/60) • Vision / min = vision_score / (game_duration_sec/60) • Death windows (pre‑10, 10‑20, 20‑30) from checkpoint columns • Objective participation % = (dragons + heralds + barons + towers) / total possible per game.	Numeric KPIs ready for comparison against target thresholds.
+2️⃣ KPI Calculation	Raw columns (kills, deaths, vision_score, etc.).	Computes derived metrics: • KDA = (K + A) / max(1, D) • CS / min = creep_score / (game_duration_sec/60) • Vision / min = vision_score / (game_duration_sec/60) • Death windows (pre‑10, 10‑20, 20‑30) from metric columns • Objective participation % = (dragons + heralds + barons + towers) / total possible per game.	Numeric KPIs ready for comparison against target thresholds.
 3️⃣ Trend & Anomaly Detection	Time‑ordered matches (by game_start_time).	• Rolling averages (last 5, 10, 20 games). • Z‑score outliers for each KPI (e.g., a game where deaths > 2 σ above the mean). • Change‑point detection to spot when a new champion or patch caused a shift.	• Red flags (e.g., “high death count in early game”). • Positive spikes (e.g., “vision / min jumped 30 % this week”).
 4️⃣ Goal‑Specific Heatmaps	KPI series + goal definitions (G1‑G3).	• Maps each game to “Goal‑met?” boolean for G1, G2, G3. • Generates heatmaps showing which minutes or phases contributed most to success/failure (e.g., “most deaths occurred between 12‑16 min”).	Visual cues that tell you where to focus practice.
 5️⃣ Actionable Recommendations	Detected patterns + domain knowledge (team‑fight placement, vision habits).	Uses rule‑based logic such as: • If deaths_pre_10 + deaths_10_20 + deaths_20_30 > 3 → suggest “Ward‑jump‑back” drill. • If vision_per_min < 1.2 → suggest “Buy 2 control wards early”. • If objective participation < 85 % → suggest “Prioritise dragon after 15 min when you have vision advantage”.	Short, concrete tips that you can copy‑paste into a post‑game notes sheet.
@@ -138,49 +138,7 @@ Goal	Highlighted Issue	Example Highlight (auto‑generated)
 G1 – Reduce early‑game deaths	• Spike in deaths_pre_10 or deaths_10_20. • Correlation between low vision score and early deaths.	“Game #12: 4 deaths before 10 min (2× your average). Vision / min = 0.6 (below 1.0). Recommend adding a control ward at 3 min.”
 G2 – Boost vision & map awareness	• Vision / min below 1.0 for > 50 % of games. • Missing control‑ward placements in the river.	“Vision / min average = 0.78 (target ≥ 1.5). You placed 0 control wards in 8 of the last 10 games.”
 G3 – Convert objective control into wins	• High objective participation but low win‑rate when you die early. • Low tower participation relative to dragons/barons.	“Objective participation = 84 % (just shy of target). However, win‑rate when you die before 20 min = 22 %. Focus on staying alive longer to leverage objective advantage.”
-📦 Minimal Viable Implementation (for a programmer)
 
-If you want to spin this up quickly, here’s a rough outline in Python (using pandas):
-
-import pandas as pd
-
-# 1️⃣ Load CSVs
-matches      = pd.read_csv('matches.csv')
-participants = pd.read_csv('participants.csv')
-checkpoints  = pd.read_csv('checkpoints.csv')
-metrics      = pd.read_csv('metrics.csv')
-objectives   = pd.read_csv('objectives.csv')
-
-# 2️⃣ Merge into a single view for your puuid
-puuid = 'YOUR_PUUID_HERE'
-df = (participants[participants.puuid == puuid]
-      .merge(matches, on='match_id')
-      .merge(checkpoints, left_on='id', right_on='participant_id')
-      .merge(metrics, left_on='id', right_on='participant_id')
-      .merge(objectives, left_on='id', right_on='participant_id'))
-
-# 3️⃣ Derive KPIs
-df['kda']          = (df.kills + df.assists) / df.deaths.clip(lower=1)
-df['cs_per_min']   = df.creep_score / (df.game_duration_sec/60)
-df['vision_per_min']= df.vision_score / (df.game_duration_sec/60)
-df['early_deaths'] = df.deaths_pre_10 + df.deaths_10_20 + df.deaths_20_30
-df['obj_part']     = (df.dragons_participated +
-                      df.heralds_participated +
-                      df.barons_participated +
-                      df.towers_participated) / 4   # 4 possible obj types per game
-
-# 4️⃣ Goal checks
-df['g1_met'] = (df.early_deaths <= 3) & (df.kda >= 5)
-df['g2_met'] = (df.vision_per_min >= 1.5) & (df.vision_score >= 55)
-df['g3_met'] = (df.win == 1) & (df.obj_part >= 0.85) & (df.kda >= 5)
-
-# 5️⃣ Summary dashboard
-summary = {
-    'G1': {'games_needed': 20 - df.g1_met.sum()},
-    'G2': {'games_needed': 30 - df.g2_met.sum()},
-    'G3': {'games_needed': 40 - df.g3_met.sum()}
-}
-print(summary)
 
 You can then plug the summary dict into a tiny Flask/Dash UI to get the table you asked for, plus line charts for each KPI.
 ✅ Takeaway for you, Thread
