@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RiotProxy.External.Domain.Entities;
 using RiotProxy.Infrastructure.External.Database.Repositories;
 
 namespace RiotProxy.Application.Endpoints.Auth;
@@ -30,6 +31,7 @@ public sealed class VerifyEndpoint : IEndpoint
             [FromBody] VerifyRequest request,
             HttpContext httpContext,
             [FromServices] UsersRepository usersRepo,
+            [FromServices] VerificationTokensRepository tokensRepo,
             [FromServices] ILogger<VerifyEndpoint> logger,
             [FromServices] IConfiguration config
         ) =>
@@ -63,11 +65,27 @@ public sealed class VerifyEndpoint : IEndpoint
                     return Results.Ok(new VerifyResponse(true, "Email already verified"));
                 }
 
-                // For MVP, accept any valid 6-digit code
-                // TODO: Implement actual email verification with stored codes
-                logger.LogDebug("User {UserId} submitted verification code", userId);
+                // Get active verification token
+                var token = await tokensRepo.GetActiveTokenAsync(userId, TokenTypes.EmailVerification);
+                if (token == null)
+                {
+                    logger.LogWarning("User {UserId} has no active verification token", userId);
+                    return Results.BadRequest(new { error = "No verification code found. Please request a new code.", code = "NO_CODE_STORED" });
+                }
 
-                // Update user as verified
+                // Validate the code matches
+                if (!string.Equals(request.Code, token.Code, StringComparison.Ordinal))
+                {
+                    // Increment attempt counter
+                    await tokensRepo.IncrementAttemptsAsync(token.Id);
+                    logger.LogWarning("User {UserId} submitted incorrect verification code (attempt {Attempts})", userId, token.Attempts + 1);
+                    return Results.BadRequest(new { error = "Invalid verification code. Please try again.", code = "INVALID_CODE" });
+                }
+
+                logger.LogDebug("User {UserId} submitted correct verification code", userId);
+
+                // Mark token as used and update user as verified
+                await tokensRepo.MarkTokenAsUsedAsync(token.Id);
                 await usersRepo.UpdateEmailVerifiedAsync(userId, true);
 
                 // Update the session claims to reflect verified status

@@ -8,6 +8,7 @@ using RiotProxy.Infrastructure.External;
 using RiotProxy.Infrastructure.Security;
 using RiotProxy.Infrastructure.WebSocket;
 using RiotProxy.Infrastructure.Middleware;
+using RiotProxy.Infrastructure.Email;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,9 +52,13 @@ builder.Services.AddScoped<DuoMetricsRepository>();
 builder.Services.AddScoped<SoloStatsRepository>();
 builder.Services.AddScoped<SeasonsRepository>();
 builder.Services.AddScoped<AnalyticsEventsRepository>();
+builder.Services.AddScoped<VerificationTokensRepository>();
 
 // Application services
 builder.Services.AddScoped<RiotProxy.Application.Services.LoginSyncService>();
+
+// Email service for verification emails
+builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 
 // Named HttpClient for Riot API
 builder.Services.AddHttpClient("RiotApi", client =>

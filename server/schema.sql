@@ -26,6 +26,21 @@ CREATE TABLE IF NOT EXISTS users (
     KEY idx_tier (tier)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Verification tokens for email verification, password reset, etc.
+CREATE TABLE IF NOT EXISTS verification_tokens (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    token_type ENUM('email_verification', 'password_reset', 'email_change') NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP NULL,
+    attempts INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_type (user_id, token_type, used_at),
+    INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS riot_accounts (
     puuid VARCHAR(78) PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,

@@ -131,6 +131,29 @@ export async function verify(code) {
 }
 
 /**
+ * Resend verification email
+ * @returns {Promise<Object>} Result with success status
+ */
+export async function resendVerification() {
+  const response = await fetch(`${API_BASE}/auth/resend-verification`, {
+    method: 'POST',
+    credentials: 'include'
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to resend verification code')
+    error.status = response.status
+    error.code = data.code
+    error.waitSeconds = data.waitSeconds
+    throw error
+  }
+
+  return data
+}
+
+/**
  * Get current authenticated user
  * @returns {Promise<Object|null>} User data or null if not authenticated
  */
