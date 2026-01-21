@@ -10,7 +10,7 @@ public class VerificationTokensRepository : RepositoryBase
     /// <summary>
     /// Creates a new verification token for a user.
     /// </summary>
-    public async Task<long> CreateTokenAsync(long userId, string tokenType, string code, DateTime expiresAt)
+    public virtual async Task<long> CreateTokenAsync(long userId, string tokenType, string code, DateTime expiresAt)
     {
         const string sql = @"INSERT INTO verification_tokens 
             (user_id, token_type, code, expires_at, attempts, created_at)
@@ -32,7 +32,7 @@ public class VerificationTokensRepository : RepositoryBase
     /// <summary>
     /// Gets the most recent active (non-expired, non-used) token for a user and type.
     /// </summary>
-    public async Task<VerificationToken?> GetActiveTokenAsync(long userId, string tokenType)
+    public virtual async Task<VerificationToken?> GetActiveTokenAsync(long userId, string tokenType)
     {
         const string sql = @"SELECT id, user_id, token_type, code, expires_at, used_at, attempts, created_at 
             FROM verification_tokens 
@@ -52,7 +52,7 @@ public class VerificationTokensRepository : RepositoryBase
     /// <summary>
     /// Marks a token as used.
     /// </summary>
-    public async Task MarkTokenAsUsedAsync(long tokenId)
+    public virtual async Task MarkTokenAsUsedAsync(long tokenId)
     {
         const string sql = "UPDATE verification_tokens SET used_at = @used_at WHERE id = @id";
         await ExecuteNonQueryAsync(sql, ("@used_at", DateTime.UtcNow), ("@id", tokenId));
@@ -61,7 +61,7 @@ public class VerificationTokensRepository : RepositoryBase
     /// <summary>
     /// Increments the attempt counter for a token.
     /// </summary>
-    public async Task IncrementAttemptsAsync(long tokenId)
+    public virtual async Task IncrementAttemptsAsync(long tokenId)
     {
         const string sql = "UPDATE verification_tokens SET attempts = attempts + 1 WHERE id = @id";
         await ExecuteNonQueryAsync(sql, ("@id", tokenId));
@@ -71,7 +71,7 @@ public class VerificationTokensRepository : RepositoryBase
     /// Counts tokens created for a user within the specified time window.
     /// Used for rate limiting token creation.
     /// </summary>
-    public async Task<int> CountRecentTokensAsync(long userId, string tokenType, int seconds)
+    public virtual async Task<int> CountRecentTokensAsync(long userId, string tokenType, int seconds)
     {
         const string sql = @"SELECT COUNT(*) FROM verification_tokens 
             WHERE user_id = @user_id 
@@ -91,7 +91,7 @@ public class VerificationTokensRepository : RepositoryBase
     /// Invalidates all active tokens for a user and type (marks as used).
     /// Call this before creating a new token to ensure only one active token exists.
     /// </summary>
-    public async Task InvalidateActiveTokensAsync(long userId, string tokenType)
+    public virtual async Task InvalidateActiveTokensAsync(long userId, string tokenType)
     {
         const string sql = @"UPDATE verification_tokens 
             SET used_at = @used_at 
