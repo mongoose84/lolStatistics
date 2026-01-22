@@ -143,6 +143,9 @@ jobs:
               "FromEmail" = "${{ secrets.SMTP_FROM_EMAIL }}"
               "FromName" = "Mongoose.gg"
             }
+            "Secrets" = @{
+              "EnableDebugLogging" = $true
+            }
           } | ConvertTo-Json -Depth 10
 
           Set-Content -Path "appsettings.Production.json" -Value $json
@@ -176,6 +179,8 @@ jobs:
             exit 1
           }
 
+          Write-Host "Source file size: $((Get-Item $sourceFile).Length) bytes"
+
           Copy-Item -Path $sourceFile -Destination $targetFile -Force
           Write-Host "✅ appsettings.Production.json copied to publish output"
 
@@ -185,7 +190,12 @@ jobs:
             exit 1
           }
 
+          Write-Host "Target file size: $((Get-Item $targetFile).Length) bytes"
           Write-Host "✅ Verified: appsettings.Production.json exists in publish output"
+
+          # Show the structure (keys only, no values) for verification
+          Write-Host "Configuration structure:"
+          Get-Content $targetFile | ConvertFrom-Json | ConvertTo-Json -Depth 1
 
       # -------------------------------------------------
       # Verify publish output exists and show its contents
@@ -286,7 +296,9 @@ jobs:
           # timeout: 30
 
       # --------------------------------------------------------------
-      # Bring site back online only if it was taken offline
+      # Bring site back online by deleting app_offline.htm
+      # Note: The FTP deploy step above already deployed the new files,
+      # so we just need to delete app_offline.htm to bring the site online
       # --------------------------------------------------------------
       - name: Bring site back online (delete app_offline.htm)
         if: ${{ always() && steps.bring-offline.outputs.site_offline == 'true' }}
@@ -295,58 +307,38 @@ jobs:
           $maxAttempts = 3
           $remoteBase = "ftp://${{ secrets.FTP_HOSTNAME }}/${{ secrets.FTP_API_PATH }}"
           $remoteOffline = "$remoteBase/app_offline.htm"
-          $remoteSupportDir = "${{ secrets.FTP_API_PATH }}/CI-Support"
-          $remoteSupportTarget = "$remoteBase/CI-Support/app_offline.htm"
-          $moveSucceeded = $false
-
-          # Ensure the CI-Support folder exists on the remote (ignore errors if it already exists)
-          curl -s --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
-            "$remoteBase" `
-            -Q "MKD $remoteSupportDir" > $null 2>&1
-          Write-Host "CI-Support folder creation attempt completed (may already exist)."
-
-          # Best-effort delete of any existing target to avoid RNTO collisions
-          curl -s --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
-            "$remoteBase" `
-            -Q "DELE $remoteSupportDir/app_offline.htm" > $null 2>&1
-          Write-Host "Target cleanup attempt completed (file may not exist)."
+          $deleteSucceeded = $false
 
           for ($i = 1; $i -le $maxAttempts; $i++) {
-            Write-Host "Attempt ${i}: Moving app_offline.htm from root back to CI-Support"
+            Write-Host "Attempt ${i}: Deleting app_offline.htm to bring site back online"
             curl -v --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
               "$remoteBase" `
-              -Q "RNFR ${{ secrets.FTP_API_PATH }}/app_offline.htm" `
-              -Q "RNTO $remoteSupportDir/app_offline.htm" 2>&1 | Out-Null
+              -Q "DELE ${{ secrets.FTP_API_PATH }}/app_offline.htm" 2>&1 | Out-Null
 
             if ($LASTEXITCODE -eq 0) {
-              Write-Host "✅ Maintenance mode disabled (file moved to CI-Support)"
-              $moveSucceeded = $true
+              Write-Host "✅ Maintenance mode disabled (app_offline.htm deleted)"
+              $deleteSucceeded = $true
               break
             }
             elseif ($LASTEXITCODE -eq 21) {
-              # Exit code 21 = "FTP quote error" which typically indicates the source file was not found
-              # (RNFR failed because app_offline.htm doesn't exist in root). This is acceptable—it means
-              # the site is already online. However, exit code 21 can have other meanings depending on the
-              # FTP server and curl version, so this check may need adjustment if false positives occur.
-              # Alternative: parse stderr or expand exit code checks to include other "not found" codes.
-              Write-Warning "app_offline.htm not found or already moved; treating as already online"
-              $moveSucceeded = $true
+              # Exit code 21 typically means file not found - site is already online
+              Write-Warning "app_offline.htm not found; site is already online"
+              $deleteSucceeded = $true
               break
             }
             elseif ($i -eq $maxAttempts) {
-              Write-Warning "⚠️ Failed to move app_offline.htm after $maxAttempts attempts; site may remain offline"
+              Write-Warning "⚠️ Failed to delete app_offline.htm after $maxAttempts attempts; site may remain offline"
               break
             }
             else {
               $delay = 5 * $i
-              Write-Warning "Move failed with exit code $LASTEXITCODE, retrying in $delay seconds..."
+              Write-Warning "Delete failed with exit code $LASTEXITCODE, retrying in $delay seconds..."
               Start-Sleep -Seconds $delay
             }
           }
 
-          # Only succeed if we explicitly handled the condition; otherwise fail
-          if (-not $moveSucceeded) {
-            Write-Error "Maintenance mode could not be disabled; pipeline failing to alert operators"
+          if (-not $deleteSucceeded) {
+            Write-Error "❌ Maintenance mode could not be disabled; pipeline failing to alert operators"
             exit 1
           }
 

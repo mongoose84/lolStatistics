@@ -24,6 +24,18 @@ namespace RiotProxy.Infrastructure
             var isTesting = string.Equals(aspnetEnv, "Testing", StringComparison.OrdinalIgnoreCase);
             var isProduction = string.Equals(aspnetEnv, "Production", StringComparison.OrdinalIgnoreCase);
 
+            // Optional debug logging: only in Development or when explicitly enabled
+            var enableSecretsDebug = config.GetValue<bool>("Secrets:EnableDebugLogging", false);
+            var isDevelopment = string.Equals(aspnetEnv, "Development", StringComparison.OrdinalIgnoreCase);
+
+            if (enableSecretsDebug || isDevelopment)
+            {
+                Console.WriteLine($"[Secrets.Initialize] Environment: {aspnetEnv}");
+                Console.WriteLine($"[Secrets.Initialize] IsProduction: {isProduction}");
+                Console.WriteLine($"[Secrets.Initialize] IsTesting: {isTesting}");
+                Console.WriteLine($"[Secrets.Initialize] IsDevelopment: {isDevelopment}");
+            }
+
             // Compute candidates outside the lock to reduce lock duration
             var apiKeyCandidate = FirstNonEmpty(
                 config["Riot:ApiKey"],
@@ -51,19 +63,23 @@ namespace RiotProxy.Infrastructure
                 config["Security:EncryptionSecret"],
                 config["ENCRYPTION_SECRET"],
                 Environment.GetEnvironmentVariable("ENCRYPTION_SECRET"));
+
             lock (_initLock)
             {
                 // In non-testing environments, initialize only once for thread safety.
                 if (_initialized && !isTesting)
+                {
+                    if (enableSecretsDebug || isDevelopment)
+                    {
+                        Console.WriteLine("[Secrets.Initialize] Already initialized, skipping");
+                    }
                     return;
+                }
 
                 ApiKey = apiKeyCandidate;
                 DatabaseConnectionString = dbConnectionStringCandidate;
                 EncryptionSecret = encryptionSecretCandidate;
 
-                // Optional debug logging: only in Development or when explicitly enabled
-                var enableSecretsDebug = config.GetValue<bool>("Secrets:EnableDebugLogging", false);
-                var isDevelopment = string.Equals(aspnetEnv, "Development", StringComparison.OrdinalIgnoreCase);
                 if (enableSecretsDebug || isDevelopment)
                 {
                     LogConfigurationStatus(isProduction);
@@ -115,12 +131,40 @@ namespace RiotProxy.Infrastructure
 
         private static string GetDatabaseConnectionString(IConfiguration config, string connectionString)
         {
+            // Check each source individually for debugging
+            var fromGetConnectionString = config.GetConnectionString(connectionString);
+            var fromConnectionStringsKey = config["ConnectionStrings:" + connectionString];
+            var fromDatabaseKey = config["Database:" + connectionString];
+            var fromDirectKey = config[connectionString];
+            var fromEnvVar = Environment.GetEnvironmentVariable(connectionString);
+
+            // Log what we found (only in non-production or when debug is enabled)
+            var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            var enableSecretsDebug = config.GetValue<bool>("Secrets:EnableDebugLogging", false);
+            var isDevelopment = string.Equals(aspnetEnv, "Development", StringComparison.OrdinalIgnoreCase);
+
+            if (enableSecretsDebug || isDevelopment)
+            {
+                Console.WriteLine($"[Secrets.GetDatabaseConnectionString] Looking for: {connectionString}");
+                Console.WriteLine($"  - GetConnectionString: {(string.IsNullOrWhiteSpace(fromGetConnectionString) ? "NOT_SET" : $"SET ({fromGetConnectionString.Length} chars)")}");
+                Console.WriteLine($"  - ConnectionStrings:{connectionString}: {(string.IsNullOrWhiteSpace(fromConnectionStringsKey) ? "NOT_SET" : $"SET ({fromConnectionStringsKey.Length} chars)")}");
+                Console.WriteLine($"  - Database:{connectionString}: {(string.IsNullOrWhiteSpace(fromDatabaseKey) ? "NOT_SET" : $"SET ({fromDatabaseKey.Length} chars)")}");
+                Console.WriteLine($"  - Direct key {connectionString}: {(string.IsNullOrWhiteSpace(fromDirectKey) ? "NOT_SET" : $"SET ({fromDirectKey.Length} chars)")}");
+                Console.WriteLine($"  - Environment variable: {(string.IsNullOrWhiteSpace(fromEnvVar) ? "NOT_SET" : $"SET ({fromEnvVar.Length} chars)")}");
+            }
+
             var dbConnectionString = FirstNonEmpty(
-                    config.GetConnectionString(connectionString),
-                    config["ConnectionStrings:" + connectionString],
-                    config["Database:" + connectionString],
-                    config[connectionString],
-                    Environment.GetEnvironmentVariable(connectionString));
+                    fromGetConnectionString,
+                    fromConnectionStringsKey,
+                    fromDatabaseKey,
+                    fromDirectKey,
+                    fromEnvVar);
+
+            if (enableSecretsDebug || isDevelopment)
+            {
+                Console.WriteLine($"  - Final result: {(string.IsNullOrWhiteSpace(dbConnectionString) ? "NOT_SET" : $"SET ({dbConnectionString.Length} chars)")}");
+            }
+
             return dbConnectionString;
         }
     }
