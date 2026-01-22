@@ -95,7 +95,7 @@ public class SmtpEmailService : IEmailService
                 EnableSsl = true
             };
 
-            var mailMessage = new MailMessage
+            using var mailMessage = new MailMessage
             {
                 From = new MailAddress(fromEmail, fromName),
                 Subject = "Verify your Mongoose.gg email",
@@ -117,6 +117,10 @@ public class SmtpEmailService : IEmailService
 
     private string BuildEmailBody(string username, string verificationCode)
     {
+        // HTML-encode user-controlled data to prevent HTML injection
+        var encodedUsername = WebUtility.HtmlEncode(username);
+        var encodedCode = WebUtility.HtmlEncode(verificationCode);
+
         return $@"
 <!DOCTYPE html>
 <html>
@@ -141,20 +145,20 @@ public class SmtpEmailService : IEmailService
                     <tr>
                         <td style=""padding: 0 40px 20px 40px;"">
                             <p style=""margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #b3b3b3;"">
-                                Hi <strong style=""color: #ffffff;"">{username}</strong>,
+                                Hi <strong style=""color: #ffffff;"">{encodedUsername}</strong>,
                             </p>
                             <p style=""margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #b3b3b3;"">
                                 Thanks for signing up for Mongoose.gg! To complete your registration, please verify your email address by entering the code below:
                             </p>
                         </td>
                     </tr>
-                    
+
                     <!-- Verification Code -->
                     <tr>
                         <td align=""center"" style=""padding: 0 40px 30px 40px;"">
                             <div style=""background-color: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; padding: 24px; display: inline-block;"">
                                 <div style=""font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #ffffff; font-family: 'Courier New', monospace;"">
-                                    {verificationCode}
+                                    {encodedCode}
                                 </div>
                             </div>
                         </td>
