@@ -108,6 +108,10 @@ public sealed class RegisterEndpoint : IEndpoint
                 var userId = await usersRepo.UpsertAsync(newUser);
                 newUser.UserId = userId;
 
+                // Invalidate any existing verification tokens for this user
+                // This handles edge cases like race conditions or if UpsertAsync updated an existing user
+                await tokensRepo.InvalidateActiveTokensAsync(userId, TokenTypes.EmailVerification);
+
                 // Generate verification code and create token
                 var verificationCode = VerificationCodeGenerator.Generate();
                 var verificationExpiresAt = DateTime.UtcNow.AddMinutes(15);
