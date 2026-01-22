@@ -306,33 +306,36 @@ jobs:
         run: |
           $maxAttempts = 3
           $remoteBase = "ftp://${{ secrets.FTP_HOSTNAME }}/${{ secrets.FTP_API_PATH }}"
-          $remoteOffline = "$remoteBase/app_offline.htm"
           $deleteSucceeded = $false
 
           for ($i = 1; $i -le $maxAttempts; $i++) {
             Write-Host "Attempt ${i}: Deleting app_offline.htm to bring site back online"
+
+            # Run curl and capture exit code
             curl -v --ssl -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
               "$remoteBase" `
               -Q "DELE ${{ secrets.FTP_API_PATH }}/app_offline.htm" 2>&1 | Out-Null
 
-            if ($LASTEXITCODE -eq 0) {
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
               Write-Host "✅ Maintenance mode disabled (app_offline.htm deleted)"
               $deleteSucceeded = $true
               break
             }
-            elseif ($LASTEXITCODE -eq 21) {
-              # Exit code 21 typically means file not found - site is already online
-              Write-Warning "app_offline.htm not found; site is already online"
+            elseif ($exitCode -eq 21 -or $exitCode -eq 78) {
+              # Exit codes 21 or 78 typically mean file not found - site is already online
+              Write-Host "✅ app_offline.htm not found; site is already online (exit code: $exitCode)"
               $deleteSucceeded = $true
               break
             }
             elseif ($i -eq $maxAttempts) {
-              Write-Warning "⚠️ Failed to delete app_offline.htm after $maxAttempts attempts; site may remain offline"
+              Write-Warning "⚠️ Failed to delete app_offline.htm after $maxAttempts attempts (exit code: $exitCode); site may remain offline"
               break
             }
             else {
               $delay = 5 * $i
-              Write-Warning "Delete failed with exit code $LASTEXITCODE, retrying in $delay seconds..."
+              Write-Warning "Delete failed with exit code $exitCode, retrying in $delay seconds..."
               Start-Sleep -Seconds $delay
             }
           }
@@ -341,4 +344,7 @@ jobs:
             Write-Error "❌ Maintenance mode could not be disabled; pipeline failing to alert operators"
             exit 1
           }
+
+          Write-Host "✅ Site is now online"
+          exit 0
 
