@@ -7,8 +7,9 @@ Your production server diagnostics show:
 - ❌ `smtpConfigured`: false
 - ✅ `emailEncryptionKeyConfigured`: true
 
-## ✅ ROOT CAUSE IDENTIFIED
+## ✅ ROOT CAUSES IDENTIFIED AND FIXED
 
+### Issue 1: Missing appsettings.Production.json in deployment
 **The `appsettings.Production.json` file was NOT being copied to the publish output directory.**
 
 The GitHub Actions workflow was:
@@ -16,7 +17,18 @@ The GitHub Actions workflow was:
 2. ❌ Running `dotnet publish` which did NOT copy the file to the publish output
 3. ❌ Deploying the publish output (without `appsettings.Production.json`) to production
 
-**This has been FIXED** in the updated `.github/workflows/ci-server.yml` file.
+**FIXED** in `.github/workflows/ci-server.yml` - now explicitly copies the file to publish output.
+
+### Issue 2: ASPNETCORE_ENVIRONMENT not set to Production ⚠️ **CRITICAL**
+**The `ASPNETCORE_ENVIRONMENT` environment variable was NOT SET on the production server.**
+
+This caused:
+1. ❌ Server thought it was running in Development/Default mode (not Production)
+2. ❌ `Secrets.Initialize()` looked for `Database_test` instead of `Database_production`
+3. ❌ Connection string in `appsettings.Production.json` was under `Database_production` key
+4. ❌ Result: Database connection string not found!
+
+**FIXED** in `server/web.config` and `server/CI-Support/web.config` - now sets `ASPNETCORE_ENVIRONMENT=Production`.
 
 ## Changes Made
 
