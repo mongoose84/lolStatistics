@@ -26,6 +26,7 @@ namespace RiotProxy.Application.Endpoints.Diagnostics
                 var isApiKeyConfigured = !string.IsNullOrWhiteSpace(Secrets.ApiKey);
                 var isDbConfigured = !string.IsNullOrWhiteSpace(Secrets.DatabaseConnectionString);
                 var isEncryptionKeyConfigured = !string.IsNullOrWhiteSpace(Secrets.EncryptionSecret);
+                var isSmtpConfigured = Environment.GetEnvironmentVariable("SMTP_HOST") is not null;
 
                 var diagnostics = new
                 {
@@ -36,8 +37,12 @@ namespace RiotProxy.Application.Endpoints.Diagnostics
                     {
                         apiKeyConfigured = isApiKeyConfigured,
                         databaseConfigured = isDbConfigured,
+                        smtpConfigured = isSmtpConfigured,
                         emailEncryptionKeyConfigured = isEncryptionKeyConfigured,
-                        allConfigured = isApiKeyConfigured && isDbConfigured && isEncryptionKeyConfigured
+                        allConfigured = isApiKeyConfigured && 
+                                        isDbConfigured && 
+                                        isSmtpConfigured && 
+                                        isEncryptionKeyConfigured
                     },
                     metrics = new
                     {
