@@ -276,6 +276,17 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             return _tokens.Values.Where(t => t.UserId == userId);
         }
+
+        /// <summary>
+        /// Helper method for testing: sets the attempt count on a token.
+        /// </summary>
+        public void SetTokenAttempts(long tokenId, int attempts)
+        {
+            if (_tokens.TryGetValue(tokenId, out var token))
+            {
+                token.Attempts = attempts;
+            }
+        }
     }
 
     /// <summary>

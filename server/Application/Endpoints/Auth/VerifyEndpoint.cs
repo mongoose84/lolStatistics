@@ -73,12 +73,25 @@ public sealed class VerifyEndpoint : IEndpoint
                     return Results.BadRequest(new { error = "No verification code found. Please request a new code.", code = "NO_CODE_STORED" });
                 }
 
+                // Check if max attempts exceeded (brute-force protection)
+                var maxAttempts = config.GetValue<int>("Auth:VerificationMaxAttempts", 5);
+                if (token.Attempts >= maxAttempts)
+                {
+                    // Invalidate the token to prevent further attempts
+                    await tokensRepo.MarkTokenAsUsedAsync(token.Id);
+                    logger.LogWarning("User {UserId} exceeded max verification attempts ({MaxAttempts}). Token invalidated.", userId, maxAttempts);
+                    return Results.BadRequest(new {
+                        error = "Too many failed attempts. Please request a new verification code.",
+                        code = "MAX_ATTEMPTS_EXCEEDED"
+                    });
+                }
+
                 // Validate the code matches
                 if (!string.Equals(request.Code, token.Code, StringComparison.Ordinal))
                 {
                     // Increment attempt counter
                     await tokensRepo.IncrementAttemptsAsync(token.Id);
-                    logger.LogWarning("User {UserId} submitted incorrect verification code (attempt {Attempts})", userId, token.Attempts + 1);
+                    logger.LogWarning("User {UserId} submitted incorrect verification code (attempt {Attempts}/{MaxAttempts})", userId, token.Attempts + 1, maxAttempts);
                     return Results.BadRequest(new { error = "Invalid verification code. Please try again.", code = "INVALID_CODE" });
                 }
 
