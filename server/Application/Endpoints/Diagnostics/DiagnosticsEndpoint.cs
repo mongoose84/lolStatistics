@@ -81,15 +81,34 @@ namespace RiotProxy.Application.Endpoints.Diagnostics
             // Mask sensitive values - only show if they exist, not the actual values
             string MaskValue(string? value) => string.IsNullOrWhiteSpace(value) ? "NOT_SET" : $"SET ({value.Length} chars)";
 
+            // Show first few chars to help debug (safe for connection strings that start with "Server=")
+            string MaskValueWithPrefix(string? value)
+            {
+                if (string.IsNullOrWhiteSpace(value)) return "NOT_SET";
+                var prefix = value.Length > 10 ? value.Substring(0, 10) : value;
+                return $"SET ({value.Length} chars, starts with '{prefix}...')";
+            }
+
+            var dbKey = isProduction ? "Database_production" : "Database_test";
+            var dbFromConfig = config.GetConnectionString(dbKey);
+            var dbDirect = config["ConnectionStrings:" + dbKey];
+
             return new
             {
                 database = new
                 {
-                    expectedKey = isProduction ? "Database_production" : "Database_test",
-                    connectionStringFromConfig = MaskValue(config.GetConnectionString(isProduction ? "Database_production" : "Database_test")),
-                    connectionStringDirect = MaskValue(config["ConnectionStrings:" + (isProduction ? "Database_production" : "Database_test")]),
-                    fromEnvironmentVariable = MaskValue(Environment.GetEnvironmentVariable(isProduction ? "Database_production" : "Database_test")),
-                    secretsValue = MaskValue(Secrets.DatabaseConnectionString)
+                    expectedKey = dbKey,
+                    connectionStringFromConfig = MaskValueWithPrefix(dbFromConfig),
+                    connectionStringDirect = MaskValueWithPrefix(dbDirect),
+                    fromEnvironmentVariable = MaskValue(Environment.GetEnvironmentVariable(dbKey)),
+                    secretsValue = MaskValueWithPrefix(Secrets.DatabaseConnectionString),
+                    // Debug: Show what Secrets.Initialize would have seen
+                    debugInfo = new
+                    {
+                        configHasValue = !string.IsNullOrWhiteSpace(dbFromConfig),
+                        secretsInitialized = !string.IsNullOrWhiteSpace(Secrets.DatabaseConnectionString),
+                        valuesMatch = dbFromConfig == Secrets.DatabaseConnectionString
+                    }
                 },
                 smtp = new
                 {
