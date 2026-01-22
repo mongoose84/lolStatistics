@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RiotProxy.External.Domain.Entities;
 using RiotProxy.Infrastructure.External.Database.Repositories;
 
 namespace RiotProxy.Application.Endpoints.Auth;
@@ -30,6 +31,7 @@ public sealed class VerifyEndpoint : IEndpoint
             [FromBody] VerifyRequest request,
             HttpContext httpContext,
             [FromServices] UsersRepository usersRepo,
+            [FromServices] VerificationTokensRepository tokensRepo,
             [FromServices] ILogger<VerifyEndpoint> logger,
             [FromServices] IConfiguration config
         ) =>
@@ -63,12 +65,43 @@ public sealed class VerifyEndpoint : IEndpoint
                     return Results.Ok(new VerifyResponse(true, "Email already verified"));
                 }
 
-                // For MVP, accept any valid 6-digit code
-                // TODO: Implement actual email verification with stored codes
-                logger.LogDebug("User {UserId} submitted verification code", userId);
+                // Get active verification token
+                var token = await tokensRepo.GetActiveTokenAsync(userId, TokenTypes.EmailVerification);
+                if (token == null)
+                {
+                    logger.LogWarning("User {UserId} has no active verification token", userId);
+                    return Results.BadRequest(new { error = "No verification code found. Please request a new code.", code = "NO_CODE_STORED" });
+                }
 
-                // Update user as verified
+                // Check if max attempts exceeded (brute-force protection)
+                var maxAttempts = config.GetValue<int>("Auth:VerificationMaxAttempts", 5);
+                if (token.Attempts >= maxAttempts)
+                {
+                    // Invalidate the token to prevent further attempts
+                    await tokensRepo.MarkTokenAsUsedAsync(token.Id);
+                    logger.LogWarning("User {UserId} exceeded max verification attempts ({MaxAttempts}). Token invalidated.", userId, maxAttempts);
+                    return Results.BadRequest(new {
+                        error = "Too many failed attempts. Please request a new verification code.",
+                        code = "MAX_ATTEMPTS_EXCEEDED"
+                    });
+                }
+
+                // Validate the code matches
+                if (!string.Equals(request.Code, token.Code, StringComparison.Ordinal))
+                {
+                    // Increment attempt counter
+                    await tokensRepo.IncrementAttemptsAsync(token.Id);
+                    logger.LogWarning("User {UserId} submitted incorrect verification code (attempt {Attempts}/{MaxAttempts})", userId, token.Attempts + 1, maxAttempts);
+                    return Results.BadRequest(new { error = "Invalid verification code. Please try again.", code = "INVALID_CODE" });
+                }
+
+                logger.LogDebug("User {UserId} submitted correct verification code", userId);
+
+                // Update user as verified first, then mark token as used
+                // Order matters: if user update fails, token remains valid for retry
+                // If token marking fails, user is verified (acceptable - token can't be reused anyway)
                 await usersRepo.UpdateEmailVerifiedAsync(userId, true);
+                await tokensRepo.MarkTokenAsUsedAsync(token.Id);
 
                 // Update the session claims to reflect verified status
                 var claims = new List<Claim>

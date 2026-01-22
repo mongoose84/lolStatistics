@@ -149,6 +149,17 @@ Make sure to also use the web.config file in the publish folder for IIS hosting.
 
 This will create all the files needed in the folder /bin/Release/publish
 
+###### SMPTP Settings
+Set the SMTP settings in appsettings.json or via user-secrets:
+```bash 
+# From server/ directory, set via user-secrets:
+dotnet user-secrets set "Email:SmtpHost" "smtp.yourdomain.com"
+dotnet user-secrets set "Email:SmtpPort" "587"
+dotnet user-secrets set "Email:SmtpUsername" "noreply@yourdomain.com"
+dotnet user-secrets set "Email:SmtpPassword" "your-smtp-password"
+dotnet user-secrets set "Email:FromEmail" "noreply@yourdomain.com"
+```
+
 ##### Run server tests
 ```
 cd root

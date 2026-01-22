@@ -62,7 +62,7 @@ jobs:
         shell: pwsh
         run: |
           $missingSecrets = @()
-          
+
           if ([string]::IsNullOrWhiteSpace("${{ secrets.DB_CONNECTIONSTRING }}")) {
             $missingSecrets += "DB_CONNECTIONSTRING"
           }
@@ -72,6 +72,18 @@ jobs:
           if ([string]::IsNullOrWhiteSpace("${{ secrets.ENCRYPTION_SECRET }}")) {
             $missingSecrets += "ENCRYPTION_SECRET"
           }
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SMTP_HOST }}")) {
+            $missingSecrets += "SMTP_HOST"
+          }
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SMTP_USERNAME }}")) {
+            $missingSecrets += "SMTP_USERNAME"
+          }
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SMTP_PASSWORD }}")) {
+            $missingSecrets += "SMTP_PASSWORD"
+          }
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SMTP_FROM_EMAIL }}")) {
+            $missingSecrets += "SMTP_FROM_EMAIL"
+          }
 
           if ($missingSecrets.Count -gt 0) {
             Write-Error "❌ Missing required GitHub secrets: $($missingSecrets -join ', ')"
@@ -80,9 +92,13 @@ jobs:
             Write-Error "  - DB_CONNECTIONSTRING: Server=host;Port=3306;Database=db;User=user;Password=pass;SslMode=Preferred;"
             Write-Error "  - RIOT_API_KEY: RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             Write-Error "  - ENCRYPTION_SECRET: Base64-encoded 32-byte key (use: openssl rand -base64 32)"
+            Write-Error "  - SMTP_HOST: Your SMTP server hostname (e.g., websmtp.simply.com)"
+            Write-Error "  - SMTP_USERNAME: Your SMTP username"
+            Write-Error "  - SMTP_PASSWORD: Your SMTP password"
+            Write-Error "  - SMTP_FROM_EMAIL: Sender email address (e.g., noreply@mongoose.gg)"
             exit 1
           }
-          
+
           Write-Host "✅ All required secrets are configured"
 
       # -------------------------------------------------
@@ -109,16 +125,25 @@ jobs:
             "Auth" = @{
               "CookieName" = "pulse-auth"
               "SessionTimeout" = 30
-              "EnableMvpLogin" = $false
+              "EnableMvpLogin" = $true
             }
             "Jobs" = @{
-              "EnableMatchHistorySync" = $false
+              "EnableMatchHistorySync" = $true
             }
             "Security" = @{
               "EncryptionSecret" = "${{ secrets.ENCRYPTION_SECRET }}"
             }
+            "Email" = @{
+              "DevMode" = $false
+              "SmtpHost" = "${{ secrets.SMTP_HOST }}"
+              "SmtpPort" = 587
+              "SmtpUsername" = "${{ secrets.SMTP_USERNAME }}"
+              "SmtpPassword" = "${{ secrets.SMTP_PASSWORD }}"
+              "FromEmail" = "${{ secrets.SMTP_FROM_EMAIL }}"
+              "FromName" = "Mongoose.gg"
+            }
           } | ConvertTo-Json -Depth 10
-          
+
           Set-Content -Path "appsettings.Production.json" -Value $json
           Write-Host "✅ appsettings.Production.json generated successfully (contents hidden for security)"
 

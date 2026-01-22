@@ -113,7 +113,7 @@ public class UsersRepository : RepositoryBase
 	        return result;
 	    }
 
-    public async Task UpdateEmailVerifiedAsync(long userId, bool verified)
+    public virtual async Task UpdateEmailVerifiedAsync(long userId, bool verified)
     {
         const string sql = "UPDATE users SET email_verified = @verified, updated_at = @updated_at WHERE user_id = @user_id";
         await ExecuteWithConnectionAsync<object?>(async conn =>

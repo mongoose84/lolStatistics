@@ -40,6 +40,9 @@ namespace RiotProxy.Application
             var verifyEndpoint = new VerifyEndpoint(basePath);
             _endpoints.Add(verifyEndpoint);
 
+            var resendVerificationEndpoint = new ResendVerificationEndpoint(basePath);
+            _endpoints.Add(resendVerificationEndpoint);
+
             // Users endpoint - auth required
             var usersMeEndpoint = new UsersMeEndpoint(basePath);
             _endpoints.Add(usersMeEndpoint);

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using RiotProxy.External.Domain.Entities;
 using RiotProxy.Infrastructure.External.Database.Repositories;
+using RiotProxy.Infrastructure.Email;
 using static RiotProxy.Application.DTOs.RegisterDto;
 
 namespace RiotProxy.Application.Endpoints.Auth;
@@ -30,6 +31,8 @@ public sealed class RegisterEndpoint : IEndpoint
             [FromBody] RegisterRequest request,
             HttpContext httpContext,
             [FromServices] UsersRepository usersRepo,
+            [FromServices] VerificationTokensRepository tokensRepo,
+            [FromServices] IEmailService emailService,
             [FromServices] ILogger<RegisterEndpoint> logger,
             [FromServices] IConfiguration config
         ) =>
@@ -104,6 +107,28 @@ public sealed class RegisterEndpoint : IEndpoint
 
                 var userId = await usersRepo.UpsertAsync(newUser);
                 newUser.UserId = userId;
+
+                // Invalidate any existing verification tokens for this user
+                // This handles edge cases like race conditions or if UpsertAsync updated an existing user
+                await tokensRepo.InvalidateActiveTokensAsync(userId, TokenTypes.EmailVerification);
+
+                // Generate verification code and create token
+                var verificationCode = VerificationCodeGenerator.Generate();
+                var verificationExpiresAt = DateTime.UtcNow.AddMinutes(15);
+                await tokensRepo.CreateTokenAsync(userId, TokenTypes.EmailVerification, verificationCode, verificationExpiresAt);
+
+                // Send verification email (fire-and-forget to not block registration)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await emailService.SendVerificationEmailAsync(newUser.Email, newUser.Username, verificationCode);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to send verification email to {Email}", newUser.Email);
+                    }
+                });
 
                 // Create claims identity for cookie auth
                 var claims = new List<Claim>

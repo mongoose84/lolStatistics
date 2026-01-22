@@ -12,6 +12,11 @@
           </p>
         </div>
 
+        <!-- Success message -->
+        <div v-if="successMessage" class="verify-success">
+          {{ successMessage }}
+        </div>
+
         <!-- Error message -->
         <div v-if="errorMessage" class="verify-error">
           {{ errorMessage }}
@@ -44,8 +49,10 @@
         
         <div class="verify-footer">
           <p class="verify-resend-text">Didn't receive the code?</p>
-          <button @click="handleResend" class="verify-resend" :disabled="isSubmitting">
-            Resend Code
+          <button @click="handleResend" class="verify-resend" :disabled="isResending || resendCooldown > 0">
+            <span v-if="isResending">Sending...</span>
+            <span v-else-if="resendCooldown > 0">Resend in {{ resendCooldown }}s</span>
+            <span v-else>Resend Code</span>
           </button>
         </div>
       </div>
@@ -58,25 +65,29 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 import { useAuthStore } from '../stores/authStore';
+import { resendVerification } from '../services/authApi';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
 const code = ref('');
 const isSubmitting = ref(false);
+const isResending = ref(false);
 const errorMessage = ref('');
+const successMessage = ref('');
+const resendCooldown = ref(0);
 
 const email = computed(() => authStore.email || 'your email');
 
 onMounted(async () => {
   await authStore.initialize();
-  
+
   // Redirect if not authenticated
   if (!authStore.isAuthenticated) {
     router.push('/auth?mode=login');
     return;
   }
-  
+
   // Redirect if already verified
   if (authStore.isVerified) {
     router.push('/app/user');
@@ -90,10 +101,11 @@ const handleCodeInput = (e) => {
 
 const handleSubmit = async () => {
   if (isSubmitting.value || code.value.length !== 6) return;
-  
+
   isSubmitting.value = true;
   errorMessage.value = '';
-  
+  successMessage.value = '';
+
   try {
     await authStore.verify(code.value);
     router.push('/app/user');
@@ -104,9 +116,37 @@ const handleSubmit = async () => {
   }
 };
 
-const handleResend = () => {
-  // TODO: Implement resend functionality
-  alert('Resend functionality coming soon!');
+const startCooldown = (seconds) => {
+  resendCooldown.value = seconds;
+  const interval = setInterval(() => {
+    resendCooldown.value--;
+    if (resendCooldown.value <= 0) {
+      clearInterval(interval);
+    }
+  }, 1000);
+};
+
+const handleResend = async () => {
+  if (isResending.value || resendCooldown.value > 0) return;
+
+  isResending.value = true;
+  errorMessage.value = '';
+  successMessage.value = '';
+
+  try {
+    await resendVerification();
+    successMessage.value = 'A new verification code has been sent to your email.';
+    startCooldown(60);
+  } catch (e) {
+    if (e.code === 'RATE_LIMITED' && e.waitSeconds) {
+      startCooldown(e.waitSeconds);
+      errorMessage.value = e.message;
+    } else {
+      errorMessage.value = e.message || 'Failed to resend verification code. Please try again.';
+    }
+  } finally {
+    isResending.value = false;
+  }
 };
 </script>
 
@@ -161,6 +201,17 @@ const handleResend = () => {
 
 .verify-subtitle strong {
   color: var(--color-text);
+}
+
+.verify-success {
+  padding: var(--spacing-md);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-md);
+  color: #22c55e;
+  font-size: var(--font-size-sm);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
 }
 
 .verify-error {
