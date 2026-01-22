@@ -31,6 +31,9 @@ client/playwright-report
 client/test-results
 client/playwright/.cache
 
+# Docs 
+docs/.~lock.gui_playground.odp#
+
 # Server build outputs and secrets (after structure change)
 server/bin
 server/obj
