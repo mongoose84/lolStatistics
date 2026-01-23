@@ -41,9 +41,8 @@ public class DiagnosticsEndpointTests
         var payload = await response.Content.ReadFromJsonAsync<DiagnosticsResponse>();
         payload.Should().NotBeNull();
         payload!.configuration.apiKeyConfigured.Should().BeTrue();
-        // Note: databaseConfigured (v1) may be false in test environment since we use v2
-        // The important check is that databaseV2Configured is true
-        payload.configuration.databaseV2Configured.Should().BeTrue();
+
+        payload.configuration.databaseConfigured.Should().BeTrue();
         payload.metrics.metricHits.Should().BeGreaterOrEqualTo(1);
     }
 
@@ -83,7 +82,7 @@ public class DiagnosticsEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var payload = await response.Content.ReadFromJsonAsync<DiagnosticsResponse>();
-        payload!.configuration.databaseV2Configured.Should().BeFalse();
+        payload!.configuration.databaseConfigured.Should().BeFalse();
         payload.configuration.allConfigured.Should().BeFalse();
     }
 
@@ -110,6 +109,6 @@ public class DiagnosticsEndpointTests
     }
 
     public record DiagnosticsResponse(string environment, DateTime timestamp, string build, Configuration configuration, Metrics metrics, string[] notes);
-    public record Configuration(bool apiKeyConfigured, bool databaseConfigured, bool databaseV2Configured, bool allConfigured);
+    public record Configuration(bool apiKeyConfigured, bool databaseConfigured, bool allConfigured);
     public record Metrics(long homeHits, long metricHits, long winrateHits, long summonerHits, string lastUrlCalled);
 }

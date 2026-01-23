@@ -73,7 +73,7 @@ public class SmtpEmailService : IEmailService
             throw new InvalidOperationException(errorMessage);
         }
 
-        var fromName = _config["Email:FromName"] ?? "Mongoose.gg";
+        var fromName = "The Mongoose.gg Team";
         if (string.IsNullOrWhiteSpace(fromName))
         {
             var errorMessage = $"SMTP from name is not configured. Email not sent to {toEmail}";
