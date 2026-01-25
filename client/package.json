@@ -35,6 +35,7 @@
     "@vitest/ui": "^4.0.17",
     "@vue/test-utils": "^2.4.1",
     "autoprefixer": "^10.4.19",
+    "dotenv": "^17.2.3",
     "happy-dom": "^20.1.0",
     "jsdom": "^27.4.0",
     "postcss": "^8.4.38",

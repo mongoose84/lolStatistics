@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env file
+dotenv.config({ path: path.resolve(import.meta.dirname, '.env') });
 
 /**
  * Playwright configuration for mongoose.gg E2E tests
