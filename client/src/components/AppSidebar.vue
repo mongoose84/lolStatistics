@@ -45,7 +45,13 @@
       </router-link>
 
       <!-- Analysis Section with Submenu -->
-      <div class="nav-section" :class="{ 'has-popout': isCollapsed }">
+      <div
+        class="nav-section"
+        :class="{ 'has-popout': isCollapsed, 'popout-open': isCollapsed && analysisPopoutOpen }"
+        @click="handleAnalysisSectionClick"
+        @mouseenter="handleAnalysisSectionMouseEnter"
+        @mouseleave="handleAnalysisSectionMouseLeave"
+      >
         <div class="nav-item-header">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="nav-icon">
             <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
@@ -66,12 +72,12 @@
             <span class="nav-sublabel">Team</span>
           </router-link>
         </div>
-        <!-- Collapsed: show popout menu on hover -->
-        <div v-if="isCollapsed" class="nav-popout">
+        <!-- Collapsed: show popout menu on hover/click -->
+        <div v-if="isCollapsed" class="nav-popout" @click.stop>
           <div class="popout-header">Analysis</div>
-          <router-link to="/app/solo" class="popout-item">Solo</router-link>
-          <router-link to="/app/duo" class="popout-item">Duo</router-link>
-          <router-link to="/app/team" class="popout-item">Team</router-link>
+          <router-link to="/app/solo" class="popout-item" @click="closeAnalysisPopout">Solo</router-link>
+          <router-link to="/app/duo" class="popout-item" @click="closeAnalysisPopout">Duo</router-link>
+          <router-link to="/app/team" class="popout-item" @click="closeAnalysisPopout">Team</router-link>
         </div>
       </div>
 
@@ -144,6 +150,7 @@ const version = pkg.version || '0.0.0';
 
 // Local state
 const linkedIconError = ref(false);
+const analysisPopoutOpen = ref(false);
 
 // Sidebar state from store
 const isCollapsed = computed(() => uiStore.isSidebarCollapsed);
@@ -185,6 +192,45 @@ onUnmounted(() => {
 function toggleSidebar() {
   uiStore.toggleSidebar();
 }
+
+// Analysis popout handlers for touch device support
+function handleAnalysisSectionClick() {
+  if (isCollapsed.value) {
+    analysisPopoutOpen.value = !analysisPopoutOpen.value;
+  }
+}
+
+function handleAnalysisSectionMouseEnter() {
+  if (isCollapsed.value) {
+    analysisPopoutOpen.value = true;
+  }
+}
+
+function handleAnalysisSectionMouseLeave() {
+  if (isCollapsed.value) {
+    analysisPopoutOpen.value = false;
+  }
+}
+
+function closeAnalysisPopout() {
+  analysisPopoutOpen.value = false;
+}
+
+// Close popout when clicking outside
+function handleClickOutside(event) {
+  const sidebar = document.querySelector('.app-sidebar');
+  if (sidebar && !sidebar.contains(event.target)) {
+    analysisPopoutOpen.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 // User data
 const username = computed(() => authStore.username || 'User');
@@ -437,7 +483,9 @@ function handleLinkedIconError() {
   margin-left: var(--spacing-xs);
 }
 
-.nav-section.has-popout:hover .nav-popout {
+/* Show popout on hover (desktop) or when explicitly opened (touch devices) */
+.nav-section.has-popout:hover .nav-popout,
+.nav-section.popout-open .nav-popout {
   opacity: 1;
   visibility: visible;
   transform: translateX(0);
@@ -648,10 +696,11 @@ function handleLinkedIconError() {
   background: var(--color-text-secondary);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .app-sidebar {
-    width: 64px;
-  }
-}
+/*
+ * Note: Responsive sidebar collapse is handled by uiStore.handleResize()
+ * which auto-collapses the sidebar on screens < 1024px. This keeps the
+ * sidebar width in sync with AppLayout's margin-left calculation.
+ * Do NOT add a media query here that forces width: 64px as it would
+ * conflict with the store-driven state.
+ */
 </style>
