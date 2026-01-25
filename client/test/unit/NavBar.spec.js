@@ -23,7 +23,7 @@ describe('NavBar.vue', () => {
       routes: [
         { path: '/', component: { template: '<div>Home</div>' } },
         { path: '/auth', component: { template: '<div>Auth</div>' } },
-        { path: '/app/user', component: { template: '<div>User</div>' } },
+        { path: '/app/overview', component: { template: '<div>Overview</div>' } },
       ]
     });
 

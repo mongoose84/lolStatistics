@@ -1,6 +1,6 @@
 <template>
   <div class="app-layout">
-    <AppHeader />
+    <AppSidebar />
     <main class="app-main">
       <router-view />
     </main>
@@ -9,7 +9,7 @@
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue';
-import AppHeader from '../components/AppHeader.vue';
+import AppSidebar from '../components/AppSidebar.vue';
 import { useAuthStore } from '../stores/authStore';
 
 const authStore = useAuthStore();
@@ -100,12 +100,20 @@ onUnmounted(() => {
 .app-layout {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
 }
 
 .app-main {
   flex: 1;
-  padding-top: 64px; /* Height of AppHeader */
+  margin-left: 256px; /* Width of expanded sidebar */
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+}
+
+/* Adjust for collapsed sidebar */
+@media (max-width: 1024px) {
+  .app-main {
+    margin-left: 64px; /* Width of collapsed sidebar */
+  }
 }
 </style>
 

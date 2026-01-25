@@ -34,7 +34,7 @@ async function performLogin(page, username, password) {
 
   // Wait for either navigation OR error message
   await Promise.race([
-    page.waitForURL('/app/user', { timeout: 15_000 }),
+    page.waitForURL('/app/overview', { timeout: 15_000 }),
     page.waitForSelector('.auth-error', { timeout: 15_000 }),
   ]);
 
@@ -52,14 +52,14 @@ test.describe('Solo Dashboard Flow', () => {
     await page.context().clearCookies();
   });
 
-  test('should complete login → UserPage → Solo Dashboard flow', async ({ page }) => {
+  test('should complete login → OverviewPage → Solo Dashboard flow', async ({ page }) => {
     // Step 1-3: Login
     await performLogin(page, TEST_USER.username, TEST_USER.password);
 
-    // Step 4: Verify we're on the User Page
-    await expect(page).toHaveURL('/app/user');
+    // Step 4: Verify we're on the Overview Page
+    await expect(page).toHaveURL('/app/overview');
 
-    // Step 5: Verify User Page loaded successfully
+    // Step 5: Verify Overview Page loaded successfully
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -78,7 +78,7 @@ test.describe('Solo Dashboard Flow', () => {
 
   test('should redirect unauthenticated users to login', async ({ page }) => {
     // Try to access protected route directly
-    await page.goto('/app/user');
+    await page.goto('/app/overview');
 
     // Should redirect to auth page
     await expect(page).toHaveURL(/\/auth/);
