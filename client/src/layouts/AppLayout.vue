@@ -1,16 +1,20 @@
 <template>
   <div class="app-layout">
-    <AppHeader />
-    <main class="app-main">
+    <AppSidebar />
+    <main class="app-main" :style="{ marginLeft: sidebarWidth + 'px' }">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue';
-import AppHeader from '../components/AppHeader.vue';
+import { computed, onMounted, onUnmounted } from 'vue';
+import AppSidebar from '../components/AppSidebar.vue';
 import { useAuthStore } from '../stores/authStore';
+import { useUiStore } from '../stores/uiStore';
+
+const uiStore = useUiStore();
+const sidebarWidth = computed(() => uiStore.sidebarWidth);
 
 const authStore = useAuthStore();
 
@@ -100,12 +104,12 @@ onUnmounted(() => {
 .app-layout {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
 }
 
 .app-main {
   flex: 1;
-  padding-top: 64px; /* Height of AppHeader */
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
 }
 </style>
 

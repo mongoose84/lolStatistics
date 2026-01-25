@@ -28,7 +28,7 @@ describe('AuthPage.vue', () => {
         { path: '/', component: { template: '<div>Home</div>' } },
         { path: '/auth', component: { template: '<div>Auth</div>' } },
         { path: '/auth/verify', component: { template: '<div>Verify</div>' } },
-        { path: '/app/user', component: { template: '<div>User</div>' } },
+        { path: '/app/overview', component: { template: '<div>Overview</div>' } },
       ]
     });
 

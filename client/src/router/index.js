@@ -43,17 +43,47 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: '/app/user'
+          redirect: '/app/overview'
         },
         {
-          path: 'user',
-          name: 'app-user',
-          component: () => import('../views/UserPage.vue')
+          path: 'overview',
+          name: 'app-overview',
+          component: () => import('../views/OverviewPage.vue')
+        },
+        {
+          path: 'champion-select',
+          name: 'app-champion-select',
+          component: () => import('../views/ChampionSelectPage.vue')
+        },
+        {
+          path: 'matches',
+          name: 'app-matches',
+          component: () => import('../views/MatchesPage.vue')
         },
         {
           path: 'solo',
           name: 'app-solo',
           component: () => import('../views/SoloDashboard.vue')
+        },
+        {
+          path: 'duo',
+          name: 'app-duo',
+          component: () => import('../views/DuoPage.vue')
+        },
+        {
+          path: 'team',
+          name: 'app-team',
+          component: () => import('../views/TeamPage.vue')
+        },
+        {
+          path: 'goals',
+          name: 'app-goals',
+          component: () => import('../views/GoalsPage.vue')
+        },
+        {
+          path: 'user',
+          name: 'app-user',
+          component: () => import('../views/UserSettingsPage.vue')
         }
       ]
     },
@@ -99,7 +129,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Redirect verified users away from verify page
   if (to.name === 'verify' && authStore.isAuthenticated && authStore.isVerified) {
-    return next('/app/user')
+    return next('/app/overview')
   }
 
   next()
