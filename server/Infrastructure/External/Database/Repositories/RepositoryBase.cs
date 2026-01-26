@@ -47,8 +47,7 @@ public abstract class RepositoryBase
     /// </summary>
     protected async Task<T?> ExecuteScalarAsync<T>(string sql, params (string name, object? value)[] parameters)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         await using var cmd = new MySqlCommand(sql, conn);
         
         foreach (var (name, value) in parameters)
@@ -69,8 +68,7 @@ public abstract class RepositoryBase
     /// </summary>
     protected async Task<T?> ExecuteSingleAsync<T>(string sql, Func<MySqlDataReader, T> mapper, params (string name, object? value)[] parameters) where T : class
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         await using var cmd = new MySqlCommand(sql, conn);
         
         foreach (var (name, value) in parameters)
@@ -94,8 +92,7 @@ public abstract class RepositoryBase
     protected async Task<IList<T>> ExecuteListAsync<T>(string sql, Func<MySqlDataReader, T> mapper, params (string name, object? value)[] parameters)
     {
         var results = new List<T>();
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         await using var cmd = new MySqlCommand(sql, conn);
         
         foreach (var (name, value) in parameters)
@@ -119,8 +116,7 @@ public abstract class RepositoryBase
     /// </summary>
     protected async Task<int> ExecuteNonQueryAsync(string sql, params (string name, object? value)[] parameters)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         await using var cmd = new MySqlCommand(sql, conn);
         
         foreach (var (name, value) in parameters)
@@ -137,8 +133,7 @@ public abstract class RepositoryBase
     /// </summary>
     protected async Task<T> ExecuteWithConnectionAsync<T>(Func<MySqlConnection, Task<T>> action)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         return await action(conn);
     }
 
@@ -148,8 +143,7 @@ public abstract class RepositoryBase
     /// </summary>
     protected async Task<T> ExecuteWithConnectionAsync<T>(Func<MySqlConnection, MySqlCommand, Task<T>> action)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         await using var cmd = new MySqlCommand { Connection = conn };
         return await action(conn, cmd);
     }
@@ -159,8 +153,7 @@ public abstract class RepositoryBase
     /// </summary>
     protected async Task ExecuteTransactionAsync(Func<MySqlConnection, MySqlTransaction, Task> action)
     {
-        await using var conn = _factory.CreateConnection();
-        await conn.OpenAsync();
+        await using var conn = await _factory.CreateOpenConnectionAsync();
         await using var transaction = await conn.BeginTransactionAsync();
 
         try
