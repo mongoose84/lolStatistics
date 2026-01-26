@@ -9,9 +9,9 @@
           v-for="queue in queueOptions"
           :key="queue.value"
           type="button"
-          class="queue-toggle-btn py-sm px-md bg-transparent border-none text-text-secondary text-sm font-medium cursor-pointer transition-all duration-200 relative focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-soft"
+          class="queue-toggle-btn py-sm px-md bg-transparent border-none text-text-secondary text-sm font-medium cursor-pointer transition-colors duration-200 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-soft"
           :class="{
-            'bg-primary text-white': queueFilter === queue.value,
+            'queue-toggle-btn--active': queueFilter === queue.value,
             'hover:text-text hover:bg-background-elevated': queueFilter !== queue.value
           }"
           @click="queueFilter = queue.value"
@@ -213,6 +213,12 @@ watch(syncProgress, (progress) => {
 </script>
 
 <style scoped>
+/* Active state with darker purple for better visibility */
+.queue-toggle-btn--active {
+  background-color: #5b21b6; /* Darker purple (violet-800) */
+  color: white;
+}
+
 /* Queue toggle button dividers (pseudo-elements can't be done in Tailwind) */
 .queue-toggle-btn:not(:last-child)::after {
   content: '';
@@ -225,11 +231,11 @@ watch(syncProgress, (progress) => {
 }
 
 /* Hide divider when button is active or next to active */
-.queue-toggle-btn.bg-primary::after {
+.queue-toggle-btn--active::after {
   display: none;
 }
 
-.queue-toggle-btn:has(+ .bg-primary)::after {
+.queue-toggle-btn:has(+ .queue-toggle-btn--active)::after {
   display: none;
 }
 </style>
