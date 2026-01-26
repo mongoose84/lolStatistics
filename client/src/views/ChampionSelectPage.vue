@@ -1,5 +1,5 @@
 <template>
-  <section class="p-lg" data-testid="champion-select-page">
+  <section class="py-lg px-2xl" data-testid="champion-select-page">
     <h1 class="sr-only">Champion Select</h1>
 
     <!-- Header with centered Queue Toggle and Time Filter on right -->
@@ -43,7 +43,7 @@
     <!-- Main content area -->
     <div class="flex flex-col gap-lg">
       <!-- Main Champions Card -->
-      <div class="max-w-4xl mx-auto w-full">
+      <div class="w-full">
         <MainChampionCard
           v-if="dashboardData?.mainChampions && dashboardData.mainChampions.length"
           :main-champions="dashboardData.mainChampions"

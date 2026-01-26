@@ -40,21 +40,7 @@
     </header>
 
     <div class="flex flex-col gap-lg">
-      <!-- First row: Main Champions -->
-      <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] gap-lg items-stretch">
-        <div class="min-w-0">
-          <MainChampionCard
-            v-if="dashboardData?.mainChampions && dashboardData.mainChampions.length"
-            :main-champions="dashboardData.mainChampions"
-          />
-          <div v-else class="border border-border rounded-lg p-lg bg-background-surface">
-            <h2 class="m-0 mb-sm text-lg font-semibold text-text">Main Champions</h2>
-            <p class="m-0 text-text-secondary text-sm">No champion data yet for this filter.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Second row: Stats charts + Champion Matchups -->
+      <!-- Stats charts + Champion Matchups -->
       <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] gap-lg items-stretch">
         <div class="min-w-0">
           <div class="flex flex-col gap-lg h-full">
@@ -103,7 +89,6 @@ import { useAuthStore } from '../stores/authStore'
 import { getSoloDashboard, getWinrateTrend, getChampionMatchups } from '../services/authApi'
 import { useSyncWebSocket } from '../composables/useSyncWebSocket'
 import { trackFilterChange } from '../services/analyticsApi'
-import MainChampionCard from '../components/MainChampionCard.vue'
 import WinrateChart from '../components/WinrateChart.vue'
 import LpTrendChart from '../components/LpTrendChart.vue'
 import ChampionMatchupsTable from '../components/ChampionMatchupsTable.vue'
