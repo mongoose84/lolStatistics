@@ -34,8 +34,28 @@ describe('OverviewPlayerHeader.vue', () => {
     });
 
     it('displays the region', () => {
-      const wrapper = createWrapper({ region: 'KR' });
+      const wrapper = createWrapper({ region: 'kr' });
       expect(wrapper.find('.region-tag').text()).toBe('KR');
+    });
+
+    it('converts eun1 to EUNE', () => {
+      const wrapper = createWrapper({ region: 'eun1' });
+      expect(wrapper.find('.region-tag').text()).toBe('EUNE');
+    });
+
+    it('converts euw1 to EUW', () => {
+      const wrapper = createWrapper({ region: 'euw1' });
+      expect(wrapper.find('.region-tag').text()).toBe('EUW');
+    });
+
+    it('converts na1 to NA', () => {
+      const wrapper = createWrapper({ region: 'na1' });
+      expect(wrapper.find('.region-tag').text()).toBe('NA');
+    });
+
+    it('handles unknown regions by uppercasing', () => {
+      const wrapper = createWrapper({ region: 'unknown' });
+      expect(wrapper.find('.region-tag').text()).toBe('UNKNOWN');
     });
   });
 
