@@ -1,28 +1,88 @@
 <template>
-  <div class="min-h-screen p-2xl">
-    <div class="max-w-[1400px] mx-auto">
-      <div class="mb-2xl">
-        <h1 class="text-2xl font-bold text-text tracking-tight">Overview</h1>
-      </div>
+  <OverviewLayout
+    :is-loading="isLoading"
+    :error="error"
+    :is-empty="!overviewData"
+    @retry="fetchOverviewData"
+  >
+    <!-- Player Header (G14b) -->
+    <OverviewPlayerHeader
+      v-if="overviewData?.playerHeader"
+      :summoner-name="overviewData.playerHeader.summonerName"
+      :level="overviewData.playerHeader.level"
+      :region="overviewData.playerHeader.region"
+      :profile-icon-url="overviewData.playerHeader.profileIconUrl"
+      :active-contexts="overviewData.playerHeader.activeContexts"
+    />
 
-      <!-- Overview components will be implemented here (G14b-G14g) -->
-      <div class="flex flex-col gap-xl">
-        <!-- Placeholder for future implementation -->
-      </div>
+    <!-- Placeholder for RankSnapshot (G14c) -->
+    <div v-if="overviewData?.rankSnapshot" class="placeholder-card">
+      <h3 class="text-lg font-semibold text-text mb-xs">Rank Snapshot</h3>
+      <p class="text-text-secondary text-sm">{{ overviewData.rankSnapshot.primaryQueueLabel }} • Coming soon</p>
     </div>
-  </div>
+
+    <!-- Placeholder for LastMatchCard (G14d) -->
+    <div v-if="overviewData?.lastMatch" class="placeholder-card">
+      <h3 class="text-lg font-semibold text-text mb-xs">Last Match</h3>
+      <p class="text-text-secondary text-sm">{{ overviewData.lastMatch.championName }} • {{ overviewData.lastMatch.result }} • {{ overviewData.lastMatch.kda }}</p>
+    </div>
+
+    <!-- Placeholder for GoalProgressPreview (G14e) -->
+    <div v-if="overviewData?.activeGoals && overviewData.activeGoals.length > 0" class="placeholder-card">
+      <h3 class="text-lg font-semibold text-text mb-xs">Active Goals</h3>
+      <p class="text-text-secondary text-sm">{{ overviewData.activeGoals.length }} goal(s) in progress</p>
+    </div>
+
+    <!-- Placeholder for SuggestedActions (G14f) -->
+    <div v-if="overviewData?.suggestedActions && overviewData.suggestedActions.length > 0" class="placeholder-card">
+      <h3 class="text-lg font-semibold text-text mb-xs">Suggested Actions</h3>
+      <p class="text-text-secondary text-sm">{{ overviewData.suggestedActions.length }} action(s) available</p>
+    </div>
+  </OverviewLayout>
 </template>
 
 <script setup>
-// Overview page - ready for implementation (G14a-G14g)
-// Components to be added:
-// - OverviewPlayerHeader (G14b)
-// - RankSnapshot (G14c)
-// - LastMatchCard (G14d)
-// - GoalProgressPreview (G14e)
-// - SuggestedActions (G14f)
-// - OverviewLayout (G14g)
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/authStore'
+import { getOverview } from '../services/authApi'
+import OverviewLayout from '../components/overview/OverviewLayout.vue'
+import OverviewPlayerHeader from '../components/overview/OverviewPlayerHeader.vue'
+
+const authStore = useAuthStore()
+
+// State
+const overviewData = ref(null)
+const isLoading = ref(false)
+const error = ref(null)
+
+async function fetchOverviewData() {
+  if (!authStore.userId) return
+
+  isLoading.value = true
+  error.value = null
+
+  try {
+    overviewData.value = await getOverview(authStore.userId)
+  } catch (e) {
+    console.error('Failed to fetch overview:', e)
+    error.value = e.message || 'Failed to load overview'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchOverviewData()
+})
 </script>
 
-<!-- Tailwind utilities: min-h-screen, p-2xl, max-w-[1400px], mx-auto, mb-2xl, text-2xl, font-bold, text-text, tracking-tight, flex, flex-col, gap-xl -->
+<style scoped>
+.placeholder-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  backdrop-filter: blur(10px);
+}
+</style>
 
