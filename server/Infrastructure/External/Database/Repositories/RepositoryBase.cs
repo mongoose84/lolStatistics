@@ -3,6 +3,33 @@ using MySqlConnector;
 namespace RiotProxy.Infrastructure.External.Database.Repositories;
 
 /// <summary>
+/// Extension methods for MySqlDataReader to ensure DateTime values are read with UTC kind.
+/// </summary>
+public static class MySqlDataReaderExtensions
+{
+    /// <summary>
+    /// Gets a DateTime value from the reader and specifies it as UTC.
+    /// MySQL TIMESTAMP columns store UTC values, so we explicitly mark them as such.
+    /// </summary>
+    public static DateTime GetDateTimeUtc(this MySqlDataReader reader, int ordinal)
+    {
+        var dateTime = reader.GetDateTime(ordinal);
+        return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+    }
+
+    /// <summary>
+    /// Gets a nullable DateTime value from the reader and specifies it as UTC if not null.
+    /// </summary>
+    public static DateTime? GetDateTimeUtcOrNull(this MySqlDataReader reader, int ordinal)
+    {
+        if (reader.IsDBNull(ordinal))
+            return null;
+        var dateTime = reader.GetDateTime(ordinal);
+        return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+    }
+}
+
+/// <summary>
 /// Base class for repositories providing common database operation helpers.
 /// Reduces connection boilerplate and provides consistent patterns for queries.
 /// </summary>

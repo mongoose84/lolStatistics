@@ -820,7 +820,7 @@ public class SoloStatsRepository : RepositoryBase
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var gameDate = reader.GetDateTime(0);
+                var gameDate = ((MySqlDataReader)reader).GetDateTimeUtc(0);
                 var matchCount = reader.GetInt32(1);
                 result[gameDate.ToString("yyyy-MM-dd")] = matchCount;
             }
