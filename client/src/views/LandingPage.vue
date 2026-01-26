@@ -10,7 +10,7 @@
           <div class="w-[210px] h-[100px] mx-auto">
             <img src="/mongoose.png" alt="Mongoose.gg logo" class="w-full h-full object-contain" />
           </div>
-          <h2 class="text-2xl font-bold text-text -mt-9 ml-sm mb-2xl">Mongoose.gg <span class="beta-tag">Beta</span></h2>
+          <h2 class="text-2xl font-bold text-text -mt-4 ml-sm mb-2xl">Mongoose.gg <span class="beta-tag">Beta</span></h2>
 
           <div class="inline-flex items-center gap-sm py-sm px-lg bg-background-surface border border-border rounded-full text-sm text-text-secondary mt-2xl mb-2xl backdrop-blur-[10px]">
             <span class="text-lg">🎮</span>
