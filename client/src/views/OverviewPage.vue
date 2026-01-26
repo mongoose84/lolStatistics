@@ -1,12 +1,12 @@
 <template>
-  <div class="overview-page">
-    <div class="overview-container">
-      <div class="page-header">
-        <h1 class="page-title">Overview</h1>
+  <div class="min-h-screen p-2xl">
+    <div class="max-w-[1400px] mx-auto">
+      <div class="mb-2xl">
+        <h1 class="text-2xl font-bold text-text tracking-tight">Overview</h1>
       </div>
 
       <!-- Overview components will be implemented here (G14b-G14g) -->
-      <div class="overview-content">
+      <div class="flex flex-col gap-xl">
         <!-- Placeholder for future implementation -->
       </div>
     </div>
@@ -24,32 +24,5 @@
 // - OverviewLayout (G14g)
 </script>
 
-<style scoped>
-.overview-page {
-  min-height: 100vh;
-  padding: var(--spacing-2xl);
-}
-
-.overview-container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.page-title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-  letter-spacing: var(--letter-spacing);
-}
-
-.overview-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-}
-</style>
+<!-- Tailwind utilities: min-h-screen, p-2xl, max-w-[1400px], mx-auto, mb-2xl, text-2xl, font-bold, text-text, tracking-tight, flex, flex-col, gap-xl -->
 
