@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -34,7 +35,7 @@ public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
             _ => value
         };
         
-        writer.WriteStringValue(utcValue.ToString(DateTimeFormat));
+        writer.WriteStringValue(utcValue.ToString(DateTimeFormat, CultureInfo.InvariantCulture));
     }
 }
 
@@ -75,7 +76,7 @@ public sealed class UtcNullableDateTimeJsonConverter : JsonConverter<DateTime?>
             _ => value.Value
         };
         
-        writer.WriteStringValue(utcValue.ToString(DateTimeFormat));
+        writer.WriteStringValue(utcValue.ToString(DateTimeFormat, CultureInfo.InvariantCulture));
     }
 }
 
