@@ -60,6 +60,14 @@
           <p class="m-0 text-text-secondary text-sm">No champion data yet for this filter.</p>
         </div>
       </div>
+
+      <!-- Opponent Search Bar (centered) -->
+      <div class="flex justify-center mt-2xl">
+        <OpponentSearchBar
+          :matchups="matchupsData"
+          @select="onOpponentSelect"
+        />
+      </div>
     </div>
   </section>
 </template>
@@ -67,13 +75,15 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
-import { getChampionSelectData } from '../services/authApi'
+import { getChampionSelectData, getChampionMatchups } from '../services/authApi'
 import MainChampionCard from '../components/MainChampionCard.vue'
+import OpponentSearchBar from '../components/OpponentSearchBar.vue'
 
 const authStore = useAuthStore()
 
 // Dashboard data from API
 const dashboardData = ref(null)
+const matchupsData = ref(null)
 const isLoading = ref(false)
 const error = ref(null)
 
@@ -90,23 +100,34 @@ const queueOptions = [
   { value: 'aram', label: 'ARAM' }
 ]
 
-// Fetch champion select data
+// Fetch champion select data and matchups in parallel
 async function fetchData() {
   if (!authStore.userId) return
 
   isLoading.value = true
   error.value = null
 
-  try {
-    const data = await getChampionSelectData(authStore.userId, queueFilter.value, timeRange.value)
-    dashboardData.value = data
-  } catch (err) {
-    console.error('Failed to fetch champion select data:', err)
-    error.value = err.message || 'Failed to load data'
+  const [dashboardResult, matchupsResult] = await Promise.allSettled([
+    getChampionSelectData(authStore.userId, queueFilter.value, timeRange.value),
+    getChampionMatchups(authStore.userId, queueFilter.value, timeRange.value)
+  ])
+
+  if (dashboardResult.status === 'fulfilled') {
+    dashboardData.value = dashboardResult.value
+  } else {
+    console.error('Failed to fetch champion select data:', dashboardResult.reason)
+    error.value = dashboardResult.reason?.message || 'Failed to load data'
     dashboardData.value = null
-  } finally {
-    isLoading.value = false
   }
+
+  if (matchupsResult.status === 'fulfilled') {
+    matchupsData.value = matchupsResult.value?.matchups || null
+  } else {
+    console.warn('Failed to fetch matchups:', matchupsResult.reason)
+    matchupsData.value = null
+  }
+
+  isLoading.value = false
 }
 
 // Fetch on mount
@@ -118,6 +139,12 @@ onMounted(() => {
 watch([queueFilter, timeRange], () => {
   fetchData()
 })
+
+// Handle opponent selection from search
+function onOpponentSelect(result) {
+  // For now, just log the selection - can be extended later to show details
+  console.log('Selected matchup:', result)
+}
 </script>
 
 <style scoped>
