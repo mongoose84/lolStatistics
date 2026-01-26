@@ -15,11 +15,17 @@
       :active-contexts="overviewData.playerHeader.activeContexts"
     />
 
-    <!-- Placeholder for RankSnapshot (G14c) -->
-    <div v-if="overviewData?.rankSnapshot" class="placeholder-card">
-      <h3 class="text-lg font-semibold text-text mb-xs">Rank Snapshot</h3>
-      <p class="text-text-secondary text-sm">{{ overviewData.rankSnapshot.primaryQueueLabel }} • Coming soon</p>
-    </div>
+    <!-- Rank Snapshot (G14c) -->
+    <RankSnapshot
+      v-if="overviewData?.rankSnapshot"
+      :primary-queue-label="overviewData.rankSnapshot.primaryQueueLabel"
+      :rank="overviewData.rankSnapshot.rank"
+      :lp="overviewData.rankSnapshot.lp"
+      :lp-delta-last20="overviewData.rankSnapshot.lpDeltaLast20"
+      :last20-wins="overviewData.rankSnapshot.last20Wins"
+      :last20-losses="overviewData.rankSnapshot.last20Losses"
+      :wl-last20="overviewData.rankSnapshot.wlLast20"
+    />
 
     <!-- Placeholder for LastMatchCard (G14d) -->
     <div v-if="overviewData?.lastMatch" class="placeholder-card">
@@ -47,6 +53,7 @@ import { useAuthStore } from '../stores/authStore'
 import { getOverview } from '../services/authApi'
 import OverviewLayout from '../components/overview/OverviewLayout.vue'
 import OverviewPlayerHeader from '../components/overview/OverviewPlayerHeader.vue'
+import RankSnapshot from '../components/overview/RankSnapshot.vue'
 
 const authStore = useAuthStore()
 
