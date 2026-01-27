@@ -32,9 +32,14 @@
         <slot name="empty-action"></slot>
       </div>
 
-      <!-- Content Slot -->
+      <!-- Content Slot with 2x2 Grid -->
       <div v-else class="overview-content">
-        <slot></slot>
+        <div class="overview-grid">
+          <slot name="top-left"></slot>
+          <slot name="top-right"></slot>
+          <slot name="bottom-left"></slot>
+          <slot name="bottom-right"></slot>
+        </div>
       </div>
     </div>
   </div>
@@ -72,7 +77,7 @@ defineEmits(['retry'])
 }
 
 .overview-container {
-  max-width: 800px;
+  max-width: 80%;
   margin: 0 auto;
 }
 
@@ -80,6 +85,18 @@ defineEmits(['retry'])
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+  .overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* State cards */
