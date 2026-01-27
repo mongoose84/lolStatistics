@@ -52,7 +52,21 @@ public class ParticipantsRepository : RepositoryBase
             cmd.Parameters.AddWithValue("@rank_after", p.RankAfter ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@created_at", p.CreatedAt == default ? DateTime.UtcNow : p.CreatedAt);
             await cmd.ExecuteNonQueryAsync();
-            return cmd.LastInsertedId;
+            if (cmd.LastInsertedId != 0)
+            {
+                return cmd.LastInsertedId;
+            }
+            // If duplicate, fetch the existing participant's ID
+            const string idSql = "SELECT id FROM participants WHERE match_id = @match_id AND puuid = @puuid LIMIT 1";
+            await using var idCmd = new MySqlCommand(idSql, conn);
+            idCmd.Parameters.AddWithValue("@match_id", p.MatchId);
+            idCmd.Parameters.AddWithValue("@puuid", p.Puuid);
+            var result = await idCmd.ExecuteScalarAsync();
+            if (result != null && result != DBNull.Value)
+            {
+                return Convert.ToInt64(result);
+            }
+            throw new InvalidOperationException($"Failed to insert or find participant for match_id={p.MatchId}, puuid={p.Puuid}");
         });
     }
 
