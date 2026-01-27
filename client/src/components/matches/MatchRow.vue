@@ -133,6 +133,7 @@ const relativeTime = computed(() => {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
+  min-height: 68px;
 }
 
 .match-row:hover {
@@ -198,7 +199,9 @@ const relativeTime = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  flex-wrap: wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .champion-name {
@@ -247,6 +250,9 @@ const relativeTime = computed(() => {
 /* Trend Badge */
 .trend-badge-wrapper {
   flex-shrink: 0;
+  min-width: 80px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Mobile responsive */

@@ -18,6 +18,14 @@
           {{ match.win ? 'Victory' : 'Defeat' }}
         </span>
       </div>
+      <div class="kda-row">
+        <span class="kda-value">{{ match.kills }}</span>
+        <span class="kda-separator">/</span>
+        <span class="kda-value">{{ match.deaths }}</span>
+        <span class="kda-separator">/</span>
+        <span class="kda-value">{{ match.assists }}</span>
+        <span class="kda-ratio">{{ kdaRatio }} KDA</span>
+      </div>
       <div class="secondary-row">
         <span class="role">{{ formatRole(match.role) }}</span>
         <span class="separator">·</span>
@@ -64,9 +72,16 @@ function formatDuration(seconds) {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+const kdaRatio = computed(() => {
+  const m = props.match
+  if (m.deaths === 0) return 'Perfect'
+  const ratio = (m.kills + m.assists) / m.deaths
+  return ratio.toFixed(2)
+})
+
 const relativeTime = computed(() => {
   if (!props.match.gameStartTime) return ''
-  
+
   const now = Date.now()
   const matchTime = props.match.gameStartTime
   const diffMs = now - matchTime
@@ -154,6 +169,30 @@ const relativeTime = computed(() => {
 .result-badge.loss {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
+}
+
+.kda-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.kda-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.kda-separator {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin: 0 2px;
+}
+
+.kda-ratio {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-left: var(--spacing-sm);
 }
 
 .secondary-row {

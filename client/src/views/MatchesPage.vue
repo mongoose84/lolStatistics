@@ -68,9 +68,9 @@ const selectedMatchId = ref(null)
 
 // Queue options for toggle bar
 const queueOptions = [
-  { value: 'all', label: 'All' },
-  { value: 'ranked_solo', label: 'Ranked' },
-  { value: 'ranked_flex', label: 'Flex' },
+  { value: 'all', label: 'All Queues' },
+  { value: 'ranked_solo', label: 'Ranked Solo/Duo' },
+  { value: 'ranked_flex', label: 'Ranked Flex' },
   { value: 'normal', label: 'Normal' },
   { value: 'aram', label: 'ARAM' }
 ]
@@ -143,7 +143,7 @@ onMounted(() => {
 .page-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -164,7 +164,18 @@ onMounted(() => {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.queue-toggle-btn:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: var(--color-border);
 }
 
 .queue-toggle-btn:hover:not(.queue-toggle-btn--active) {
@@ -173,12 +184,21 @@ onMounted(() => {
 }
 
 .queue-toggle-btn--active {
-  background: #5b21b6;
+  background: var(--color-primary);
   color: white;
 }
 
-.queue-toggle-btn:not(:last-child) {
-  border-right: 1px solid var(--color-border);
+.queue-toggle-btn--active::after {
+  display: none;
+}
+
+.queue-toggle-btn:has(+ .queue-toggle-btn--active)::after {
+  display: none;
+}
+
+.queue-toggle-btn:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-primary-soft);
 }
 
 /* Main Content Layout */

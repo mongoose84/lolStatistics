@@ -94,7 +94,7 @@ const stats = computed(() => {
     },
     {
       label: 'Kill Part.',
-      value: `${(m.killParticipation * 100).toFixed(0)}%`,
+      value: `${m.killParticipation.toFixed(0)}%`,
       trend: b ? getTrend(m.killParticipation, b.avgKillParticipation, 0.1) : null
     }
   ]
