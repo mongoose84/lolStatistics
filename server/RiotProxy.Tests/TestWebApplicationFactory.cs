@@ -519,7 +519,7 @@ internal sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         public FakeLpSnapshotsRepository() : base(null!) { }
 
-        public new Task<long> InsertAsync(LpSnapshot snapshot)
+        public override Task<long> InsertAsync(LpSnapshot snapshot)
         {
             var key = snapshot.Puuid;
             if (!_snapshotsByPuuid.TryGetValue(key, out var snapshots))

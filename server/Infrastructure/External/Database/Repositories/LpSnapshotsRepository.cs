@@ -10,12 +10,11 @@ public class LpSnapshotsRepository : RepositoryBase
     /// <summary>
     /// Inserts a new LP snapshot. Always inserts (no upsert) since each snapshot is a unique point in time.
     /// </summary>
-    public Task<long> InsertAsync(LpSnapshot snapshot)
+    public virtual Task<long> InsertAsync(LpSnapshot snapshot)
     {
         const string sql = @"INSERT INTO lp_snapshots
             (puuid, queue_type, tier, division, lp, recorded_at, created_at)
-            VALUES (@puuid, @queue_type, @tier, @division, @lp, @recorded_at, @created_at);
-            SELECT LAST_INSERT_ID();";
+            VALUES (@puuid, @queue_type, @tier, @division, @lp, @recorded_at, @created_at);";
 
         return ExecuteWithConnectionAsync(async conn =>
         {
@@ -27,9 +26,9 @@ public class LpSnapshotsRepository : RepositoryBase
             cmd.Parameters.AddWithValue("@lp", snapshot.Lp);
             cmd.Parameters.AddWithValue("@recorded_at", snapshot.RecordedAt);
             cmd.Parameters.AddWithValue("@created_at", snapshot.CreatedAt == default ? DateTime.UtcNow : snapshot.CreatedAt);
-            
-            var result = await cmd.ExecuteScalarAsync();
-            return Convert.ToInt64(result);
+
+            await cmd.ExecuteNonQueryAsync();
+            return cmd.LastInsertedId;
         });
     }
 

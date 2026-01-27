@@ -143,6 +143,8 @@ public sealed class OverviewEndpoint : IEndpoint
         string? rank = null;
         int? currentLp = null;
         string? queueType = null;
+        string? currentTier = null;
+        string? currentDivision = null;
 
         if (primaryQueueId == 420) // Ranked Solo/Duo
         {
@@ -151,6 +153,8 @@ public sealed class OverviewEndpoint : IEndpoint
             {
                 rank = $"{account.SoloTier} {account.SoloRank}";
                 currentLp = account.SoloLp;
+                currentTier = account.SoloTier;
+                currentDivision = account.SoloRank;
             }
         }
         else if (primaryQueueId == 440) // Ranked Flex
@@ -160,6 +164,8 @@ public sealed class OverviewEndpoint : IEndpoint
             {
                 rank = $"{account.FlexTier} {account.FlexRank}";
                 currentLp = account.FlexLp;
+                currentTier = account.FlexTier;
+                currentDivision = account.FlexRank;
             }
         }
 
@@ -175,6 +181,8 @@ public sealed class OverviewEndpoint : IEndpoint
         var lpDeltaLast20 = await CalculateLpDeltaFromSnapshotsAsync(
             account.Puuid,
             queueType,
+            currentTier,
+            currentDivision,
             currentLp,
             last20Matches,
             lpSnapshotsRepo
@@ -197,12 +205,15 @@ public sealed class OverviewEndpoint : IEndpoint
     }
 
     /// <summary>
-    /// Calculates LP delta by comparing current LP to the LP snapshot from around the time
-    /// of the oldest match in the last 20. This gives an accurate "LP gained/lost in last 20 games".
+    /// Calculates LP delta by comparing current rank/LP to the LP snapshot from around the time
+    /// of the oldest match in the last 20. Accounts for tier/division changes by converting
+    /// to absolute LP values.
     /// </summary>
     private static async Task<int> CalculateLpDeltaFromSnapshotsAsync(
         string puuid,
         string? queueType,
+        string? currentTier,
+        string? currentDivision,
         int? currentLp,
         List<MatchResultData> last20Matches,
         LpSnapshotsRepository lpSnapshotsRepo)
@@ -222,50 +233,69 @@ public sealed class OverviewEndpoint : IEndpoint
 
         if (oldSnapshot == null)
         {
-            // No snapshot before the oldest match - can't calculate accurate delta
-            // This will happen for new users until they have enough LP history
+            // No snapshot before the oldest match - can't calculate delta
             return 0;
         }
 
-        // Calculate the "absolute LP" for comparison
-        // This handles rank changes by converting tier+division+LP to a single number
-        var currentAbsoluteLp = CalculateAbsoluteLp(
-            GetTierFromQueueType(queueType,
-                queueType == "RANKED_SOLO_5x5" ? puuid : null, // We need the account, but we only have puuid
-                null), // We'll use a simpler approach
-            currentLp.Value
-        );
+        // Convert both current and old rank to absolute LP for accurate comparison
+        var currentAbsoluteLp = CalculateAbsoluteLp(currentTier, currentDivision, currentLp.Value);
+        var oldAbsoluteLp = CalculateAbsoluteLp(oldSnapshot.Tier, oldSnapshot.Division, oldSnapshot.Lp);
 
-        // For now, use a simpler approach: just compare LP values directly
-        // This won't handle rank-ups/downs perfectly, but it's more honest than the old approach
-        var lpDelta = currentLp.Value - oldSnapshot.Lp;
-
-        // If the tier/division changed, we need to account for that
-        // For simplicity, we'll use a heuristic based on typical LP gains/losses
-        // A more accurate approach would require tracking tier changes
-
-        return lpDelta;
+        return currentAbsoluteLp - oldAbsoluteLp;
     }
 
     /// <summary>
-    /// Helper to get tier from queue type. This is a simplified version.
+    /// Converts tier + division + LP to an absolute LP value for comparison across ranks.
+    /// Each division is worth 100 LP, each tier is worth 400 LP (4 divisions).
+    /// Master+ tiers don't have divisions, so LP can exceed 100.
     /// </summary>
-    private static string? GetTierFromQueueType(string queueType, string? puuid, RiotProxy.External.Domain.Entities.RiotAccount? account)
+    private static int CalculateAbsoluteLp(string? tier, string? division, int lp)
     {
-        // This method is not fully implemented - we'd need the account object
-        // For now, return null and handle it in the caller
-        return null;
+        var tierValue = GetTierValue(tier);
+        var divisionValue = GetDivisionValue(division);
+
+        // For Master+ (no divisions), just add LP directly to tier base
+        // For other tiers, add division offset + LP within division
+        return tierValue + divisionValue + lp;
     }
 
     /// <summary>
-    /// Converts tier + LP to an absolute LP value for comparison across ranks.
-    /// Not currently used but kept for future enhancement.
+    /// Gets the base LP value for a tier.
+    /// Each tier below Master is worth 400 LP (4 divisions × 100 LP each).
     /// </summary>
-    private static int CalculateAbsoluteLp(string? tier, int lp)
+    private static int GetTierValue(string? tier)
     {
-        // This would convert "GOLD" + 50 LP to an absolute number
-        // For now, just return the LP value
-        return lp;
+        return tier?.ToUpperInvariant() switch
+        {
+            "IRON" => 0,
+            "BRONZE" => 400,
+            "SILVER" => 800,
+            "GOLD" => 1200,
+            "PLATINUM" => 1600,
+            "EMERALD" => 2000,
+            "DIAMOND" => 2400,
+            "MASTER" => 2800,
+            "GRANDMASTER" => 2800, // Same base as Master, differentiated by LP
+            "CHALLENGER" => 2800,  // Same base as Master, differentiated by LP
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// Gets the LP offset for a division within a tier.
+    /// IV = 0, III = 100, II = 200, I = 300.
+    /// Master+ don't have divisions (returns 0).
+    /// </summary>
+    private static int GetDivisionValue(string? division)
+    {
+        return division?.ToUpperInvariant() switch
+        {
+            "IV" => 0,
+            "III" => 100,
+            "II" => 200,
+            "I" => 300,
+            _ => 0 // Master+ don't have divisions
+        };
     }
 
     private static LastMatch BuildLastMatch(LastMatchData data)
