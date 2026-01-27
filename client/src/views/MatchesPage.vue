@@ -27,7 +27,9 @@
           <h2 class="column-title">Recent Matches</h2>
           <span v-if="data" class="match-count">{{ data.totalMatches }} matches</span>
         </div>
+        <div v-if="error" class="error-message">{{ error }}</div>
         <MatchList
+          v-if="!error"
           :matches="data?.matches || []"
           :selectedMatchId="selectedMatchId"
           :loading="loading"
@@ -132,13 +134,34 @@ function handleQueueChange(value) {
   fetchMatches()
 }
 
+
 // Initial load
 onMounted(() => {
   fetchMatches()
 })
+
+// Watch for changes to matchId in the route query and sync selection
+watch(
+  () => route.query.matchId,
+  (newMatchId) => {
+    if (!data.value?.matches) return
+    if (newMatchId && data.value.matches.some(m => m.matchId === newMatchId)) {
+      selectedMatchId.value = newMatchId
+    }
+  }
+)
 </script>
 
 <style scoped>
+.error-message {
+  color: var(--color-danger, #ef4444);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid var(--color-danger, #ef4444);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
 .matches-page {
   display: flex;
   flex-direction: column;

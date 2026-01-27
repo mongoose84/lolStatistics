@@ -47,7 +47,11 @@ public class ParticipantMetricsRepository : RepositoryBase
 
     public Task<ParticipantMetric?> GetByParticipantIdAsync(long participantId)
     {
-        const string sql = "SELECT * FROM participant_metrics WHERE participant_id = @participant_id LIMIT 1";
+        const string sql = @"SELECT id, participant_id, kill_participation_pct, damage_share_pct,
+            damage_dealt, damage_taken, damage_mitigated, vision_score, vision_per_min,
+            deaths_pre_10, deaths_10_20, deaths_20_30, deaths_30_plus,
+            first_death_minute, first_kill_participation_minute, created_at
+            FROM participant_metrics WHERE participant_id = @participant_id LIMIT 1";
         return ExecuteSingleAsync(sql, Map, ("@participant_id", participantId));
     }
 

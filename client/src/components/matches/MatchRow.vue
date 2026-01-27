@@ -9,7 +9,7 @@
     <!-- Champion Icon -->
     <div class="champion-icon-wrapper">
       <img
-        v-if="match.championIconUrl"
+        v-if="match.championIconUrl && !iconError"
         :src="match.championIconUrl"
         :alt="`${match.championName} icon`"
         class="champion-icon"

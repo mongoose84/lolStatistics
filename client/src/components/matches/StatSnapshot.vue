@@ -42,6 +42,7 @@ const stats = computed(() => {
 
   const getTrend = (value, avgValue, threshold = 0.1) => {
     if (!b || b.gamesCount === 0) return null
+    if (avgValue === 0) return null // Avoid division by zero, treat as neutral
     const diff = (value - avgValue) / avgValue
     if (diff >= threshold) return 'up'
     if (diff <= -threshold) return 'down'
