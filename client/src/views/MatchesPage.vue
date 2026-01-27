@@ -90,14 +90,13 @@ const selectedBaseline = computed(() => {
 
 // Fetch match data
 async function fetchMatches() {
-  const userId = authStore.user?.id
-  if (!userId) return
+  if (!authStore.userId) return
 
   loading.value = true
   error.value = null
 
   try {
-    const result = await getMatchList(userId, queueFilter.value)
+    const result = await getMatchList(authStore.userId, queueFilter.value)
     data.value = result
 
     // Auto-select first match if none selected
@@ -124,18 +123,9 @@ function handleQueueChange(value) {
   fetchMatches()
 }
 
-// Watch for auth changes
-watch(() => authStore.user?.id, (newId) => {
-  if (newId) {
-    fetchMatches()
-  }
-}, { immediate: false })
-
 // Initial load
 onMounted(() => {
-  if (authStore.user?.id) {
-    fetchMatches()
-  }
+  fetchMatches()
 })
 </script>
 
@@ -194,7 +184,7 @@ onMounted(() => {
 /* Main Content Layout */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 2fr;
   gap: var(--spacing-xl);
   flex: 1;
   min-height: 0;
