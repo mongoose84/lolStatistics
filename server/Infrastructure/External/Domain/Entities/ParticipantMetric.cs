@@ -6,6 +6,7 @@ public class ParticipantMetric : EntityBase
     public long ParticipantId { get; set; }
     public decimal KillParticipationPct { get; set; }
     public decimal DamageSharePct { get; set; }
+    public int DamageDealt { get; set; }
     public int DamageTaken { get; set; }
     public int DamageMitigated { get; set; }
     public int VisionScore { get; set; }

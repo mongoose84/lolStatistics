@@ -493,3 +493,38 @@ export async function getChampionMatchups(userId, queueType = 'all', timeRange) 
 
   return data
 }
+
+/**
+ * Get match list with trend badges and role baselines
+ * @param {number} userId - The user ID
+ * @param {string} queueType - Queue filter (ranked_solo, ranked_flex, normal, aram, all)
+ * @returns {Promise<{ matches: Array, baselinesByRole: Object, queueType: string, totalMatches: number } | null>}
+ */
+export async function getMatchList(userId, queueType = 'all') {
+  const params = new URLSearchParams()
+  if (queueType && queueType !== 'all') {
+    params.append('queueType', queueType)
+  }
+
+  const url = `${API_BASE}/matches/${userId}${params.toString() ? '?' + params.toString() : ''}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include'
+  })
+
+  if (response.status === 404) {
+    return null // No match data found
+  }
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || 'Failed to get match list')
+    error.status = response.status
+    error.code = data.code
+    throw error
+  }
+
+  return data
+}

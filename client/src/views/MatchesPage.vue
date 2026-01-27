@@ -1,17 +1,246 @@
 <template>
-  <div class="min-h-screen p-2xl">
-    <div class="max-w-[1400px] mx-auto">
-      <div class="mb-2xl">
-        <h1 class="text-2xl font-bold text-text tracking-tight">Matches</h1>
+  <section class="matches-page" data-testid="matches-page">
+    <header class="page-header" data-testid="matches-header">
+      <h1 class="sr-only">Matches</h1>
+
+      <!-- Queue Toggle Bar -->
+      <div class="queue-toggle-group" role="group" aria-label="Filter by queue type">
+        <button
+          v-for="queue in queueOptions"
+          :key="queue.value"
+          type="button"
+          class="queue-toggle-btn"
+          :class="{ 'queue-toggle-btn--active': queueFilter === queue.value }"
+          @click="handleQueueChange(queue.value)"
+          :aria-pressed="queueFilter === queue.value"
+        >
+          {{ queue.label }}
+        </button>
       </div>
-      <div class="bg-background-surface border border-border rounded-lg p-2xl text-center">
-        <p class="text-lg text-text-secondary">Match history feature coming soon...</p>
+    </header>
+
+    <!-- Main Content: Two Column Layout -->
+    <div class="main-content">
+      <!-- Left Column: Match List -->
+      <div class="match-list-column">
+        <div class="column-header">
+          <h2 class="column-title">Recent Matches</h2>
+          <span v-if="data" class="match-count">{{ data.totalMatches }} matches</span>
+        </div>
+        <MatchList
+          :matches="data?.matches || []"
+          :selectedMatchId="selectedMatchId"
+          :loading="loading"
+          @select="handleMatchSelect"
+        />
+      </div>
+
+      <!-- Right Column: Match Details -->
+      <div class="match-details-column">
+        <div class="column-header">
+          <h2 class="column-title">Match Details</h2>
+        </div>
+        <MatchDetails
+          :match="selectedMatch"
+          :baseline="selectedBaseline"
+        />
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
-// Matches page - to be implemented
+import { ref, computed, watch, onMounted } from 'vue'
+import { useAuthStore } from '../stores/authStore'
+import { getMatchList } from '../services/authApi'
+import { trackFilterChange } from '../services/analyticsApi'
+import MatchList from '../components/matches/MatchList.vue'
+import MatchDetails from '../components/matches/MatchDetails.vue'
+
+const authStore = useAuthStore()
+
+// State
+const loading = ref(false)
+const error = ref(null)
+const data = ref(null)
+const queueFilter = ref('all')
+const selectedMatchId = ref(null)
+
+// Queue options for toggle bar
+const queueOptions = [
+  { value: 'all', label: 'All' },
+  { value: 'ranked_solo', label: 'Ranked' },
+  { value: 'ranked_flex', label: 'Flex' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'aram', label: 'ARAM' }
+]
+
+// Computed: Selected match object
+const selectedMatch = computed(() => {
+  if (!selectedMatchId.value || !data.value?.matches) return null
+  return data.value.matches.find(m => m.matchId === selectedMatchId.value) || null
+})
+
+// Computed: Baseline for selected match's role
+const selectedBaseline = computed(() => {
+  if (!selectedMatch.value || !data.value?.baselinesByRole) return null
+  const role = selectedMatch.value.role || 'UNKNOWN'
+  return data.value.baselinesByRole[role] || null
+})
+
+// Fetch match data
+async function fetchMatches() {
+  const userId = authStore.user?.id
+  if (!userId) return
+
+  loading.value = true
+  error.value = null
+
+  try {
+    const result = await getMatchList(userId, queueFilter.value)
+    data.value = result
+
+    // Auto-select first match if none selected
+    if (result?.matches?.length > 0 && !selectedMatchId.value) {
+      selectedMatchId.value = result.matches[0].matchId
+    }
+  } catch (err) {
+    console.error('Failed to fetch matches:', err)
+    error.value = err.message || 'Failed to load matches'
+  } finally {
+    loading.value = false
+  }
+}
+
+// Handlers
+function handleMatchSelect(matchId) {
+  selectedMatchId.value = matchId
+}
+
+function handleQueueChange(value) {
+  queueFilter.value = value
+  selectedMatchId.value = null // Reset selection on filter change
+  trackFilterChange('queue', value)
+  fetchMatches()
+}
+
+// Watch for auth changes
+watch(() => authStore.user?.id, (newId) => {
+  if (newId) {
+    fetchMatches()
+  }
+}, { immediate: false })
+
+// Initial load
+onMounted(() => {
+  if (authStore.user?.id) {
+    fetchMatches()
+  }
+})
 </script>
+
+<style scoped>
+.matches-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  height: 100%;
+  max-height: calc(100vh - 64px); /* Account for header */
+  overflow: hidden;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+/* Queue Toggle Group */
+.queue-toggle-group {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.queue-toggle-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.queue-toggle-btn:hover:not(.queue-toggle-btn--active) {
+  color: var(--color-text);
+  background: var(--color-elevated);
+}
+
+.queue-toggle-btn--active {
+  background: #5b21b6;
+  color: white;
+}
+
+.queue-toggle-btn:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+/* Main Content Layout */
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.match-list-column,
+.match-details-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  overflow: hidden;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.column-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.match-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Responsive: Stack on mobile */
+@media (max-width: 1024px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .match-details-column {
+    display: none; /* Hide details on mobile for now */
+  }
+
+  .matches-page {
+    max-height: none;
+  }
+}
+</style>
 

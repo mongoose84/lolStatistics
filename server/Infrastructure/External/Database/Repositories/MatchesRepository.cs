@@ -1,10 +1,13 @@
 using MySqlConnector;
+using RiotProxy.Application.DTOs.Matches;
 using RiotProxy.External.Domain.Entities;
 
 namespace RiotProxy.Infrastructure.External.Database.Repositories;
 
 public class MatchesRepository : RepositoryBase
 {
+    private const string DataDragonVersion = "16.1.1";
+
     public MatchesRepository(IDbConnectionFactory factory) : base(factory) {}
 
     public Task UpsertAsync(Match match)
@@ -69,4 +72,307 @@ public class MatchesRepository : RepositoryBase
         SeasonCode = r.IsDBNull(5) ? null : r.GetString(5),
         CreatedAt = r.GetDateTimeUtc(6)
     };
+
+    /// <summary>
+    /// Gets the last 20 matches with full participant stats for the match list view.
+    /// Includes trend badge computation based on role baselines.
+    /// </summary>
+    public async Task<IList<MatchListItem>> GetMatchListAsync(
+        string puuid,
+        string queueFilter,
+        int limit = 20,
+        Dictionary<string, RoleBaseline>? baselines = null)
+    {
+        var sql = $@"
+            SELECT
+                m.match_id,
+                m.queue_id,
+                p.champion_id,
+                p.champion_name,
+                COALESCE(p.role, 'UNKNOWN') as role,
+                p.lane,
+                p.win,
+                p.kills,
+                p.deaths,
+                p.assists,
+                p.creep_score,
+                p.gold_earned,
+                m.game_duration_sec,
+                m.game_start_time,
+                COALESCE(pm.damage_dealt, 0) as damage_dealt,
+                COALESCE(pm.damage_taken, 0) as damage_taken,
+                COALESCE(pm.vision_score, 0) as vision_score,
+                COALESCE(pm.kill_participation_pct, 0) as kill_participation
+            FROM participants p
+            INNER JOIN matches m ON m.match_id = p.match_id
+            LEFT JOIN participant_metrics pm ON pm.participant_id = p.id
+            WHERE p.puuid = @puuid
+            {queueFilter}
+            ORDER BY m.game_start_time DESC
+            LIMIT @limit";
+
+        var rawData = await ExecuteListAsync(sql, MapMatchListRaw,
+            ("@puuid", puuid),
+            ("@limit", limit));
+
+        // Transform to MatchListItem with computed fields
+        var items = new List<MatchListItem>();
+        foreach (var raw in rawData)
+        {
+            var durationMin = raw.GameDurationSec / 60.0;
+            var csPerMin = durationMin > 0 ? Math.Round(raw.CreepScore / durationMin, 1) : 0;
+            var goldPerMin = durationMin > 0 ? Math.Round(raw.GoldEarned / durationMin, 0) : 0;
+
+            // Compute trend badge if baselines available
+            TrendBadge? trendBadge = null;
+            if (baselines != null && baselines.TryGetValue(raw.Role, out var baseline))
+            {
+                trendBadge = ComputeTrendBadge(raw, baseline);
+            }
+
+            items.Add(new MatchListItem(
+                MatchId: raw.MatchId,
+                QueueId: raw.QueueId,
+                QueueType: GetQueueLabel(raw.QueueId),
+                ChampionId: raw.ChampionId,
+                ChampionName: raw.ChampionName,
+                ChampionIconUrl: GetChampionIconUrl(raw.ChampionName),
+                Role: raw.Role,
+                Lane: raw.Lane,
+                Win: raw.Win,
+                Kills: raw.Kills,
+                Deaths: raw.Deaths,
+                Assists: raw.Assists,
+                CreepScore: raw.CreepScore,
+                GoldEarned: raw.GoldEarned,
+                GameDurationSec: raw.GameDurationSec,
+                GameStartTime: raw.GameStartTime,
+                DamageDealt: raw.DamageDealt,
+                DamageTaken: raw.DamageTaken,
+                VisionScore: raw.VisionScore,
+                KillParticipation: (double)raw.KillParticipation,
+                CsPerMin: csPerMin,
+                GoldPerMin: goldPerMin,
+                TrendBadge: trendBadge
+            ));
+        }
+
+        return items;
+    }
+
+    /// <summary>
+    /// Gets baseline averages per role from the last 10 games in each role.
+    /// Used for trend comparisons in the match list.
+    /// </summary>
+    public async Task<Dictionary<string, RoleBaseline>> GetRoleBaselinesAsync(string puuid, string queueFilter)
+    {
+        var sql = $@"
+            WITH RankedMatches AS (
+                SELECT
+                    COALESCE(p.role, 'UNKNOWN') as role,
+                    p.kills,
+                    p.deaths,
+                    p.assists,
+                    p.creep_score,
+                    p.gold_earned,
+                    p.win,
+                    m.game_duration_sec,
+                    COALESCE(pm.damage_dealt, 0) as damage_dealt,
+                    COALESCE(pm.damage_taken, 0) as damage_taken,
+                    COALESCE(pm.vision_score, 0) as vision_score,
+                    COALESCE(pm.kill_participation_pct, 0) as kill_participation,
+                    ROW_NUMBER() OVER (PARTITION BY COALESCE(p.role, 'UNKNOWN') ORDER BY m.game_start_time DESC) as rn
+                FROM participants p
+                INNER JOIN matches m ON m.match_id = p.match_id
+                LEFT JOIN participant_metrics pm ON pm.participant_id = p.id
+                WHERE p.puuid = @puuid
+                {queueFilter}
+            )
+            SELECT
+                role,
+                COUNT(*) as games_count,
+                AVG(kills) as avg_kills,
+                AVG(deaths) as avg_deaths,
+                AVG(assists) as avg_assists,
+                AVG(CASE WHEN deaths = 0 THEN kills + assists ELSE (kills + assists) / deaths END) as avg_kda,
+                AVG(creep_score) as avg_creep_score,
+                AVG(CASE WHEN game_duration_sec > 0 THEN creep_score / (game_duration_sec / 60.0) ELSE 0 END) as avg_cs_per_min,
+                AVG(gold_earned) as avg_gold_earned,
+                AVG(CASE WHEN game_duration_sec > 0 THEN gold_earned / (game_duration_sec / 60.0) ELSE 0 END) as avg_gold_per_min,
+                AVG(damage_dealt) as avg_damage_dealt,
+                AVG(damage_taken) as avg_damage_taken,
+                AVG(vision_score) as avg_vision_score,
+                AVG(kill_participation) as avg_kill_participation,
+                AVG(game_duration_sec) as avg_game_duration_sec,
+                AVG(CASE WHEN win THEN 1.0 ELSE 0.0 END) * 100 as win_rate
+            FROM RankedMatches
+            WHERE rn <= 10
+            GROUP BY role";
+
+        var baselines = new Dictionary<string, RoleBaseline>();
+
+        await ExecuteWithConnectionAsync(async conn =>
+        {
+            await using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@puuid", puuid);
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var role = reader.GetString(0);
+                baselines[role] = new RoleBaseline(
+                    Role: role,
+                    GamesCount: reader.GetInt32(1),
+                    AvgKills: reader.GetDouble(2),
+                    AvgDeaths: reader.GetDouble(3),
+                    AvgAssists: reader.GetDouble(4),
+                    AvgKda: reader.GetDouble(5),
+                    AvgCreepScore: reader.GetDouble(6),
+                    AvgCsPerMin: reader.GetDouble(7),
+                    AvgGoldEarned: reader.GetDouble(8),
+                    AvgGoldPerMin: reader.GetDouble(9),
+                    AvgDamageDealt: reader.GetDouble(10),
+                    AvgDamageTaken: reader.GetDouble(11),
+                    AvgVisionScore: reader.GetDouble(12),
+                    AvgKillParticipation: reader.GetDouble(13),
+                    AvgGameDurationSec: reader.GetDouble(14),
+                    WinRate: reader.GetDouble(15)
+                );
+            }
+            return 0;
+        });
+
+        return baselines;
+    }
+
+    /// <summary>
+    /// Computes the most notable trend badge for a match compared to role baseline.
+    /// </summary>
+    private static TrendBadge? ComputeTrendBadge(MatchListRawData match, RoleBaseline baseline)
+    {
+        if (baseline.GamesCount < 3) return null; // Not enough data for meaningful comparison
+
+        var durationMin = match.GameDurationSec / 60.0;
+        var csPerMin = durationMin > 0 ? match.CreepScore / durationMin : 0;
+
+        // Calculate deviations from baseline (as percentage difference)
+        var insights = new List<(string text, string type, string stat, double deviation)>();
+
+        // Damage dealt comparison
+        if (baseline.AvgDamageDealt > 0)
+        {
+            var damageDeviation = (match.DamageDealt - baseline.AvgDamageDealt) / baseline.AvgDamageDealt;
+            if (damageDeviation > 0.2)
+                insights.Add(("Above avg damage", "positive", "damageDealt", damageDeviation));
+            else if (damageDeviation < -0.2)
+                insights.Add(("Below avg damage", "neutral", "damageDealt", Math.Abs(damageDeviation)));
+        }
+
+        // Damage taken comparison (higher can be good for tanks)
+        if (baseline.AvgDamageTaken > 0)
+        {
+            var takenDeviation = (match.DamageTaken - baseline.AvgDamageTaken) / baseline.AvgDamageTaken;
+            if (takenDeviation > 0.25)
+                insights.Add(("Tankier than usual", "positive", "damageTaken", takenDeviation));
+        }
+
+        // Deaths comparison (lower is better)
+        if (baseline.AvgDeaths > 0)
+        {
+            var deathDeviation = (match.Deaths - baseline.AvgDeaths) / baseline.AvgDeaths;
+            if (deathDeviation > 0.3)
+                insights.Add(("Higher deaths vs trend", "neutral", "deaths", deathDeviation));
+            else if (deathDeviation < -0.3 && match.Deaths <= 3)
+                insights.Add(("Clean game", "positive", "deaths", Math.Abs(deathDeviation)));
+        }
+
+        // Vision score comparison (for support/jungle)
+        if (baseline.AvgVisionScore > 10 && match.VisionScore > 0)
+        {
+            var visionDeviation = (match.VisionScore - baseline.AvgVisionScore) / baseline.AvgVisionScore;
+            if (visionDeviation > 0.25)
+                insights.Add(("Strong vision control", "positive", "visionScore", visionDeviation));
+        }
+
+        // CS comparison (for laners)
+        if (baseline.AvgCsPerMin > 4 && csPerMin > 0)
+        {
+            var csDeviation = (csPerMin - baseline.AvgCsPerMin) / baseline.AvgCsPerMin;
+            if (csDeviation > 0.15)
+                insights.Add(("High CS efficiency", "positive", "csPerMin", csDeviation));
+        }
+
+        // Kill participation
+        if (baseline.AvgKillParticipation > 0)
+        {
+            var kpDeviation = ((double)match.KillParticipation - baseline.AvgKillParticipation) / baseline.AvgKillParticipation;
+            if (kpDeviation > 0.2)
+                insights.Add(("High kill participation", "positive", "killParticipation", kpDeviation));
+        }
+
+        // Return the most significant insight (highest deviation)
+        if (insights.Count == 0) return null;
+
+        var best = insights.OrderByDescending(i => i.deviation).First();
+        return new TrendBadge(best.text, best.type, best.stat);
+    }
+
+    private static MatchListRawData MapMatchListRaw(MySqlDataReader r) => new(
+        MatchId: r.GetString(0),
+        QueueId: r.GetInt32(1),
+        ChampionId: r.GetInt32(2),
+        ChampionName: r.GetString(3),
+        Role: r.GetString(4),
+        Lane: r.IsDBNull(5) ? null : r.GetString(5),
+        Win: r.GetBoolean(6),
+        Kills: r.GetInt32(7),
+        Deaths: r.GetInt32(8),
+        Assists: r.GetInt32(9),
+        CreepScore: r.GetInt32(10),
+        GoldEarned: r.GetInt32(11),
+        GameDurationSec: r.GetInt32(12),
+        GameStartTime: r.GetInt64(13),
+        DamageDealt: r.GetInt32(14),
+        DamageTaken: r.GetInt32(15),
+        VisionScore: r.GetInt32(16),
+        KillParticipation: r.GetDecimal(17)
+    );
+
+    private static string GetQueueLabel(int queueId) => queueId switch
+    {
+        420 => "Ranked Solo",
+        440 => "Ranked Flex",
+        400 => "Normal Draft",
+        430 => "Normal Blind",
+        450 => "ARAM",
+        _ => $"Queue {queueId}"
+    };
+
+    private static string GetChampionIconUrl(string championName)
+    {
+        var normalized = championName.Replace(" ", "").Replace("'", "");
+        return $"https://ddragon.leagueoflegends.com/cdn/{DataDragonVersion}/img/champion/{normalized}.png";
+    }
+
+    public static string BuildQueueFilter(string queueType)
+    {
+        return queueType switch
+        {
+            "ranked_solo" => "AND m.queue_id = 420",
+            "ranked_flex" => "AND m.queue_id = 440",
+            "normal" => "AND m.queue_id IN (430, 400)",
+            "aram" => "AND m.queue_id = 450",
+            _ => ""  // all
+        };
+    }
+
+    public static string ValidateQueueType(string? queueType)
+    {
+        var normalized = queueType?.ToLowerInvariant() ?? "all";
+        return normalized switch
+        {
+            "ranked_solo" or "ranked_flex" or "normal" or "aram" or "all" => normalized,
+            _ => "all"
+        };
+    }
 }

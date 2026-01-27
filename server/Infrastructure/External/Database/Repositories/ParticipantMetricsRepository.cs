@@ -10,11 +10,12 @@ public class ParticipantMetricsRepository : RepositoryBase
     public Task UpsertAsync(ParticipantMetric m)
     {
         const string sql = @"INSERT INTO participant_metrics
-            (participant_id, kill_participation_pct, damage_share_pct, damage_taken, damage_mitigated, vision_score, vision_per_min, deaths_pre_10, deaths_10_20, deaths_20_30, deaths_30_plus, first_death_minute, first_kill_participation_minute, created_at)
-            VALUES (@participant_id, @kill_participation_pct, @damage_share_pct, @damage_taken, @damage_mitigated, @vision_score, @vision_per_min, @deaths_pre_10, @deaths_10_20, @deaths_20_30, @deaths_30_plus, @first_death_minute, @first_kill_participation_minute, @created_at) AS new
+            (participant_id, kill_participation_pct, damage_share_pct, damage_dealt, damage_taken, damage_mitigated, vision_score, vision_per_min, deaths_pre_10, deaths_10_20, deaths_20_30, deaths_30_plus, first_death_minute, first_kill_participation_minute, created_at)
+            VALUES (@participant_id, @kill_participation_pct, @damage_share_pct, @damage_dealt, @damage_taken, @damage_mitigated, @vision_score, @vision_per_min, @deaths_pre_10, @deaths_10_20, @deaths_20_30, @deaths_30_plus, @first_death_minute, @first_kill_participation_minute, @created_at) AS new
             ON DUPLICATE KEY UPDATE
                 kill_participation_pct = new.kill_participation_pct,
                 damage_share_pct = new.damage_share_pct,
+                damage_dealt = new.damage_dealt,
                 damage_taken = new.damage_taken,
                 damage_mitigated = new.damage_mitigated,
                 vision_score = new.vision_score,
@@ -30,6 +31,7 @@ public class ParticipantMetricsRepository : RepositoryBase
             ("@participant_id", m.ParticipantId),
             ("@kill_participation_pct", m.KillParticipationPct),
             ("@damage_share_pct", m.DamageSharePct),
+            ("@damage_dealt", m.DamageDealt),
             ("@damage_taken", m.DamageTaken),
             ("@damage_mitigated", m.DamageMitigated),
             ("@vision_score", m.VisionScore),
@@ -55,16 +57,17 @@ public class ParticipantMetricsRepository : RepositoryBase
         ParticipantId = r.GetInt64(1),
         KillParticipationPct = r.GetDecimal(2),
         DamageSharePct = r.GetDecimal(3),
-        DamageTaken = r.GetInt32(4),
-        DamageMitigated = r.GetInt32(5),
-        VisionScore = r.GetInt32(6),
-        VisionPerMin = r.GetDecimal(7),
-        DeathsPre10 = r.GetInt32(8),
-        Deaths10To20 = r.GetInt32(9),
-        Deaths20To30 = r.GetInt32(10),
-        Deaths30Plus = r.GetInt32(11),
-        FirstDeathMinute = r.IsDBNull(12) ? null : r.GetInt32(12),
-        FirstKillParticipationMinute = r.IsDBNull(13) ? null : r.GetInt32(13),
-        CreatedAt = r.GetDateTimeUtc(14)
+        DamageDealt = r.GetInt32(4),
+        DamageTaken = r.GetInt32(5),
+        DamageMitigated = r.GetInt32(6),
+        VisionScore = r.GetInt32(7),
+        VisionPerMin = r.GetDecimal(8),
+        DeathsPre10 = r.GetInt32(9),
+        Deaths10To20 = r.GetInt32(10),
+        Deaths20To30 = r.GetInt32(11),
+        Deaths30Plus = r.GetInt32(12),
+        FirstDeathMinute = r.IsDBNull(13) ? null : r.GetInt32(13),
+        FirstKillParticipationMinute = r.IsDBNull(14) ? null : r.GetInt32(14),
+        CreatedAt = r.GetDateTimeUtc(15)
     };
 }

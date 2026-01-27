@@ -110,6 +110,7 @@ public static class RiotMatchMapper
         {
             KillParticipationPct = teamTotalKills > 0 ? (decimal)(kills + assists) / teamTotalKills * 100 : 0,
             DamageSharePct = teamTotalDamage > 0 ? (decimal)damage / teamTotalDamage * 100 : 0,
+            DamageDealt = damage,
             DamageTaken = participantJson.GetProperty("totalDamageTaken").GetInt32(),
             DamageMitigated = participantJson.GetProperty("damageSelfMitigated").GetInt32(),
             VisionScore = visionScore,
