@@ -215,6 +215,7 @@ CREATE TABLE IF NOT EXISTS participant_metrics (
     participant_id BIGINT UNSIGNED NOT NULL UNIQUE,
     kill_participation_pct DECIMAL(5,2) NOT NULL,
     damage_share_pct DECIMAL(5,2) NOT NULL,
+    damage_dealt INT NOT NULL,
     damage_taken INT NOT NULL,
     damage_mitigated INT NOT NULL,
     vision_score INT NOT NULL,

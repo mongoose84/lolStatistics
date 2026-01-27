@@ -5,42 +5,45 @@
       <p class="text-sm text-text-secondary m-0">Your gaming activity over the past 6 months</p>
     </header>
 
-    <div v-if="hasData" class="relative">
-      <!-- Month labels -->
-      <div class="month-labels relative h-5 mb-xs ml-6">
-        <span v-for="month in monthLabels" :key="month.key" class="absolute text-xs text-text-secondary" :style="{ left: month.offset + 'px' }">
-          {{ month.name }}
-        </span>
-      </div>
+    <div v-if="hasData" class="flex flex-col items-center">
+      <!-- Heatmap wrapper for centering -->
+      <div class="relative inline-block">
+        <!-- Month labels -->
+        <div class="month-labels relative h-5 mb-xs ml-6">
+          <span v-for="month in monthLabels" :key="month.key" class="absolute text-xs text-text-secondary" :style="{ left: month.offset + 'px' }">
+            {{ month.name }}
+          </span>
+        </div>
 
-      <!-- Day labels (Mon, Wed, Fri) -->
-      <div class="day-labels absolute left-0 top-7 flex flex-col gap-0.5 w-5">
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]">Mon</span>
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]">Wed</span>
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]">Fri</span>
-        <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
-      </div>
+        <!-- Day labels (Mon, Wed, Fri) -->
+        <div class="day-labels absolute left-0 top-7 flex flex-col gap-0.5 w-5">
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]">Mon</span>
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]">Wed</span>
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]">Fri</span>
+          <span class="text-[9px] text-text-secondary h-2.5 leading-[10px]"></span>
+        </div>
 
-      <!-- Heatmap grid -->
-      <div class="heatmap-grid flex gap-0.5 ml-6 overflow-x-auto pb-sm">
-        <div v-for="week in weeks" :key="week.weekIndex" class="flex flex-col gap-0.5">
-          <div
-            v-for="day in week.days"
-            :key="day.date"
-            class="heatmap-cell w-2.5 h-2.5 rounded-[2px] cursor-pointer transition-transform duration-100 hover:scale-125"
-            :class="getCellClass(day.count)"
-            :title="getTooltip(day)"
-            @mouseenter="showTooltip(day, $event)"
-            @mouseleave="hideTooltip"
-          ></div>
+        <!-- Heatmap grid -->
+        <div class="heatmap-grid flex gap-0.5 ml-6 overflow-x-auto pb-sm">
+          <div v-for="week in weeks" :key="week.weekIndex" class="flex flex-col gap-0.5">
+            <div
+              v-for="day in week.days"
+              :key="day.date"
+              class="heatmap-cell w-2.5 h-2.5 rounded-[2px] cursor-pointer transition-transform duration-100 hover:scale-125"
+              :class="getCellClass(day.count)"
+              :title="getTooltip(day)"
+              @mouseenter="showTooltip(day, $event)"
+              @mouseleave="hideTooltip"
+            ></div>
+          </div>
         </div>
       </div>
 
       <!-- Legend -->
-      <div class="flex items-center gap-xs mt-md justify-end">
+      <div class="flex items-center gap-xs mt-md justify-center">
         <span class="text-xs text-text-secondary">Less</span>
         <div class="flex gap-0.5">
           <div class="legend-cell level-0 w-2.5 h-2.5 rounded-[2px]" title="0 matches"></div>

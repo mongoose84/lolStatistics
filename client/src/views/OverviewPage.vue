@@ -3,7 +3,7 @@
     :is-loading="isLoading"
     :error="error"
     :is-empty="!overviewData"
-    @retry="fetchOverviewData"
+    @retry="fetchData"
   >
     <!-- Empty State Action -->
     <template #empty-action>
@@ -12,55 +12,60 @@
       </button>
     </template>
 
-    <!-- Player Header (G14b) -->
-    <OverviewPlayerHeader
-      v-if="overviewData?.playerHeader"
-      :summoner-name="overviewData.playerHeader.summonerName"
-      :level="overviewData.playerHeader.level"
-      :region="overviewData.playerHeader.region"
-      :profile-icon-url="overviewData.playerHeader.profileIconUrl"
-      :active-contexts="overviewData.playerHeader.activeContexts"
-      :sync-status="currentSyncStatus"
-      :sync-progress="currentSyncProgress"
-      :sync-total="currentSyncTotal"
-      :last-sync-at="authStore.primaryRiotAccount?.lastSyncAt"
-    />
+    <!-- Top Left: Player Header -->
+    <template #top-left>
+      <OverviewPlayerHeader
+        v-if="overviewData?.playerHeader"
+        :summoner-name="overviewData.playerHeader.summonerName"
+        :level="overviewData.playerHeader.level"
+        :region="overviewData.playerHeader.region"
+        :profile-icon-url="overviewData.playerHeader.profileIconUrl"
+        :active-contexts="overviewData.playerHeader.activeContexts"
+        :sync-status="currentSyncStatus"
+        :sync-progress="currentSyncProgress"
+        :sync-total="currentSyncTotal"
+        :last-sync-at="authStore.primaryRiotAccount?.lastSyncAt"
+      />
+    </template>
 
-    <!-- Rank Snapshot (G14c) -->
-    <RankSnapshot
-      v-if="overviewData?.rankSnapshot"
-      :primary-queue-label="overviewData.rankSnapshot.primaryQueueLabel"
-      :rank="overviewData.rankSnapshot.rank"
-      :lp="overviewData.rankSnapshot.lp"
-      :lp-delta-last20="overviewData.rankSnapshot.lpDeltaLast20"
-      :last20-wins="overviewData.rankSnapshot.last20Wins"
-      :last20-losses="overviewData.rankSnapshot.last20Losses"
-      :wl-last20="overviewData.rankSnapshot.wlLast20"
-    />
+    <!-- Top Right: Match Activity Heatmap -->
+    <template #top-right>
+      <MatchActivityHeatmap
+        v-if="matchActivityData"
+        :daily-match-counts="matchActivityData.dailyMatchCounts"
+        :start-date="matchActivityData.startDate"
+        :end-date="matchActivityData.endDate"
+        :total-matches="matchActivityData.totalMatches"
+      />
+    </template>
 
-    <!-- Last Match Card (G14d) -->
-    <LastMatchCard
-      v-if="overviewData?.lastMatch"
-      :match-id="overviewData.lastMatch.matchId"
-      :champion-icon-url="overviewData.lastMatch.championIconUrl"
-      :champion-name="overviewData.lastMatch.championName"
-      :result="overviewData.lastMatch.result"
-      :kda="overviewData.lastMatch.kda"
-      :timestamp="overviewData.lastMatch.timestamp"
-      :queue-type="overviewData.lastMatch.queueType"
-    />
+    <!-- Bottom Left: Rank Snapshot -->
+    <template #bottom-left>
+      <RankSnapshot
+        v-if="overviewData?.rankSnapshot"
+        :primary-queue-label="overviewData.rankSnapshot.primaryQueueLabel"
+        :rank="overviewData.rankSnapshot.rank"
+        :lp="overviewData.rankSnapshot.lp"
+        :lp-delta-last20="overviewData.rankSnapshot.lpDeltaLast20"
+        :last20-wins="overviewData.rankSnapshot.last20Wins"
+        :last20-losses="overviewData.rankSnapshot.last20Losses"
+        :wl-last20="overviewData.rankSnapshot.wlLast20"
+      />
+    </template>
 
-    <!-- Placeholder for GoalProgressPreview (G14e) -->
-    <div v-if="overviewData?.activeGoals && overviewData.activeGoals.length > 0" class="placeholder-card">
-      <h3 class="text-lg font-semibold text-text mb-xs">Active Goals</h3>
-      <p class="text-text-secondary text-sm">{{ overviewData.activeGoals.length }} goal(s) in progress</p>
-    </div>
-
-    <!-- Placeholder for SuggestedActions (G14f) -->
-    <div v-if="overviewData?.suggestedActions && overviewData.suggestedActions.length > 0" class="placeholder-card">
-      <h3 class="text-lg font-semibold text-text mb-xs">Suggested Actions</h3>
-      <p class="text-text-secondary text-sm">{{ overviewData.suggestedActions.length }} action(s) available</p>
-    </div>
+    <!-- Bottom Right: Last Match Card -->
+    <template #bottom-right>
+      <LastMatchCard
+        v-if="overviewData?.lastMatch"
+        :match-id="overviewData.lastMatch.matchId"
+        :champion-icon-url="overviewData.lastMatch.championIconUrl"
+        :champion-name="overviewData.lastMatch.championName"
+        :result="overviewData.lastMatch.result"
+        :kda="overviewData.lastMatch.kda"
+        :timestamp="overviewData.lastMatch.timestamp"
+        :queue-type="overviewData.lastMatch.queueType"
+      />
+    </template>
   </OverviewLayout>
 
   <!-- Link Riot Account Modal -->
@@ -75,9 +80,10 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useSyncWebSocket } from '../composables/useSyncWebSocket'
-import { getOverview } from '../services/authApi'
+import { getOverview, getMatchActivity } from '../services/authApi'
 import OverviewLayout from '../components/overview/OverviewLayout.vue'
 import OverviewPlayerHeader from '../components/overview/OverviewPlayerHeader.vue'
+import MatchActivityHeatmap from '../components/overview/MatchActivityHeatmap.vue'
 import RankSnapshot from '../components/overview/RankSnapshot.vue'
 import LastMatchCard from '../components/overview/LastMatchCard.vue'
 import LinkRiotAccountModal from '../components/LinkRiotAccountModal.vue'
@@ -87,6 +93,7 @@ const { syncProgress, subscribe, resetProgress } = useSyncWebSocket()
 
 // State
 const overviewData = ref(null)
+const matchActivityData = ref(null)
 const isLoading = ref(false)
 const error = ref(null)
 const showLinkModal = ref(false)
@@ -124,16 +131,22 @@ const currentSyncTotal = computed(() => {
   return authStore.primaryRiotAccount?.syncTotal ?? null
 })
 
-async function fetchOverviewData() {
+async function fetchData() {
   if (!authStore.userId) return
 
   isLoading.value = true
   error.value = null
 
   try {
-    overviewData.value = await getOverview(authStore.userId)
+    // Fetch overview and match activity data in parallel
+    const [overview, activity] = await Promise.all([
+      getOverview(authStore.userId),
+      getMatchActivity(authStore.userId)
+    ])
+    overviewData.value = overview
+    matchActivityData.value = activity
   } catch (e) {
-    console.error('Failed to fetch overview:', e)
+    console.error('Failed to fetch overview data:', e)
     error.value = e.message || 'Failed to load overview'
   } finally {
     isLoading.value = false
@@ -147,7 +160,7 @@ watch(syncProgress, (progress) => {
       // Refresh user data to get updated profile info
       authStore.refreshUser()
       // Refresh overview data to get updated stats
-      fetchOverviewData()
+      fetchData()
       // Reset the status after refresh to avoid repeated refreshes
       resetProgress(puuid)
       break
@@ -164,11 +177,11 @@ async function handleLinkSuccess() {
     subscribe(primaryPuuid.value)
   }
   // Refresh overview data
-  fetchOverviewData()
+  fetchData()
 }
 
 onMounted(() => {
-  fetchOverviewData()
+  fetchData()
   // Subscribe to sync updates for primary account
   if (primaryPuuid.value) {
     subscribe(primaryPuuid.value)
