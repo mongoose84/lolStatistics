@@ -135,7 +135,7 @@ describe('LastMatchCard.vue', () => {
     it('navigates to correct match details URL', () => {
       const wrapper = createWrapper({ matchId: 'EUW1_67890' });
       const link = wrapper.find('a.last-match-card');
-      expect(link.attributes('href')).toBe('/app/matches/EUW1_67890');
+      expect(link.attributes('href')).toBe('/app/matches?matchId=EUW1_67890');
     });
   });
 
