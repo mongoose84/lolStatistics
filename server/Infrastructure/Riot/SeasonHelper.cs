@@ -1,7 +1,7 @@
-using RiotProxy.External.Domain.Entities;
-using RiotProxy.Infrastructure.External.Database.Repositories;
+using RiotProxy.Core.Entities;
+using RiotProxy.Infrastructure.Database.Repositories;
 
-namespace RiotProxy.Infrastructure.External.Riot;
+namespace RiotProxy.Infrastructure.Riot;
 
 /// <summary>
 /// Helper for calculating and managing League of Legends seasons.

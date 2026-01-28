@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class AiSnapshot : EntityBase
 {
@@ -12,3 +12,4 @@ public class AiSnapshot : EntityBase
     public DateOnly SnapshotDate { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

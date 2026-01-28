@@ -1,4 +1,4 @@
-namespace RiotProxy.Infrastructure.External.Riot.LimitHandler;
+namespace RiotProxy.Infrastructure.Riot.LimitHandler;
 
 public interface IRiotLimitHandler : IDisposable
 {

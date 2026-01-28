@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class TeamMatchMetric : EntityBase
 {
@@ -11,3 +11,4 @@ public class TeamMatchMetric : EntityBase
     public bool? WinWhenAheadAt20 { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

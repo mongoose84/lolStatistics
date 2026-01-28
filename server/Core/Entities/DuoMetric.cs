@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class DuoMetric : EntityBase
 {
@@ -13,3 +13,4 @@ public class DuoMetric : EntityBase
     public bool? WinWhenAheadAt15 { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

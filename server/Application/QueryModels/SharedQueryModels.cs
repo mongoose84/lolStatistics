@@ -1,4 +1,4 @@
-namespace RiotProxy.Infrastructure.External.Database.Records;
+namespace RiotProxy.Application.QueryModels;
 
 /// <summary>
 /// Record representing the latest game details for a player.
@@ -155,3 +155,4 @@ public record PlayerAggregateStatsRecord(
     int TotalGoldEarnedExcludingAram,
     long TotalDurationExcludingAramSeconds
 );
+

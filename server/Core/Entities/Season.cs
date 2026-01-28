@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class Season : EntityBase
 {
@@ -8,3 +8,4 @@ public class Season : EntityBase
     public DateOnly? EndDate { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

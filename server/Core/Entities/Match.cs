@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class Match : EntityBase
 {
@@ -10,3 +10,4 @@ public class Match : EntityBase
     public string? SeasonCode { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

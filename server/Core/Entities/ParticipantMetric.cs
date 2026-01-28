@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class ParticipantMetric : EntityBase
 {
@@ -25,3 +25,4 @@ public class ParticipantMetric : EntityBase
     public int? FirstKillParticipationMinute { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

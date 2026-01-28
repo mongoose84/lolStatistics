@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
-using RiotProxy.External.Domain.Entities;
-using RiotProxy.Infrastructure.External.Database.Repositories;
-using RiotProxy.Infrastructure.External.Riot;
-using RiotProxy.Infrastructure.External.Riot.Mappers;
+using RiotProxy.Core.Entities;
+using RiotProxy.Infrastructure.Database.Repositories;
+using RiotProxy.Infrastructure.Riot;
+using RiotProxy.Infrastructure.Riot.Mappers;
 using RiotProxy.Infrastructure.WebSocket;
 using System.Text.Json;
 
-namespace RiotProxy.Infrastructure.External;
+namespace RiotProxy.Infrastructure.Jobs;
 
 /// <summary>
 /// Background job that syncs match history for linked Riot accounts.
@@ -437,14 +437,6 @@ public class MatchHistorySyncJob : BackgroundService
     /// For initial syncs: fetches all matches up to the limit, filtering out existing ones
     ///   (because existing matches may have been created by another account's sync, not this account's previous sync).
     /// </summary>
-    /// <param name="riotApiClient">The Riot API client</param>
-    /// <param name="puuid">The player's PUUID</param>
-    /// <param name="existingMatchIds">Set of match IDs where this PUUID already has a participant record</param>
-    /// <param name="startTime">Unix timestamp (seconds) - only fetch matches after this time</param>
-    /// <param name="maxMatches">Maximum number of matches to fetch (300 for backfill, 100 for incremental)</param>
-    /// <param name="isInitialSync">True for initial backfill (don't stop early), false for incremental (stop on existing)</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>List of new match IDs, ordered from newest to oldest</returns>
     private async Task<IList<string>> FetchNewMatchIdsAsync(
         IRiotApiClient riotApiClient,
         string puuid,
@@ -500,9 +492,6 @@ public class MatchHistorySyncJob : BackgroundService
                 }
 
                 // For initial sync: use a generous safety cap to prevent infinite loops
-                // while still allowing completeness within the 6-month window.
-                // With 6 months and ~10 games/day max, theoretical max is ~1800 matches.
-                // Use 1500 as a reasonable safety cap that allows completeness for most players.
                 const int initialSyncSafetyCap = 1500;
                 if (isInitialSync && totalFetched >= initialSyncSafetyCap)
                 {
@@ -542,7 +531,7 @@ public class MatchHistorySyncJob : BackgroundService
         var match = RiotMatchMapper.MapMatch(matchRoot);
 
         // Calculate and ensure season exists, then set on match
-        match.SeasonCode = await Riot.SeasonHelper.EnsureSeasonExistsAsync(
+        match.SeasonCode = await SeasonHelper.EnsureSeasonExistsAsync(
             seasonsRepo,
             match.PatchVersion,
             match.GameStartTime);
@@ -677,4 +666,3 @@ public class MatchHistorySyncJob : BackgroundService
         }
     }
 }
-

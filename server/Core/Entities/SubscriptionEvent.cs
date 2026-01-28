@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class SubscriptionEvent : EntityBase
 {
@@ -13,3 +13,4 @@ public class SubscriptionEvent : EntityBase
     public string? MetadataJson { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

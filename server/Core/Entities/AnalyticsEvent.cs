@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 /// <summary>
 /// Represents a user behavior analytics event for tracking app usage.

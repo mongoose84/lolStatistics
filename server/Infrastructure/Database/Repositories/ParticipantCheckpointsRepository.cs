@@ -1,8 +1,8 @@
 using MySqlConnector;
-using RiotProxy.External.Domain.Entities;
+using RiotProxy.Core.Entities;
 using System.Text;
 
-namespace RiotProxy.Infrastructure.External.Database.Repositories;
+namespace RiotProxy.Infrastructure.Database.Repositories;
 
 public class ParticipantCheckpointsRepository : RepositoryBase
 {

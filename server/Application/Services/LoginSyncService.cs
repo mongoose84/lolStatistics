@@ -1,7 +1,7 @@
 using System.Text.Json;
-using RiotProxy.External.Domain.Entities;
-using RiotProxy.Infrastructure.External.Database.Repositories;
-using RiotProxy.Infrastructure.External.Riot;
+using RiotProxy.Core.Entities;
+using RiotProxy.Infrastructure.Database.Repositories;
+using RiotProxy.Infrastructure.Riot;
 using RiotProxy.Infrastructure.WebSocket;
 
 namespace RiotProxy.Application.Services;

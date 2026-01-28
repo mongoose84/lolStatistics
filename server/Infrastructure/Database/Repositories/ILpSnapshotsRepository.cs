@@ -1,6 +1,6 @@
-using RiotProxy.External.Domain.Entities;
+using RiotProxy.Core.Entities;
 
-namespace RiotProxy.Infrastructure.External.Database.Repositories;
+namespace RiotProxy.Infrastructure.Database.Repositories;
 
 /// <summary>
 /// Interface for LP snapshots repository operations.

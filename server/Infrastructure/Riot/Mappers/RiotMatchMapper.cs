@@ -1,7 +1,7 @@
 using System.Text.Json;
-using RiotProxy.External.Domain.Entities;
+using RiotProxy.Core.Entities;
 
-namespace RiotProxy.Infrastructure.External.Riot.Mappers;
+namespace RiotProxy.Infrastructure.Riot.Mappers;
 
 /// <summary>
 /// Maps Riot API match-v5 info JSON to domain entities.

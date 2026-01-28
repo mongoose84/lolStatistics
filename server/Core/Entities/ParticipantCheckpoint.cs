@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class ParticipantCheckpoint : EntityBase
 {
@@ -13,3 +13,4 @@ public class ParticipantCheckpoint : EntityBase
     public bool? IsAhead { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class Participant : EntityBase
 {
@@ -25,3 +25,4 @@ public class Participant : EntityBase
     public string? RankAfter { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

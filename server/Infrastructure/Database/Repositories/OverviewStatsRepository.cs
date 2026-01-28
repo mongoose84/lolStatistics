@@ -1,7 +1,7 @@
 using MySqlConnector;
 using RiotProxy.Application.DTOs.Overview;
 
-namespace RiotProxy.Infrastructure.External.Database.Repositories;
+namespace RiotProxy.Infrastructure.Database.Repositories;
 
 /// <summary>
 /// Repository for overview page statistics.

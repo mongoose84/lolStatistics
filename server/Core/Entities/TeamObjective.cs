@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class TeamObjective : EntityBase
 {
@@ -11,3 +11,4 @@ public class TeamObjective : EntityBase
     public int TowersTaken { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

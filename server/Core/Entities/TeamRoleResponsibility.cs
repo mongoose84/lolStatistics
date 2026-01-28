@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class TeamRoleResponsibility : EntityBase
 {
@@ -11,3 +11,4 @@ public class TeamRoleResponsibility : EntityBase
     public decimal DamageSharePct { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+

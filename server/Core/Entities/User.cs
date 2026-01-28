@@ -1,5 +1,4 @@
-
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 public class User : EntityBase
 {
@@ -15,3 +14,4 @@ public class User : EntityBase
     public DateTime UpdatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
 }
+

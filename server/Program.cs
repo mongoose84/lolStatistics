@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using RiotProxy.Infrastructure;
 using RiotProxy.Application;
-using RiotProxy.Infrastructure.External.Database;
-using RiotProxy.Infrastructure.External.Database.Repositories;
-using RiotProxy.Infrastructure.External.Riot;
-using RiotProxy.Infrastructure.External;
+using RiotProxy.Infrastructure.Database;
+using RiotProxy.Infrastructure.Database.Repositories;
+using RiotProxy.Infrastructure.Riot;
+using RiotProxy.Infrastructure.Jobs;
 using RiotProxy.Infrastructure.Security;
 using RiotProxy.Infrastructure.WebSocket;
 using RiotProxy.Infrastructure.Middleware;

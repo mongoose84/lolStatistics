@@ -1,4 +1,4 @@
-namespace RiotProxy.External.Domain.Entities;
+namespace RiotProxy.Core.Entities;
 
 /// <summary>
 /// Represents a point-in-time snapshot of a player's LP/rank.

@@ -4,7 +4,7 @@ using RiotProxy.Application.Services;
 using static RiotProxy.Application.DTOs.SoloSummaryDto;
 using static RiotProxy.Application.DTOs.SoloMatchupsDto;
 
-namespace RiotProxy.Infrastructure.External.Database.Repositories;
+namespace RiotProxy.Infrastructure.Database.Repositories;
 
 /// <summary>
 /// Repository for solo dashboard statistics, optimized for dashboard rendering.
