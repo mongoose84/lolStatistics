@@ -1,13 +1,22 @@
 <template>
   <div class="match-header" :class="{ 'win': match.win, 'loss': !match.win }">
-    <!-- Champion Icon -->
-    <div class="champion-icon-wrapper">
-      <img
-        v-if="match.championIconUrl"
-        :src="match.championIconUrl"
-        :alt="`${match.championName} icon`"
-        class="champion-icon"
-      />
+    <!-- Champion Icon with KDA -->
+    <div class="champion-section">
+      <div class="champion-icon-wrapper">
+        <img
+          v-if="match.championIconUrl"
+          :src="match.championIconUrl"
+          :alt="`${match.championName} icon`"
+          class="champion-icon"
+        />
+      </div>
+      <div class="kda-display">
+        <span class="kda-kills">{{ match.kills }}</span>
+        <span class="kda-separator">/</span>
+        <span class="kda-deaths">{{ match.deaths }}</span>
+        <span class="kda-separator">/</span>
+        <span class="kda-assists">{{ match.assists }}</span>
+      </div>
     </div>
 
     <!-- Match Info -->
@@ -108,13 +117,45 @@ const relativeTime = computed(() => {
   border-left: 4px solid #ef4444;
 }
 
+.champion-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
 .champion-icon-wrapper {
   width: 64px;
   height: 64px;
-  flex-shrink: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-elevated);
+}
+
+.kda-display {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.kda-kills {
+  color: #22c55e;
+}
+
+.kda-deaths {
+  color: #ef4444;
+}
+
+.kda-assists {
+  color: #3b82f6;
+}
+
+.kda-separator {
+  color: var(--color-text-secondary);
+  opacity: 0.5;
 }
 
 .champion-icon {
