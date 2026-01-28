@@ -106,8 +106,8 @@ const stats = computed(() => {
     {
       label: 'CS',
       value: m.creepScore.toString(),
-      trend: null,
-      comparison: null
+      trend: b ? getTrend(m.creepScore, b.avgCreepScore, 0.1) : null,
+      comparison: b ? getComparison(m.creepScore, b.avgCreepScore, 10, 'int') : null
     },
     {
       label: 'CS/min',
