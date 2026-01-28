@@ -75,19 +75,15 @@ const impactStats = computed(() => {
   if (isSupport.value) {
     // SUPPORT METRICS
 
-    // 1. Assist Participation - "Did I enable my team?"
-    // Assists / Team Kills (how many team kills did I assist?)
-    const assistPart = m.teamKills > 0
-      ? (m.assists / m.teamKills) * 100
-      : 0
-    const assistSentiment = assistPart >= 60 ? 'positive' : assistPart < 40 ? 'negative' : 'neutral'
-    const assistDescription = assistPart >= 60
-      ? 'High enabler'
-      : assistPart < 40
-        ? 'Low involvement'
-        : 'Average involvement'
+    // 1. Kill Participation - "Did I enable my team?"
+    // (Kills + Assists) / Team Kills - captures all involvement including kills
+    // For supports, we show the breakdown to highlight their enabling role
+    const kp = m.killParticipation
+    const kpSentiment = kp >= 60 ? 'positive' : kp < 40 ? 'negative' : 'neutral'
+    // Show breakdown: "2K / 8A" to show kills vs assists contribution
+    const kpBreakdown = `${m.kills}K / ${m.assists}A`
 
-    // 3. Vision Score - "Did I control vision?"
+    // 2. Vision Score - "Did I control vision?"
     // Vision score per minute is a good metric
     const gameMins = m.gameDurationSec / 60
     const visionPerMin = gameMins > 0 ? m.visionScore / gameMins : 0
@@ -101,10 +97,10 @@ const impactStats = computed(() => {
 
     return [
       {
-        label: 'Assist Part.',
-        value: `${assistPart.toFixed(0)}%`,
-        sentiment: assistSentiment,
-        description: assistDescription
+        label: 'Kill Part.',
+        value: `${kp.toFixed(0)}%`,
+        sentiment: kpSentiment,
+        description: kpBreakdown
       },
       goldStat,
       {
