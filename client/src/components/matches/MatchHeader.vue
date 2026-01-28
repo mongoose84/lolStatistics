@@ -104,7 +104,7 @@ const relativeTime = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xs);
   background: var(--color-elevated);
   border-radius: var(--radius-md);
 }
