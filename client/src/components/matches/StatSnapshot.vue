@@ -1,6 +1,6 @@
 <template>
   <div class="stat-snapshot">
-    <button class="section-header" @click="expanded = !expanded">
+    <button type="button" class="section-header" @click="expanded = !expanded">
       <h3 class="section-title">Stats</h3>
       <span class="expand-icon" :class="{ expanded }">›</span>
     </button>

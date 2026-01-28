@@ -41,8 +41,13 @@ const impactStats = computed(() => {
   const m = props.match
 
   // 2. Gold Diff @15 - "Who won laning phase?" (same for all roles)
+  // Note: goldDiffAt15 can be null if:
+  // - No lane opponent detected
+  // - Game ended before 15 minutes
+  // - 15m checkpoint wasn't persisted
   const goldDiff = m.goldDiffAt15
   const hasGoldDiff = goldDiff !== null && goldDiff !== undefined
+  const gameEndedEarly = m.gameDurationSec < 15 * 60
   const goldDiffSentiment = !hasGoldDiff
     ? 'neutral'
     : goldDiff >= 500
@@ -51,7 +56,7 @@ const impactStats = computed(() => {
         ? 'negative'
         : 'neutral'
   const goldDiffDescription = !hasGoldDiff
-    ? 'No lane opponent'
+    ? (gameEndedEarly ? 'Game ended early' : 'No data')
     : goldDiff >= 500
       ? 'Won lane'
       : goldDiff <= -500
